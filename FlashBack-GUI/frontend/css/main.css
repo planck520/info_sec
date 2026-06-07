@@ -77,7 +77,6 @@ a:hover { text-decoration: underline; }
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.25;
 }
 
 /* ── 侧边栏分隔线 ────────────────────────────────────────── */

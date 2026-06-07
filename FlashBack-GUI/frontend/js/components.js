@@ -299,13 +299,13 @@ function initParticleBackground(canvasId) {
     return {
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
-      size: Math.random() * 2 + 1,
-      vx: (Math.random() - 0.5) * 0.35,
-      vy: (Math.random() - 0.5) * 0.35,
-      r: Math.floor(Math.random() * 30) + 150,
-      g: Math.floor(Math.random() * 30) + 160,
-      b: Math.floor(Math.random() * 25) + 210,
-      a: Math.random() * 0.22 + 0.1
+      size: Math.random() * 2.5 + 1.5,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      r: Math.floor(Math.random() * 40) + 140,
+      g: Math.floor(Math.random() * 40) + 155,
+      b: Math.floor(Math.random() * 30) + 200,
+      a: Math.random() * 0.28 + 0.18
     };
   }
 
