@@ -320,85 +320,200 @@
           <div class="sub">$ flashback config --edit</div>
         </div>
 
-        <div style="flex:1;overflow-y:auto;max-width:660px;margin:0 auto;display:flex;flex-direction:column;gap:24px;">
+        <div class="settings-grid">
 
-          <!-- IDA Pro -->
-          <div class="panel">
-            <div class="section-hd">
-              <span class="dot amber"></span>
-              IDA PRO CONFIGURATION
-              <span class="spacer"></span>
-              <span class="tag" id="ida-tag">NOT FOUND</span>
-            </div>
-            <div class="panel-body">
-              <div class="flex-row gap-sm" style="margin-bottom:12px;">
-                <input class="input input-mono" type="text" placeholder="D:\ida9.1\windows\ida.exe" id="settings-ida-path">
-                <button class="btn btn-secondary btn-sm" style="flex-shrink:0;">Browse</button>
+          <!-- ═══ 左栏：系统状态 ═══ -->
+          <div class="settings-sidebar">
+            <!-- 子系统状态 -->
+            <div class="panel">
+              <div class="section-hd">
+                <span class="dot green"></span>
+                SYSTEM STATUS
               </div>
-              <div class="flex-row gap-sm">
-                <span style="width:8px;height:8px;border-radius:50%;background:var(--text-muted);display:inline-block;" id="ida-dot"></span>
-                <span class="code-label" id="ida-status">未检测到 IDA Pro</span>
+              <div class="panel-body" style="display:flex;flex-direction:column;gap:10px;">
+                <div class="flex-between">
+                  <div class="flex-row gap-sm">
+                    <span class="status-dot" id="s-ida-dot" style="background:var(--text-muted);"></span>
+                    <span style="font-size:13px;">IDA Pro</span>
+                  </div>
+                  <span class="code-label" id="s-ida-tag">NOT FOUND</span>
+                </div>
+                <div class="flex-between">
+                  <div class="flex-row gap-sm">
+                    <span class="status-dot" id="s-llm-dot" style="background:var(--success);"></span>
+                    <span style="font-size:13px;">LLM Engine</span>
+                  </div>
+                  <span class="code-label">CONNECTED</span>
+                </div>
+                <div class="flex-between">
+                  <div class="flex-row gap-sm">
+                    <span class="status-dot" id="s-api-dot" style="background:var(--success);"></span>
+                    <span style="font-size:13px;">Backend API</span>
+                  </div>
+                  <span class="code-label">RUNNING</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 引擎详情 -->
+            <div class="panel">
+              <div class="section-hd">
+                <span class="dot amber"></span>
+                ENGINE DETAILS
+              </div>
+              <div class="panel-body" style="display:flex;flex-direction:column;gap:8px;">
+                <div class="flex-between">
+                  <span class="code-label">ANALYZER</span>
+                  <span class="code-value" style="font-size:12px;">FlashBack</span>
+                </div>
+                <div class="flex-between">
+                  <span class="code-label">VERSION</span>
+                  <span class="code-value" style="font-size:12px;">v1.0.0</span>
+                </div>
+                <div class="flex-between">
+                  <span class="code-label">SCANS</span>
+                  <span class="code-value" style="font-size:12px;">--</span>
+                </div>
+                <div class="flex-between">
+                  <span class="code-label">VULNS</span>
+                  <span class="code-value" style="font-size:12px;">--</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- LLM -->
-          <div class="panel">
-            <div class="section-hd">
-              <span class="dot green"></span>
-              LLM ANALYSIS ENGINE
-              <span class="spacer"></span>
-              <span class="tag">OPENAI</span>
-            </div>
-            <div class="panel-body">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                <div>
-                  <label class="code-label" style="display:block;margin-bottom:6px;">BASE_URL</label>
-                  <input class="input input-mono" type="text" value="https://api.openai.com/v1" id="settings-llm-url">
+          <!-- ═══ 中栏：配置表单 ═══ -->
+          <div class="settings-main">
+
+            <!-- IDA Pro -->
+            <div class="panel">
+              <div class="section-hd">
+                <span class="dot amber"></span>
+                IDA PRO CONFIGURATION
+                <span class="spacer"></span>
+                <span class="tag" id="ida-tag">NOT FOUND</span>
+              </div>
+              <div class="panel-body">
+                <div class="flex-row gap-sm" style="margin-bottom:12px;">
+                  <input class="input input-mono" type="text" placeholder="D:\ida9.1\windows\ida.exe" id="settings-ida-path">
+                  <button class="btn btn-secondary btn-sm" style="flex-shrink:0;">Browse</button>
                 </div>
-                <div>
-                  <label class="code-label" style="display:block;margin-bottom:6px;">API_KEY</label>
-                  <div style="position:relative;">
-                    <input class="input input-mono" type="password" placeholder="sk-..." id="settings-llm-key" style="padding-right:38px;">
-                    <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);cursor:pointer;" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <div class="flex-row gap-sm">
+                  <span style="width:8px;height:8px;border-radius:50%;background:var(--text-muted);display:inline-block;" id="ida-dot"></span>
+                  <span class="code-label" id="ida-status">未检测到 IDA Pro</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- LLM -->
+            <div class="panel">
+              <div class="section-hd">
+                <span class="dot green"></span>
+                LLM ANALYSIS ENGINE
+                <span class="spacer"></span>
+                <span class="tag">OPENAI</span>
+              </div>
+              <div class="panel-body">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                  <div>
+                    <label class="code-label" style="display:block;margin-bottom:6px;">BASE_URL</label>
+                    <input class="input input-mono" type="text" value="https://api.openai.com/v1" id="settings-llm-url">
+                  </div>
+                  <div>
+                    <label class="code-label" style="display:block;margin-bottom:6px;">API_KEY</label>
+                    <div style="position:relative;">
+                      <input class="input input-mono" type="password" placeholder="sk-..." id="settings-llm-key" style="padding-right:38px;">
+                      <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);cursor:pointer;" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 通用偏好 -->
+            <div class="panel">
+              <div class="section-hd">
+                <span class="dot green"></span>
+                PREFERENCES
+              </div>
+              <div class="panel-body">
+                <div class="flex-col gap-sm">
+                  <div class="flex-between" style="padding:10px 12px;border-radius:8px;">
+                    <div>
+                      <div style="font-size:13px;font-weight:500;">暗色模式</div>
+                      <div class="code-label">DARK_MODE</div>
+                    </div>
+                    <div class="toggle on"></div>
+                  </div>
+                  <div class="flex-between" style="padding:10px 12px;border-radius:8px;">
+                    <div>
+                      <div style="font-size:13px;font-weight:500;">自动检查更新</div>
+                      <div class="code-label">AUTO_UPDATE</div>
+                    </div>
+                    <div class="toggle on"></div>
+                  </div>
+                  <div class="flex-between" style="padding:10px 12px;border-radius:8px;">
+                    <div>
+                      <div style="font-size:13px;font-weight:500;">日志级别</div>
+                      <div class="code-label">LOG_LEVEL</div>
+                    </div>
+                    <select class="select" style="min-width:auto;padding:6px 28px 6px 10px;font-size:12px;">
+                      <option>DEBUG</option>
+                      <option selected>INFO</option>
+                      <option>WARNING</option>
+                    </select>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- 通用偏好 -->
-          <div class="panel">
-            <div class="section-hd">
-              <span class="dot green"></span>
-              PREFERENCES
+          <!-- ═══ 右栏：配置指南 ═══ -->
+          <div class="settings-sidebar">
+            <!-- 配置指南 -->
+            <div class="panel">
+              <div class="section-hd">
+                <span class="dot green"></span>
+                CONFIGURATION GUIDE
+              </div>
+              <div class="panel-body" style="display:flex;flex-direction:column;gap:12px;line-height:1.6;">
+                <div>
+                  <div class="code-label" style="margin-bottom:2px;">IDA PRO PATH</div>
+                  <p class="text-muted" style="font-size:12px;">指向 ida.exe (Windows) 或 idat64 (Linux) 的绝对路径。确保 IDA 版本 ≥ 7.5 以支持 Python 脚本。</p>
+                </div>
+                <div>
+                  <div class="code-label" style="margin-bottom:2px;">LLM API KEY</div>
+                  <p class="text-muted" style="font-size:12px;">密钥仅存储在本地，不会上传到任何服务器。支持 OpenAI 兼容接口。</p>
+                </div>
+                <div>
+                  <div class="code-label" style="margin-bottom:2px;">LOG LEVEL</div>
+                  <p class="text-muted" style="font-size:12px;">DEBUG 输出最详细，适用于故障排查。生产使用建议保持 INFO 级别。</p>
+                </div>
+              </div>
             </div>
-            <div class="panel-body">
-              <div class="flex-col gap-sm">
-                <div class="flex-between" style="padding:10px 12px;border-radius:8px;">
-                  <div>
-                    <div style="font-size:13px;font-weight:500;">暗色模式</div>
-                    <div class="code-label">DARK_MODE</div>
-                  </div>
-                  <div class="toggle on"></div>
+
+            <!-- 应用信息 -->
+            <div class="panel">
+              <div class="section-hd">
+                <span class="dot amber"></span>
+                APPLICATION
+              </div>
+              <div class="panel-body" style="display:flex;flex-direction:column;gap:8px;">
+                <div class="flex-between">
+                  <span class="code-label">NAME</span>
+                  <span class="code-value" style="font-size:12px;">FlashBack GUI</span>
                 </div>
-                <div class="flex-between" style="padding:10px 12px;border-radius:8px;">
-                  <div>
-                    <div style="font-size:13px;font-weight:500;">自动检查更新</div>
-                    <div class="code-label">AUTO_UPDATE</div>
-                  </div>
-                  <div class="toggle on"></div>
+                <div class="flex-between">
+                  <span class="code-label">RUNTIME</span>
+                  <span class="code-value" style="font-size:12px;">Edge WebView2</span>
                 </div>
-                <div class="flex-between" style="padding:10px 12px;border-radius:8px;">
-                  <div>
-                    <div style="font-size:13px;font-weight:500;">日志级别</div>
-                    <div class="code-label">LOG_LEVEL</div>
-                  </div>
-                  <select class="select" style="min-width:auto;padding:6px 28px 6px 10px;font-size:12px;">
-                    <option>DEBUG</option>
-                    <option selected>INFO</option>
-                    <option>WARNING</option>
-                  </select>
+                <div class="flex-between">
+                  <span class="code-label">BACKEND</span>
+                  <span class="code-value" style="font-size:12px;">FastAPI + uvicorn</span>
+                </div>
+                <div class="flex-between">
+                  <span class="code-label">BASED ON</span>
+                  <span class="code-value" style="font-size:12px;">CCS 2026</span>
                 </div>
               </div>
             </div>

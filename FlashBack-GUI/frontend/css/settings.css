@@ -1,14 +1,57 @@
 /* ============================================================
    设置页 — Stripe 科技风
    IDA 配置 / LLM 引擎 / 通用偏好
+   三栏布局：系统状态 | 配置表单 | 配置指南
    ============================================================ */
 
-/* 设置面板间间距 */
-#page-settings .panel + .panel {
-  margin-top: 0;
+/* ── 三栏网格布局 ──────────────────────────────── */
+.settings-grid {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: 1fr 560px 1fr;
+  gap: 24px;
+  min-height: 0;
 }
 
-/* 暗色模式 / 自动更新等选项 hover */
+/* ── 侧栏面板间距 ──────────────────────────────── */
+.settings-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+/* ── 中栏主配置区 ──────────────────────────────── */
+.settings-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+/* ── 状态指示点 ────────────────────────────────── */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* ── 选项 hover ────────────────────────────────── */
 #page-settings .flex-between:hover {
   background: var(--bg-elevated);
+}
+
+/* ── 响应式：窄屏时退化为单列居中 ──────────────── */
+@media (max-width: 1200px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+  .settings-sidebar {
+    display: none;
+  }
 }
