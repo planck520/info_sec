@@ -74,7 +74,7 @@ const AppState = (() => {
   // ── 初始化 ────────────────────────────────────────────
   function init() {
     window.addEventListener('hashchange', () => {
-      navigateTo(location.hash.replace('#', '') || 'analysis');
+      navigateTo(location.hash.replace('#', '') || 'dashboard');
     });
 
     document.getElementById('sidebar-nav').addEventListener('click', e => {
@@ -85,7 +85,7 @@ const AppState = (() => {
     });
 
     // 初始路由
-    navigateTo(location.hash.replace('#', '') || 'analysis');
+    navigateTo(location.hash.replace('#', '') || 'dashboard');
   }
 
   return {
