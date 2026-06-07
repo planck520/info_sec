@@ -13,12 +13,8 @@
 </head>
 <body>
 
-  <!-- 背景光斑 -->
-  <div class="bg-orbs">
-    <div class="bg-orb"></div>
-    <div class="bg-orb"></div>
-    <div class="bg-orb"></div>
-  </div>
+  <!-- Canvas 粒子背景 -->
+  <canvas id="bg-canvas"></canvas>
 
   <!-- ═══ 应用外壳 ═══ -->
   <div id="app-shell">
@@ -81,6 +77,8 @@
             <div class="section-hd">
               <span class="dot green"></span>
               QUICK ACTIONS
+              <span class="spacer"></span>
+              <span class="tag"><span class="dot green" style="animation:pulse 2s infinite;display:inline-block;width:6px;height:6px;margin-right:4px;vertical-align:middle;"></span> ENGINE READY</span>
             </div>
             <div class="panel-body">
               <div class="flex-row gap-md">
@@ -470,6 +468,11 @@
   <!-- JS -->
   <script src="js/api.js"></script>
   <script src="js/components.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      initParticleBackground('bg-canvas');
+    });
+  </script>
   <script src="js/app.js"></script>
   <script src="js/analysis.js"></script>
   <script src="js/results.js"></script>

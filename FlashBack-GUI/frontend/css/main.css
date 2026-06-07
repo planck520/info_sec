@@ -71,49 +71,13 @@ html, body {
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-/* ── 背景光斑动效 ────────────────────────────────────────── */
-.bg-orbs {
+/* ── Canvas 粒子背景 ──────────────────────────────────────── */
+#bg-canvas {
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  overflow: hidden;
-}
-.bg-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(120px);
-  opacity: 0.05;
-  animation: orbDrift 40s var(--ease) infinite;
-}
-.bg-orb:nth-child(1) {
-  width: 500px; height: 500px;
-  background: #635bff;
-  top: -15%; left: -10%;
-  animation-delay: 0s;
-  animation-duration: 45s;
-}
-.bg-orb:nth-child(2) {
-  width: 400px; height: 400px;
-  background: #8b5cf6;
-  bottom: -20%; right: -8%;
-  animation-delay: -15s;
-  animation-duration: 50s;
-}
-.bg-orb:nth-child(3) {
-  width: 350px; height: 350px;
-  background: #00b7a8;
-  top: 40%; left: 50%;
-  animation-delay: -30s;
-  animation-duration: 55s;
-}
-
-@keyframes orbDrift {
-  0%   { transform: translate(0, 0) scale(1); }
-  25%  { transform: translate(80px, -60px) scale(1.08); }
-  50%  { transform: translate(-40px, 70px) scale(0.94); }
-  75%  { transform: translate(-70px, -40px) scale(1.05); }
-  100% { transform: translate(0, 0) scale(1); }
+  opacity: 0.25;
 }
 
 /* ── 侧边栏分隔线 ────────────────────────────────────────── */
@@ -343,3 +307,27 @@ a:hover { text-decoration: underline; }
 .gap-sm { gap: var(--gap-sm); }
 .gap-md { gap: var(--gap-md); }
 .gap-lg { gap: var(--gap-lg); }
+
+/* ── 统计卡片 hover 渐变光晕 ──────────────────────────────── */
+.stat-card {
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 100% 100%, rgba(99,91,255,0.07), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.35s var(--ease);
+  pointer-events: none;
+  z-index: 0;
+}
+.stat-card:hover::after { opacity: 1; }
+.stat-card > * { position: relative; z-index: 1; }
+
+/* ── 脉冲动画 ────────────────────────────────────────────── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
