@@ -11,9 +11,10 @@ from typing import Dict, List, Any, Optional
 class VulnerabilityAnalyzerWeakPrompt:
     """Vulnerability analyzer that uses the Weak-Prompt simplified prompt."""
 
-    def __init__(self, base_url: str, api_key: str, output_dir: str = "."):
+    def __init__(self, base_url: str, api_key: str, output_dir: str = ".", model: str = "deepseek-chat"):
         self.base_url = base_url
         self.api_key = api_key
+        self.model = model
         self.rag_db = os.path.join(output_dir, "vulnerability_rag_weak.db")
         self.init_database()
 
@@ -161,7 +162,7 @@ Notes:
         }
 
         payload = {
-            "model": "deepseek-chat",
+            "model": self.model,
             "messages": [
                 {
                     "role": "user",

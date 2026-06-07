@@ -322,7 +322,7 @@
 
         <div class="settings-grid">
 
-          <!-- ═══ 左栏：系统状态 ═══ -->
+          <!-- ═══ 左栏：状态 + 偏好 ═══ -->
           <div class="settings-sidebar">
             <!-- 子系统状态 -->
             <div class="panel">
@@ -380,55 +380,6 @@
                 </div>
               </div>
             </div>
-          </div>
-
-          <!-- ═══ 中栏：配置表单 ═══ -->
-          <div class="settings-main">
-
-            <!-- IDA Pro -->
-            <div class="panel">
-              <div class="section-hd">
-                <span class="dot amber"></span>
-                IDA PRO CONFIGURATION
-                <span class="spacer"></span>
-                <span class="tag" id="ida-tag">NOT FOUND</span>
-              </div>
-              <div class="panel-body">
-                <div class="flex-row gap-sm" style="margin-bottom:12px;">
-                  <input class="input input-mono" type="text" placeholder="D:\ida9.1\windows\ida.exe" id="settings-ida-path">
-                  <button class="btn btn-secondary btn-sm" style="flex-shrink:0;">Browse</button>
-                </div>
-                <div class="flex-row gap-sm">
-                  <span style="width:8px;height:8px;border-radius:50%;background:var(--text-muted);display:inline-block;" id="ida-dot"></span>
-                  <span class="code-label" id="ida-status">未检测到 IDA Pro</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- LLM -->
-            <div class="panel">
-              <div class="section-hd">
-                <span class="dot green"></span>
-                LLM ANALYSIS ENGINE
-                <span class="spacer"></span>
-                <span class="tag">OPENAI</span>
-              </div>
-              <div class="panel-body">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                  <div>
-                    <label class="code-label" style="display:block;margin-bottom:6px;">BASE_URL</label>
-                    <input class="input input-mono" type="text" value="https://api.openai.com/v1" id="settings-llm-url">
-                  </div>
-                  <div>
-                    <label class="code-label" style="display:block;margin-bottom:6px;">API_KEY</label>
-                    <div style="position:relative;">
-                      <input class="input input-mono" type="password" placeholder="sk-..." id="settings-llm-key" style="padding-right:38px;">
-                      <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);cursor:pointer;" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             <!-- 通用偏好 -->
             <div class="panel">
@@ -468,6 +419,73 @@
             </div>
           </div>
 
+          <!-- ═══ 中栏：配置表单 ═══ -->
+          <div class="settings-main">
+
+            <!-- IDA Pro -->
+            <div class="panel">
+              <div class="section-hd">
+                <span class="dot amber"></span>
+                IDA PRO CONFIGURATION
+                <span class="spacer"></span>
+                <span class="tag" id="ida-tag">NOT FOUND</span>
+              </div>
+              <div class="panel-body">
+                <div class="flex-row gap-sm" style="margin-bottom:12px;">
+                  <input class="input input-mono" type="text" placeholder="D:\ida9.1\windows\ida.exe" id="settings-ida-path">
+                  <button class="btn btn-secondary btn-sm" style="flex-shrink:0;">Browse</button>
+                </div>
+                <div class="flex-row gap-sm">
+                  <span style="width:8px;height:8px;border-radius:50%;background:var(--text-muted);display:inline-block;" id="ida-dot"></span>
+                  <span class="code-label" id="ida-status">未检测到 IDA Pro</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- LLM — 每参数独占一行 -->
+            <div class="panel">
+              <div class="section-hd">
+                <span class="dot green"></span>
+                LLM ANALYSIS ENGINE
+                <span class="spacer"></span>
+                <span class="tag" id="llm-provider-tag">DEEPSEEK</span>
+              </div>
+              <div class="panel-body">
+                <div class="settings-llm-rows">
+                  <!-- 提供商 -->
+                  <div>
+                    <label class="code-label" style="display:block;margin-bottom:6px;">PROVIDER</label>
+                    <select class="select" id="settings-llm-provider">
+                      <option value="deepseek">DeepSeek</option>
+                      <option value="openai">OpenAI</option>
+                      <option value="groq">Groq</option>
+                      <option value="ollama">Ollama (本地)</option>
+                      <option value="custom">Custom</option>
+                    </select>
+                  </div>
+                  <!-- Base URL -->
+                  <div>
+                    <label class="code-label" style="display:block;margin-bottom:6px;">BASE_URL</label>
+                    <input class="input input-mono" type="text" value="https://api.deepseek.com" id="settings-llm-url" placeholder="https://api.deepseek.com">
+                  </div>
+                  <!-- Model -->
+                  <div>
+                    <label class="code-label" style="display:block;margin-bottom:6px;">MODEL</label>
+                    <input class="input input-mono" type="text" value="deepseek-chat" id="settings-llm-model" placeholder="deepseek-chat">
+                  </div>
+                  <!-- API Key -->
+                  <div>
+                    <label class="code-label" style="display:block;margin-bottom:6px;">API_KEY</label>
+                    <div style="position:relative;">
+                      <input class="input input-mono" type="password" placeholder="sk-..." id="settings-llm-key" style="padding-right:42px;">
+                      <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);cursor:pointer;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- ═══ 右栏：配置指南 ═══ -->
           <div class="settings-sidebar">
             <!-- 配置指南 -->
@@ -478,12 +496,16 @@
               </div>
               <div class="panel-body" style="display:flex;flex-direction:column;gap:12px;line-height:1.6;">
                 <div>
+                  <div class="code-label" style="margin-bottom:2px;">PROVIDER</div>
+                  <p class="text-muted" style="font-size:12px;">选择 AI 提供商后将自动填入默认的 BASE_URL 和 MODEL。也可手动修改以适配自定义端点或新模型。</p>
+                </div>
+                <div>
                   <div class="code-label" style="margin-bottom:2px;">IDA PRO PATH</div>
                   <p class="text-muted" style="font-size:12px;">指向 ida.exe (Windows) 或 idat64 (Linux) 的绝对路径。确保 IDA 版本 ≥ 7.5 以支持 Python 脚本。</p>
                 </div>
                 <div>
-                  <div class="code-label" style="margin-bottom:2px;">LLM API KEY</div>
-                  <p class="text-muted" style="font-size:12px;">密钥仅存储在本地，不会上传到任何服务器。支持 OpenAI 兼容接口。</p>
+                  <div class="code-label" style="margin-bottom:2px;">API KEY SECURITY</div>
+                  <p class="text-muted" style="font-size:12px;">密钥仅存储在本地，不会上传到任何服务器。所有提供商均使用 OpenAI 兼容的 Chat Completions 接口。</p>
                 </div>
                 <div>
                   <div class="code-label" style="margin-bottom:2px;">LOG LEVEL</div>

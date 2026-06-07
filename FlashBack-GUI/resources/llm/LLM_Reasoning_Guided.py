@@ -9,9 +9,10 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 
 class VulnerabilityAnalyzer:
-    def __init__(self, base_url: str, api_key: str, output_dir: str = "."):
+    def __init__(self, base_url: str, api_key: str, output_dir: str = ".", model: str = "deepseek-chat"):
         self.base_url = base_url
         self.api_key = api_key
+        self.model = model
         self.rag_db = os.path.join(output_dir, "vulnerability_rag.db")
         self.init_database()
     
@@ -272,7 +273,7 @@ You must follow the template below exactly. The output must be valid Markdown, a
         }
         
         payload = {
-            "model": "deepseek-chat",
+            "model": self.model,
             "messages": [
                 {
                     "role": "user",

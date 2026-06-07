@@ -10,8 +10,10 @@ router = APIRouter(tags=["settings"])
 # 硬编码默认值（C 同学替换为 ConfigManager 后删除）
 _DEFAULTS = {
     "ida_path": "",
-    "llm_base_url": "https://api.openai.com/v1",
+    "llm_provider": "deepseek",
+    "llm_base_url": "https://api.deepseek.com",
     "llm_api_key": "",
+    "llm_model": "deepseek-chat",
     "max_parallel": 4,
     "theme": "dark",
 }
