@@ -1,1 +1,22 @@
-/* 分析页样式 — 成员 A 实现 */
+/* ============================================================
+   分析页 — Stripe 科技风
+   进度环 / 状态卡 / 扫描引擎面板 / 终端
+   ============================================================ */
+
+/* 分析页两栏高度自适应 */
+#page-analysis > div:last-child {
+  flex: 1;
+  min-height: 0;
+}
+
+/* 终端内部行间距微调 */
+#terminal-body .terminal-line {
+  padding: 1px 0;
+}
+
+/* 响应式：窗口宽度 < 900px 时上下排列 */
+@media (max-width: 900px) {
+  #page-analysis > div:last-child {
+    flex-direction: column !important;
+  }
+}

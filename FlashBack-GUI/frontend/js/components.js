@@ -197,7 +197,7 @@ function createTerminal(container, options) {
       var lvl = level || 'dim';
       div.innerHTML =
         '<span class="ts">[' + t + ']</span> ' +
-        '<span class="' + lvl + '">' + lvl.toUpperCase() + '</span>  ' +
+        '<span class="' + lvl + '">●</span>  ' +
         _escT(msg);
       body.appendChild(div);
       body.scrollTop = body.scrollHeight;

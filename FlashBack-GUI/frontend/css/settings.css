@@ -1,1 +1,14 @@
-/* 设置页 + LLM 面板样式 — 成员 C 实现 */
+/* ============================================================
+   设置页 — Stripe 科技风
+   IDA 配置 / LLM 引擎 / 通用偏好
+   ============================================================ */
+
+/* 设置面板间间距 */
+#page-settings .panel + .panel {
+  margin-top: 0;
+}
+
+/* 暗色模式 / 自动更新等选项 hover */
+#page-settings .flex-between:hover {
+  background: var(--bg-elevated);
+}
