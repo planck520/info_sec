@@ -87,11 +87,11 @@
   font-size: 13px;
   transition: border-color var(--transition), box-shadow var(--transition);
   outline: none;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
 }
 .input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(99,91,255,0.08), inset 0 1px 2px rgba(0,0,0,0.04);
+  box-shadow: 0 0 0 3px rgba(99,91,255,0.1), inset 0 1px 3px rgba(0,0,0,0.06);
 }
 .input::placeholder { color: var(--text-muted); }
 .input-mono { font-family: var(--font-mono); font-size: 12px; }
@@ -155,7 +155,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
 }
 .stat-card-label {
   font-family: var(--font-mono);
@@ -194,7 +194,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: #f1f4f8;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f4f8 100%);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
@@ -207,7 +207,16 @@
 }
 .terminal-dot.red   { background: #ef4444; }
 .terminal-dot.amber { background: #f59e0b; }
-.terminal-dot.green { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.5); }
+.terminal-dot.green {
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34,197,94,0.5);
+  animation: terminalPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes terminalPulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(34,197,94,0.35); }
+  50%      { box-shadow: 0 0 10px rgba(34,197,94,0.7); }
+}
 
 .terminal-title {
   margin-left: 4px;
@@ -278,8 +287,8 @@
 }
 
 @keyframes glowPulse {
-  0%, 100% { border-color: rgba(99,91,255,0.05); transform: scale(1); }
-  50%      { border-color: rgba(99,91,255,0.2);  transform: scale(1.02); }
+  0%, 100% { border-color: rgba(99,91,255,0.06); transform: scale(1); }
+  50%      { border-color: rgba(99,91,255,0.3);  transform: scale(1.03); }
 }
 
 .progress-center {
@@ -366,7 +375,8 @@
   font-size: 13px;
 }
 .data-table tbody tr { transition: background var(--transition); }
-.data-table tbody tr:hover td { background: #f8fafc; }
+.data-table tbody tr:nth-child(even) td { background: #fafbfc; }
+.data-table tbody tr:hover td { background: #f1f5f9; }
 .data-table tbody tr.selected td { background: #eef2ff; }
 
 /* ── 结果卡片 ────────────────────────────────────────────── */
@@ -475,7 +485,7 @@
 }
 .toggle.on {
   background: var(--accent);
-  box-shadow: 0 0 10px rgba(99,91,255,0.18), inset 0 1px 0 rgba(255,255,255,0.2);
+  box-shadow: 0 0 12px rgba(99,91,255,0.25), inset 0 1px 0 rgba(255,255,255,0.25);
 }
 .toggle::after {
   content: '';
