@@ -37,10 +37,17 @@ function createProgressBar(container, { total = 1 } = {}) {
       completed = c;
       render();
       if (label) right.textContent = label;
+      // 进度进行中时启用流光动画
+      if (completed > 0 && completed < total) {
+        fill.classList.add('active');
+      } else {
+        fill.classList.remove('active');
+      }
     },
     complete() {
       completed = total;
       render();
+      fill.classList.remove('active');
       fill.style.background = 'var(--success)';
     },
     error(msg) {

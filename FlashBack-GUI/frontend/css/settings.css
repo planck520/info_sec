@@ -40,8 +40,14 @@
 }
 
 /* ── 选项 hover ────────────────────────────────── */
+#page-settings .flex-between {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition: all var(--transition);
+}
 #page-settings .flex-between:hover {
   background: var(--bg-elevated);
+  border-color: var(--border);
 }
 
 /* ── 响应式：窄屏时退化为单列居中 ──────────────── */
