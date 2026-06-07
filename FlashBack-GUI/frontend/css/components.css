@@ -146,6 +146,13 @@
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s var(--ease);
+  cursor: pointer;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+  border-color: var(--border-strong);
 }
 .stat-card-icon {
   width: 42px;
@@ -390,9 +397,10 @@
   transition: all var(--transition);
 }
 .result-card:hover {
+  transform: translateY(-2px);
   border-color: var(--border-strong);
   border-left-color: var(--accent);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.07);
 }
 .result-card.critical { border-left-color: var(--danger); }
 .result-card.high     { border-left-color: var(--warning); }

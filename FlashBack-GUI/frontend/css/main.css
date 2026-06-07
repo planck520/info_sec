@@ -274,6 +274,12 @@ a:hover { text-decoration: underline; }
   border-radius: var(--radius);
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease);
+  cursor: default;
+}
+.panel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
 }
 .panel-body {
   padding: 24px;
