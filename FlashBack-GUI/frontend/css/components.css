@@ -187,7 +187,8 @@
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: var(--bg-dark);
+  background: #f1f4f8;
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
@@ -206,7 +207,7 @@
   font-family: var(--font-mono);
   font-size: 10.5px;
   font-weight: 600;
-  color: #94a3b8;
+  color: #64748b;
   letter-spacing: 0.8px;
   text-transform: uppercase;
 }
@@ -421,9 +422,10 @@
   border-radius: 10px;
   font-size: 13px;
   font-weight: 500;
-  background: var(--bg-dark);
-  color: #e2e8f0;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
   animation: toastUp 0.3s var(--ease) forwards;
   white-space: nowrap;
 }
