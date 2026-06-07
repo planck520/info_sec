@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Backup/temp pyc files
+*.pyc.*
+
+# IDE
+.vscode/
+.idea/
+
+# Claude / Serena tool configs
+.claude/
+.serena/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Duplicate backend — do NOT commit
+FlashBack-main(3)/
+
+# Large binaries/docs
+*.zip
+*.pdf
+*.docx
