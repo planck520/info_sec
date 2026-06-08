@@ -346,14 +346,23 @@ a:hover { text-decoration: underline; }
   padding: 24px;
 }
 
-/* ── 滚动条 ──────────────────────────────────────────────── */
+/* ── 滚动条：默认隐藏，hover 时浮现 ────────────────────────── */
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.1);
+  background: transparent;
   border-radius: 3px;
+  transition: background 0.3s ease;
 }
 ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.18); }
+
+/* 滚动容器 hover 时显示 thumb */
+.page-section:hover::-webkit-scrollbar-thumb,
+.settings-grid:hover::-webkit-scrollbar-thumb,
+#results-list:hover::-webkit-scrollbar-thumb,
+.terminal-body:hover::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.1);
+}
 
 /* ── 工具类 ──────────────────────────────────────────────── */
 .text-muted  { color: var(--text-muted); }
