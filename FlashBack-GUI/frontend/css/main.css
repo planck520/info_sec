@@ -68,6 +68,18 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── 噪点纹理 overlay（极淡，消除纯色塑料感）───────────────── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.022;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+}
+
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
@@ -144,7 +156,13 @@ a:hover { text-decoration: underline; }
   position: relative;
   text-decoration: none;
 }
-.sidebar-nav a svg { width: 20px; height: 20px; }
+.sidebar-nav a svg {
+  width: 20px; height: 20px;
+  transition: transform var(--transition);
+}
+.sidebar-nav a:hover svg {
+  transform: scale(1.12);
+}
 
 .sidebar-nav a:hover {
   color: var(--text-primary);
@@ -159,11 +177,11 @@ a:hover { text-decoration: underline; }
 .sidebar-nav a.active::before { display: none; }  /* 去掉左侧竖线，改为填充色 */
 
 .sidebar-version {
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: 10px;
   font-weight: 500;
   color: var(--text-muted);
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 /* ── 主内容区 ────────────────────────────────────────────── */
@@ -189,6 +207,43 @@ a:hover { text-decoration: underline; }
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── 卡片交错入场 ────────────────────────────────────────── */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-section.active .panel,
+.page-section.active .stat-card,
+.page-section.active .result-card {
+  animation: cardIn 0.45s var(--ease) both;
+}
+
+/* 按容器内出现顺序依次延迟 */
+.stat-card:nth-child(1),
+.panel:nth-child(1),
+.result-card:nth-child(1) { animation-delay: 0.03s; }
+
+.stat-card:nth-child(2),
+.panel:nth-child(2),
+.result-card:nth-child(2) { animation-delay: 0.08s; }
+
+.stat-card:nth-child(3),
+.panel:nth-child(3),
+.result-card:nth-child(3) { animation-delay: 0.13s; }
+
+.stat-card:nth-child(4),
+.panel:nth-child(4),
+.result-card:nth-child(4) { animation-delay: 0.18s; }
+
+.stat-card:nth-child(5),
+.panel:nth-child(5),
+.result-card:nth-child(5) { animation-delay: 0.23s; }
+
+.stat-card:nth-child(6),
+.panel:nth-child(6),
+.result-card:nth-child(6) { animation-delay: 0.28s; }
+
 /* ── 页面标题 ────────────────────────────────────────────── */
 .page-title {
   margin-bottom: 28px;
@@ -212,7 +267,7 @@ a:hover { text-decoration: underline; }
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 20px;
+  padding: 12px 20px 12px 17px;
   background: linear-gradient(180deg, #fafbfc 0%, #f0f3f7 100%);
   color: #475569;
   font-family: var(--font-mono);
@@ -222,6 +277,7 @@ a:hover { text-decoration: underline; }
   text-transform: uppercase;
   border-radius: var(--radius) var(--radius) 0 0;
   border-bottom: 1px solid var(--border);
+  border-left: 3px solid transparent;
   user-select: none;
 }
 .section-hd .dot {
@@ -232,6 +288,11 @@ a:hover { text-decoration: underline; }
 .section-hd .dot.green  { background: #22c55e; }
 .section-hd .dot.amber { background: #f59e0b; }
 .section-hd .dot.red   { background: #ef4444; }
+
+/* 标题栏左色条（与 dot 颜色关联） */
+.section-hd:has(.dot.green)  { border-left-color: #22c55e; }
+.section-hd:has(.dot.amber) { border-left-color: #f59e0b; }
+.section-hd:has(.dot.red)   { border-left-color: #ef4444; }
 
 .section-hd .spacer { flex: 1; }
 .section-hd .tag {
