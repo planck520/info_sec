@@ -1,7 +1,33 @@
 /* ============================================================
    FlashBack GUI — main.css
-   Stripe 科技风：CSS 变量 / 布局 / 侧边栏 / 深色 header bar
+   毛玻璃暗色主题：CSS 变量 / 布局 / 侧边栏 / 字体
    ============================================================ */
+
+/* ── Figtree 字体（对齐 frosted-glass CRM 参考）─────────── */
+@font-face {
+  font-family: 'Figtree';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 300 900;
+  src: url('../fonts/figtree-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
+@font-face {
+  font-family: 'Figtree';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 300 900;
+  src: url('../fonts/figtree-latin-ext-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Figtree';
+  font-style: italic;
+  font-display: swap;
+  font-weight: 300 900;
+  src: url('../fonts/figtree-latin-wght-italic.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
 
 /* ── CSS 变量 ────────────────────────────────────────────── */
 :root {
@@ -23,17 +49,17 @@
   --success:  #34d399;
   --info:     #7c75ff;
 
-  /* 文字 — 白色系 */
-  --text-primary:    rgba(255, 255, 255, 0.92);
-  --text-secondary:  rgba(255, 255, 255, 0.65);
-  --text-muted:      rgba(255, 255, 255, 0.4);
+  /* 文字 — 纯白高亮 */
+  --text-primary:    rgba(255, 255, 255, 1.0);
+  --text-secondary:  rgba(255, 255, 255, 0.88);
+  --text-muted:      rgba(255, 255, 255, 0.65);
 
   /* 边框 — 半透明白 */
   --border:        rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.15);
 
-  /* 字体 */
-  --font-body: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  /* 字体 — Figtree（与 frosted-glass CRM 参考一致） */
+  --font-body: 'Figtree', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-mono: 'Cascadia Code', 'Consolas', 'Fira Code', 'JetBrains Mono', monospace;
 
   /* 尺寸 */
@@ -63,12 +89,14 @@ html, body {
   color: var(--text-primary);
   font-family: var(--font-body);
   font-size: 14px;
+  font-weight: 500;
   line-height: 1.6;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── 背景图 + 暗色遮罩 ──────────────────────────────────── */
+/* ── 背景图 + 暗色遮罩（对齐参考 bg-black/30 叠加）──── */
 body::before {
   content: '';
   position: fixed;
@@ -76,7 +104,14 @@ body::before {
   z-index: 0;
   pointer-events: none;
   background: url('../img/bg-fractal.jpg') center/cover no-repeat;
-  filter: brightness(0.35) saturate(0.7);
+}
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.30);
 }
 
 a { color: var(--accent); text-decoration: none; }
@@ -97,9 +132,7 @@ a:hover { text-decoration: underline; }
 /* ── 自定义标题栏（Electron frameless 窗口）─────────────── */
 .titlebar {
   height: 36px;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(0, 0, 0, 0.65);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -159,14 +192,16 @@ a:hover { text-decoration: underline; }
 .tb-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
 .tb-close:hover { background: #e81123; color: #fff; }
 
-/* ── 主布局 ──────────────────────────────────────────────── */
+/* ── 主布局（全局 padding 让组件浮起）──────────────────── */
 #app-shell {
   display: flex;
-  height: 100vh;
-  padding-top: 36px;
+  height: calc(100vh - 36px);
+  margin-top: 36px;
+  padding: 24px;
+  gap: 24px;
 }
 
-/* ── 侧边栏 — 宽版玻璃分组导航 ──────────────────────────── */
+/* ── 侧边栏 — 浮动圆角卡片 ──────────────────────────────── */
 #sidebar {
   width: var(--sidebar-w);
   min-width: var(--sidebar-w);
@@ -174,10 +209,11 @@ a:hover { text-decoration: underline; }
   display: flex;
   flex-direction: column;
   padding: 20px 14px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.10);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  border-radius: 24px;
   z-index: 50;
   gap: 6px;
 }
@@ -239,7 +275,7 @@ a:hover { text-decoration: underline; }
   gap: 10px;
   padding: 9px 10px;
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.80);
   transition: all var(--transition);
   text-decoration: none;
   font-size: 13px;
@@ -258,8 +294,8 @@ a:hover { text-decoration: underline; }
 
 .sidebar-nav a.active {
   color: #fff;
-  background: rgba(124, 117, 255, 0.2);
-  border: 1px solid rgba(124, 117, 255, 0.3);
+  background: rgba(255, 255, 255, 0.20);
+  border: 1px solid rgba(255, 255, 255, 0.30);
 }
 
 /* 底部分隔线 */
@@ -298,15 +334,16 @@ a:hover { text-decoration: underline; }
 /* ── 主内容区 ────────────────────────────────────────────── */
 #content {
   flex: 1;
-  height: 100vh;
-  overflow: hidden;
+  height: 100%;
+  overflow: visible;
   position: relative;
+  min-height: 0;
 }
 
 .page-section {
   display: none;
-  height: 100%;
-  overflow-y: auto;
+  min-height: 100%;
+  overflow: visible;
   padding: 36px 44px;
   animation: pageIn 0.3s var(--ease) forwards;
 }
@@ -327,7 +364,7 @@ a:hover { text-decoration: underline; }
 .page-section.active .panel,
 .page-section.active .stat-card,
 .page-section.active .result-card {
-  animation: cardIn 0.45s var(--ease) both;
+  animation: cardIn 0.45s var(--ease) backwards;
 }
 
 /* 按容器内出现顺序依次延迟 */
@@ -386,7 +423,7 @@ a:hover { text-decoration: underline; }
   font-weight: 600;
   letter-spacing: 0.9px;
   text-transform: uppercase;
-  border-radius: var(--radius) var(--radius) 0 0;
+  border-radius: 24px 24px 0 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   user-select: none;
 }
@@ -433,20 +470,32 @@ a:hover { text-decoration: underline; }
   word-break: break-all;
 }
 
-/* ── 面板卡片 — 玻璃态 ─────────────────────────────────── */
+/* ── 统一毛玻璃基类（与侧边栏参数完全一致）────────────── */
+.glass {
+  background: rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  border-radius: 24px;
+}
+.glass:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* ── 面板卡片（与侧边栏参数完全一致）──────────────────── */
 .panel {
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+  background: rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  border-radius: 24px;
   transition: transform 0.4s var(--ease), background 0.4s var(--ease), border-color 0.4s var(--ease);
   cursor: default;
 }
 .panel:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
   transform: scale(1.01);
 }
 .panel-body {
@@ -494,7 +543,6 @@ a:hover { text-decoration: underline; }
 /* ── 统计卡片 hover 渐变光晕（暗色玻璃版）────────────────── */
 .stat-card {
   position: relative;
-  overflow: hidden;
 }
 .stat-card::after {
   content: '';
@@ -505,13 +553,13 @@ a:hover { text-decoration: underline; }
   transition: opacity 0.4s var(--ease);
   pointer-events: none;
   z-index: 0;
+  border-radius: inherit;
 }
 .stat-card:hover::after { opacity: 1; }
 .stat-card > * { position: relative; z-index: 1; }
 
 /* ── 仪表盘页面间距 ────────────────────────────────────── */
 #page-dashboard {
-  overflow-y: auto;
   gap: 18px;
   padding-bottom: 32px;
 }
