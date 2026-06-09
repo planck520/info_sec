@@ -7,7 +7,6 @@
 /* ── 三栏网格布局 ──────────────────────────────── */
 .settings-grid {
   flex: 1;
-  overflow-y: auto;
   display: grid;
   grid-template-columns: 280px 1fr 280px;
   gap: 24px;

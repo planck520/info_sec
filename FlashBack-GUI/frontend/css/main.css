@@ -216,6 +216,7 @@ a:hover { text-decoration: underline; }
   border-radius: 24px;
   z-index: 50;
   gap: 6px;
+  position: relative;
 }
 
 /* Logo 区 */
@@ -345,7 +346,7 @@ a:hover { text-decoration: underline; }
   min-height: 100%;
   overflow: visible;
   padding: 36px 44px;
-  animation: pageIn 0.3s var(--ease) forwards;
+  animation: pageIn 0.3s var(--ease) backwards;
 }
 
 .page-section.active { display: flex; flex-direction: column; }
@@ -477,6 +478,7 @@ a:hover { text-decoration: underline; }
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.20);
   border-radius: 24px;
+  position: relative;
 }
 .glass:hover {
   background: rgba(255, 255, 255, 0.15);
@@ -492,6 +494,7 @@ a:hover { text-decoration: underline; }
   border-radius: 24px;
   transition: transform 0.4s var(--ease), background 0.4s var(--ease), border-color 0.4s var(--ease);
   cursor: default;
+  position: relative;
 }
 .panel:hover {
   background: rgba(255, 255, 255, 0.15);

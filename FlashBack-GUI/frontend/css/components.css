@@ -148,6 +148,7 @@
   border-radius: 24px;
   transition: transform 0.4s var(--ease), background 0.4s var(--ease), border-color 0.4s var(--ease);
   cursor: pointer;
+  position: relative;
 }
 .stat-card:hover {
   background: rgba(255, 255, 255, 0.15);
@@ -198,6 +199,7 @@
   border-radius: 24px;
   flex: 1;
   min-height: 0;
+  position: relative;
 }
 
 .terminal-bar {
@@ -402,6 +404,7 @@
   border-radius: 24px;
   cursor: pointer;
   transition: all var(--transition);
+  position: relative;
 }
 .result-card:hover {
   background: rgba(255, 255, 255, 0.15);

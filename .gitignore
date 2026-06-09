@@ -29,6 +29,21 @@ ChinaCode_frontend-main/
 node_modules/
 package-lock.json
 
+# Logs
+*.log
+
+# Playwright / test artifacts
+.playwright-mcp/
+/clone-test.png
+/dashboard-debug.png
+/flashback-ui-v2-analysis.png
+/page-analysis-snapshot.md
+/settings-layout-verify.md
+/settings-snapshot.md
+
+# Reference templates (do NOT commit)
+frosted-glass-ui-crm-dashboard-ui-design/
+
 # Large binaries/docs
 *.zip
 *.pdf
