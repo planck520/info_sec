@@ -343,6 +343,8 @@ a:hover { text-decoration: underline; }
 
 .page-section {
   display: none;
+  position: relative;
+  top: 0;
   min-height: 100%;
   overflow: visible;
   padding: 36px 44px;
@@ -350,8 +352,42 @@ a:hover { text-decoration: underline; }
 
 .page-section.active { display: flex; flex-direction: column; }
 
-/* ── 页面切换 — 无动画（opacity/transform 动画会创建 Backdrop Root 阻断 backdrop-filter）── */
-/* 卡片不使用入场动画，确保 backdrop-filter 从第一帧就正常工作 */
+/* ── 卡片交错入场（top 替代 transform，不创建 Backdrop Root）── */
+@keyframes cardSlideUp {
+  from { top: 16px; }
+  to   { top: 0; }
+}
+
+.page-section.active .stat-card,
+.page-section.active .panel,
+.page-section.active .result-card {
+  animation: cardSlideUp 0.45s var(--ease) backwards;
+}
+
+/* 交错延迟 */
+.page-section.active .stat-card:nth-child(1),
+.page-section.active .panel:nth-child(1),
+.page-section.active .result-card:nth-child(1) { animation-delay: 0.03s; }
+
+.page-section.active .stat-card:nth-child(2),
+.page-section.active .panel:nth-child(2),
+.page-section.active .result-card:nth-child(2) { animation-delay: 0.08s; }
+
+.page-section.active .stat-card:nth-child(3),
+.page-section.active .panel:nth-child(3),
+.page-section.active .result-card:nth-child(3) { animation-delay: 0.13s; }
+
+.page-section.active .stat-card:nth-child(4),
+.page-section.active .panel:nth-child(4),
+.page-section.active .result-card:nth-child(4) { animation-delay: 0.18s; }
+
+.page-section.active .stat-card:nth-child(5),
+.page-section.active .panel:nth-child(5),
+.page-section.active .result-card:nth-child(5) { animation-delay: 0.23s; }
+
+.page-section.active .stat-card:nth-child(6),
+.page-section.active .panel:nth-child(6),
+.page-section.active .result-card:nth-child(6) { animation-delay: 0.28s; }
 
 /* ── 页面标题 ────────────────────────────────────────────── */
 .page-title {
