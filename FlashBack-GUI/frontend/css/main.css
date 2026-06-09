@@ -346,52 +346,12 @@ a:hover { text-decoration: underline; }
   min-height: 100%;
   overflow: visible;
   padding: 36px 44px;
-  animation: pageIn 0.3s var(--ease) backwards;
 }
 
 .page-section.active { display: flex; flex-direction: column; }
 
-@keyframes pageIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ── 卡片交错入场 ────────────────────────────────────────── */
-@keyframes cardIn {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.page-section.active .panel,
-.page-section.active .stat-card,
-.page-section.active .result-card {
-  animation: cardIn 0.45s var(--ease) backwards;
-}
-
-/* 按容器内出现顺序依次延迟 */
-.stat-card:nth-child(1),
-.panel:nth-child(1),
-.result-card:nth-child(1) { animation-delay: 0.03s; }
-
-.stat-card:nth-child(2),
-.panel:nth-child(2),
-.result-card:nth-child(2) { animation-delay: 0.08s; }
-
-.stat-card:nth-child(3),
-.panel:nth-child(3),
-.result-card:nth-child(3) { animation-delay: 0.13s; }
-
-.stat-card:nth-child(4),
-.panel:nth-child(4),
-.result-card:nth-child(4) { animation-delay: 0.18s; }
-
-.stat-card:nth-child(5),
-.panel:nth-child(5),
-.result-card:nth-child(5) { animation-delay: 0.23s; }
-
-.stat-card:nth-child(6),
-.panel:nth-child(6),
-.result-card:nth-child(6) { animation-delay: 0.28s; }
+/* ── 页面切换 — 无动画（opacity/transform 动画会创建 Backdrop Root 阻断 backdrop-filter）── */
+/* 卡片不使用入场动画，确保 backdrop-filter 从第一帧就正常工作 */
 
 /* ── 页面标题 ────────────────────────────────────────────── */
 .page-title {
