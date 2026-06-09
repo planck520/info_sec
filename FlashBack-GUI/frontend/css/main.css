@@ -352,34 +352,16 @@ a:hover { text-decoration: underline; }
 
 .page-section.active { display: flex; flex-direction: column; }
 
-/* ── 卡片交错入场 + 页面柔光幕布 ───────────────────────
-   top 替代 transform → 不创建 Backdrop Root → backdrop-filter 正常。
-   ::before 白色柔光幕布淡出 → 模拟 opacity 淡入效果。 */
+/* ── 卡片交错入场（top 替代 transform，不创建 Backdrop Root）── */
 @keyframes cardSlideUp {
   from { top: 16px; }
   to   { top: 0; }
-}
-@keyframes bloomOut {
-  from { opacity: 1; }
-  to   { opacity: 0; }
 }
 
 .page-section.active .stat-card,
 .page-section.active .panel,
 .page-section.active .result-card {
   animation: cardSlideUp 0.45s var(--ease) backwards;
-}
-
-/* 页面柔光幕布 — 覆盖整页，淡出时卡片逐渐清晰 */
-.page-section.active::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 50;
-  background: rgba(255, 255, 255, 0.18);
-  border-radius: 24px;
-  pointer-events: none;
-  animation: bloomOut 0.4s var(--ease) forwards;
 }
 
 /* 交错延迟 */
