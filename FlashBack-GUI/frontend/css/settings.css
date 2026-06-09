@@ -46,15 +46,15 @@
   flex-shrink: 0;
 }
 
-/* ── 选项 hover ────────────────────────────────── */
+/* ── 选项 hover — 暗色玻璃 ────────────────────── */
 #page-settings .flex-between {
   border: 1px solid transparent;
   border-radius: 8px;
   transition: all var(--transition);
 }
 #page-settings .flex-between:hover {
-  background: var(--bg-elevated);
-  border-color: var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* ── 响应式：窄屏时侧栏隐藏 ────────────────────── */

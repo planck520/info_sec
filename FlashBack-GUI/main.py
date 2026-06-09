@@ -10,10 +10,12 @@
 """
 from __future__ import annotations
 
+import ctypes
 import logging
 import socket
 import sys
 import threading
+import time
 from pathlib import Path
 
 import uvicorn
@@ -121,20 +123,66 @@ def main() -> int:
 
     LOGGER.info("Server ready: http://127.0.0.1:%d", port)
 
-    # 5. 创建 pywebview 窗口
+    # 5. 创建 pywebview 窗口（无边框，自定义标题栏）
+    class WindowAPI:
+        """暴露给前端的窗口控制 API，通过 pywebview.api.xxx() 调用。"""
+
+        def minimize(self):
+            webview.windows[0].minimize()
+
+        def toggle_maximize(self):
+            webview.windows[0].toggle_fullscreen()
+
+        def close(self):
+            webview.windows[0].destroy()
+
+    title = "FlashBack — Firmware Vulnerability Analyzer"
     window = webview.create_window(
-        title="FlashBack — Firmware Vulnerability Analyzer",
+        title=title,
         url=f"http://127.0.0.1:{port}",
         width=1400,
         height=900,
         min_size=(1024, 768),
         resizable=True,
+        frameless=True,
         easy_drag=False,
+        js_api=WindowAPI(),
     )
+
+    # 后台线程：frameless 窗口仍需设置暗色边框 (Win11)
+    threading.Thread(
+        target=_apply_dark_titlebar,
+        args=(title,),
+        daemon=True,
+        name="dark-titlebar",
+    ).start()
 
     webview.start(gui="edgechromium", debug=False)
     LOGGER.info("Window closed, exiting.")
     return 0
+
+
+def _apply_dark_titlebar(window_title: str, retries: int = 20, interval: float = 0.3):
+    """为 frameless 窗口设置暗色系统边框（Win11 边框/阴影）。"""
+    DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+
+    for _ in range(retries):
+        time.sleep(interval)
+        hwnd = ctypes.windll.user32.FindWindowW(None, window_title)
+        if not hwnd:
+            continue
+
+        use_dark = ctypes.c_int(1)
+        ctypes.windll.dwmapi.DwmSetWindowAttribute(
+            ctypes.wintypes.HWND(hwnd),
+            DWMWA_USE_IMMERSIVE_DARK_MODE,
+            ctypes.byref(use_dark),
+            ctypes.sizeof(use_dark),
+        )
+        LOGGER.info("Dark border applied (HWND=%d)", hwnd)
+        return
+
+    LOGGER.warning("Could not find window HWND")
 
 
 if __name__ == "__main__":

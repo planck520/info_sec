@@ -44,7 +44,7 @@ const AppState = (() => {
     if (target) target.classList.add('active');
 
     // 导航高亮
-    document.querySelectorAll('#sidebar-nav a').forEach(a => {
+    document.querySelectorAll('#sidebar a[data-page]').forEach(a => {
       a.classList.toggle('active', a.dataset.page === pageName);
     });
 
@@ -77,7 +77,7 @@ const AppState = (() => {
       navigateTo(location.hash.replace('#', '') || 'dashboard');
     });
 
-    document.getElementById('sidebar-nav').addEventListener('click', e => {
+    document.getElementById('sidebar').addEventListener('click', e => {
       const a = e.target.closest('a[data-page]');
       if (!a) return;
       e.preventDefault();
