@@ -10,6 +10,7 @@
 """
 from __future__ import annotations
 
+import argparse
 import ctypes
 import logging
 import socket
@@ -19,7 +20,6 @@ import time
 from pathlib import Path
 
 import uvicorn
-import webview
 
 from server.app import create_app
 
@@ -90,6 +90,12 @@ def main() -> int:
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     )
 
+    # 解析命令行
+    parser = argparse.ArgumentParser(description="FlashBack GUI")
+    parser.add_argument("--server-only", action="store_true", help="仅启动 API 服务器（Electron 模式）")
+    parser.add_argument("--port", type=int, default=None, help="指定端口（默认自动探测）")
+    args = parser.parse_args()
+
     # 1. 验证资源目录
     resource_dir = get_resource_dir()
     if not resource_dir.exists():
@@ -101,11 +107,21 @@ def main() -> int:
         return 1
     LOGGER.info("Resource dir: %s", resource_dir)
 
-    # 2. 探测端口
-    port = find_available_port()
+    # 2. 端口
+    port = args.port if args.port else find_available_port()
+    LOGGER.info("Using port: %d", port)
 
     # 3. 创建应用
     app = create_app(resource_dir=resource_dir)
+
+    if args.server_only:
+        # ── Electron 模式：仅启动服务器 ──────────────────
+        LOGGER.info("Server-only mode: running uvicorn directly")
+        uvicorn.run(app, host="127.0.0.1", port=port, log_level="info")
+        return 0
+
+    # ── pywebview 模式 ────────────────────────────────────
+    import webview
 
     # 4. 后台启动 uvicorn，等待 ready
     ready = threading.Event()
@@ -123,19 +139,7 @@ def main() -> int:
 
     LOGGER.info("Server ready: http://127.0.0.1:%d", port)
 
-    # 5. 创建 pywebview 窗口（无边框，自定义标题栏）
-    class WindowAPI:
-        """暴露给前端的窗口控制 API，通过 pywebview.api.xxx() 调用。"""
-
-        def minimize(self):
-            webview.windows[0].minimize()
-
-        def toggle_maximize(self):
-            webview.windows[0].toggle_fullscreen()
-
-        def close(self):
-            webview.windows[0].destroy()
-
+    # 5. 创建 pywebview 窗口
     title = "FlashBack — Firmware Vulnerability Analyzer"
     window = webview.create_window(
         title=title,
@@ -144,12 +148,10 @@ def main() -> int:
         height=900,
         min_size=(1024, 768),
         resizable=True,
-        frameless=True,
+        frameless=False,
         easy_drag=False,
-        js_api=WindowAPI(),
     )
 
-    # 后台线程：frameless 窗口仍需设置暗色边框 (Win11)
     threading.Thread(
         target=_apply_dark_titlebar,
         args=(title,),
@@ -163,7 +165,7 @@ def main() -> int:
 
 
 def _apply_dark_titlebar(window_title: str, retries: int = 20, interval: float = 0.3):
-    """为 frameless 窗口设置暗色系统边框（Win11 边框/阴影）。"""
+    """轮询查找窗口 HWND，应用暗色主题。"""
     DWMWA_USE_IMMERSIVE_DARK_MODE = 20
 
     for _ in range(retries):
@@ -172,14 +174,15 @@ def _apply_dark_titlebar(window_title: str, retries: int = 20, interval: float =
         if not hwnd:
             continue
 
+        _hwnd = ctypes.wintypes.HWND(hwnd)
         use_dark = ctypes.c_int(1)
         ctypes.windll.dwmapi.DwmSetWindowAttribute(
-            ctypes.wintypes.HWND(hwnd),
+            _hwnd,
             DWMWA_USE_IMMERSIVE_DARK_MODE,
             ctypes.byref(use_dark),
             ctypes.sizeof(use_dark),
         )
-        LOGGER.info("Dark border applied (HWND=%d)", hwnd)
+        LOGGER.info("Dark mode applied (HWND=%d)", hwnd)
         return
 
     LOGGER.warning("Could not find window HWND")

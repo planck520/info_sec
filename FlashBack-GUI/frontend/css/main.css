@@ -94,7 +94,7 @@ a:hover { text-decoration: underline; }
   flex-shrink: 0;
 }
 
-/* ── 自定义标题栏 ────────────────────────────────────────── */
+/* ── 自定义标题栏（Electron frameless 窗口）─────────────── */
 .titlebar {
   height: 36px;
   background: rgba(0, 0, 0, 0.55);
@@ -162,8 +162,8 @@ a:hover { text-decoration: underline; }
 /* ── 主布局 ──────────────────────────────────────────────── */
 #app-shell {
   display: flex;
-  height: calc(100vh - 36px);
-  margin-top: 36px;
+  height: 100vh;
+  padding-top: 36px;
 }
 
 /* ── 侧边栏 — 宽版玻璃分组导航 ──────────────────────────── */

@@ -1,0 +1,13 @@
+{
+  "name": "flashback-gui",
+  "version": "1.0.0",
+  "description": "FlashBack — Firmware Vulnerability Analyzer",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev"
+  },
+  "dependencies": {
+    "electron": "^35.0.0"
+  }
+}

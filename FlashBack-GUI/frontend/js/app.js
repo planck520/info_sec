@@ -77,12 +77,15 @@ const AppState = (() => {
       navigateTo(location.hash.replace('#', '') || 'dashboard');
     });
 
-    document.getElementById('sidebar').addEventListener('click', e => {
-      const a = e.target.closest('a[data-page]');
-      if (!a) return;
-      e.preventDefault();
-      navigateTo(a.dataset.page);
-    });
+    var sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+      sidebar.addEventListener('click', function (e) {
+        var a = e.target.closest('a[data-page]');
+        if (!a) return;
+        e.preventDefault();
+        navigateTo(a.dataset.page);
+      });
+    }
 
     // 初始路由
     navigateTo(location.hash.replace('#', '') || 'dashboard');
