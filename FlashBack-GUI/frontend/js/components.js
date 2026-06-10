@@ -23,9 +23,7 @@ function showToast(message, type, duration) {
   container.appendChild(el);
 
   setTimeout(function () {
-    el.style.opacity = '0';
-    el.style.transition = 'all 0.25s ease-out';
-    el.style.transform = 'translateY(10px)';
+    el.classList.add('toast-exit');
     setTimeout(function () { el.remove(); }, 250);
   }, duration);
 }

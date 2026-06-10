@@ -116,16 +116,10 @@
       <section class="page-section active" id="page-dashboard">
         <!-- Header 卡片 -->
         <div class="panel dash-header">
-          <div class="panel-body" style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="panel-body flex-between">
             <div>
               <h2 style="font-size:22px;font-weight:700;color:#fff;margin-bottom:4px;">仪表盘 &#128202;</h2>
               <p style="color:rgba(255,255,255,0.7);font-size:13px;">欢迎回来！这是您的固件安全概览</p>
-            </div>
-            <div class="flex-row gap-md">
-              <button class="btn btn-primary" onclick="AppState.navigateTo('analysis')">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                NEW SCAN
-              </button>
             </div>
           </div>
         </div>
@@ -497,14 +491,14 @@
                       <div style="font-size:13px;font-weight:600;">暗色模式</div>
                       <div class="code-label">DARK_MODE</div>
                     </div>
-                    <div class="toggle on"></div>
+                    <button class="toggle on" role="switch" aria-checked="true"></button>
                   </div>
                   <div class="flex-between" style="padding:10px 12px;border-radius:8px;">
                     <div>
                       <div style="font-size:13px;font-weight:600;">自动检查更新</div>
                       <div class="code-label">AUTO_UPDATE</div>
                     </div>
-                    <div class="toggle on"></div>
+                    <button class="toggle on" role="switch" aria-checked="true"></button>
                   </div>
                   <div class="flex-between" style="padding:10px 12px;border-radius:8px;">
                     <div>

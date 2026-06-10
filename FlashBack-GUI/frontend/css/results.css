@@ -5,7 +5,7 @@
 
 /* 结果卡片列表 hover 动效 */
 #results-list .result-card {
-  transition: all 0.2s var(--ease);
+  transition: all var(--transition);
 }
 
 /* 筛选栏内输入框与 select 统高 */
