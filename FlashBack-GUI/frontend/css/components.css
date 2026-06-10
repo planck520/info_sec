@@ -44,7 +44,7 @@
 .btn-secondary:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.30);
-  transform: scale(1.02);
+  transform: translateY(-1px);
 }
 
 .btn-ghost {
@@ -149,13 +149,12 @@
   transition: transform 0.4s var(--ease), background 0.4s var(--ease), border-color 0.4s var(--ease);
   cursor: pointer;
   position: relative;
-  z-index: 1;
-  isolation: isolate;
+  z-index: 10;
 }
 .stat-card:hover {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.25);
-  transform: scale(1.02);
+  transform: translateY(-2px);
 }
 .stat-card-icon {
   width: 42px;
@@ -201,8 +200,7 @@
   flex: 1;
   min-height: 0;
   position: relative;
-  z-index: 1;
-  isolation: isolate;
+  z-index: 10;
 }
 
 .terminal-bar {
@@ -254,7 +252,7 @@
   line-height: 2;
   color: var(--text-primary);
   position: relative;
-  z-index: 1;
+  z-index: 10;
 }
 
 .terminal-line {
@@ -410,14 +408,13 @@
   cursor: pointer;
   transition: all var(--transition);
   position: relative;
-  z-index: 1;
-  isolation: isolate;
+  z-index: 10;
 }
 .result-card:hover {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.25);
   border-left-color: var(--accent);
-  transform: scale(1.01);
+  transform: translateY(-2px);
 }
 .result-card.critical { border-left-color: var(--danger); }
 .result-card.high     { border-left-color: var(--warning); }
