@@ -284,7 +284,7 @@ function createCircularProgress(container, options) {
   };
 }
 
-// ── Canvas 粒子背景（浅色适配）─────────────────────────────
+// ── Canvas 粒子背景（对齐 ChinaCode_frontend-main ParticleBackground）──
 function initParticleBackground(canvasId) {
   var canvas = document.getElementById(canvasId);
   if (!canvas) return;
@@ -300,19 +300,20 @@ function initParticleBackground(canvasId) {
   window.addEventListener('resize', resize);
 
   var particles = [];
-  var count = 60;
+  var count = 100; // ChinaCode: 100 particles
 
   function create() {
+    // 颜色公式与 ChinaCode 完全一致：蓝色系粒子
     return {
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
-      size: Math.random() * 2.5 + 1.5,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.3,
-      r: Math.floor(Math.random() * 40) + 140,
-      g: Math.floor(Math.random() * 40) + 155,
-      b: Math.floor(Math.random() * 30) + 200,
-      a: Math.random() * 0.28 + 0.18
+      size: Math.random() * 3 + 1,              // 1 ~ 4
+      vx: (Math.random() - 0.5) * 0.5,          // ±0.25
+      vy: (Math.random() - 0.5) * 0.5,          // ±0.25
+      r: Math.floor(Math.random() * 100) + 100,  // 100 ~ 200
+      g: Math.floor(Math.random() * 100) + 150,  // 150 ~ 250
+      b: Math.floor(Math.random() * 55) + 200,   // 200 ~ 255
+      a: Math.random() * 0.5 + 0.2               // 0.2 ~ 0.7
     };
   }
 

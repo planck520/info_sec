@@ -95,29 +95,19 @@ html, body {
   overflow-y: auto;
 }
 
-/* ── 背景图 + 暗色遮罩（对齐参考 bg-black/30 叠加）──── */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: url('../img/bg-fractal.jpg') center/cover no-repeat;
-}
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: rgba(0, 0, 0, 0.30);
-}
-
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-/* ── 移除旧 Canvas 背景 ───────────────────────────────────── */
-#bg-canvas { display: none; }
+/* ── WebGL 粒子背景（全屏 fixed，置于最底层，对齐 ChinaCode GL component）── */
+#bg-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
 
 /* ── 侧边栏分隔线 ────────────────────────────────────────── */
 .sidebar-divider {
