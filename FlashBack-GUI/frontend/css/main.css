@@ -35,13 +35,10 @@
   --bg-root:      #08080f;
   --bg-surface:   rgba(255, 255, 255, 0.04);
   --bg-elevated:  rgba(255, 255, 255, 0.08);
-  --bg-dark:      rgba(0, 0, 0, 0.4);
-
   /* 强调色 */
   --accent:        #7c75ff;
   --accent-cyan:   #00c7b8;
   --accent-purple: #9b8eff;
-  --accent-glow:   rgba(124, 117, 255, 0.2);
 
   /* 状态色 */
   --danger:   #f87171;
@@ -64,9 +61,7 @@
 
   /* 尺寸 */
   --sidebar-w: 200px;
-  --radius-sm: 10px;
   --radius:    18px;
-  --radius-lg: 24px;
 
   /* 间距 */
   --gap-xs: 4px;
@@ -107,15 +102,6 @@ a:hover { text-decoration: underline; }
   height: 100%;
   z-index: 0;
   pointer-events: none;
-}
-
-/* ── 侧边栏分隔线 ────────────────────────────────────────── */
-.sidebar-divider {
-  width: 28px;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.12);
-  margin: 4px 0;
-  flex-shrink: 0;
 }
 
 /* ── 自定义标题栏（Electron frameless 窗口）─────────────── */
@@ -286,14 +272,6 @@ a:hover { text-decoration: underline; }
   border: 1px solid rgba(255, 255, 255, 0.30);
 }
 
-/* 底部分隔线 */
-.sidebar-divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.1);
-  margin: 8px 10px;
-  flex-shrink: 0;
-}
-
 /* 底部状态区 */
 .sidebar-footer {
   padding: 8px 10px;
@@ -452,25 +430,6 @@ a:hover { text-decoration: underline; }
   word-break: break-all;
 }
 
-/* ── 统一毛玻璃基类（与侧边栏参数完全一致）────────────── */
-.glass {
-  background: rgba(255, 255, 255, 0.10);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.20);
-  border-radius: 24px;
-  position: relative;
-  z-index: 10;
-}
-.glass > * {
-  position: relative;
-  z-index: 10;
-}
-.glass:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.25);
-}
-
 /* ── 面板卡片（与侧边栏参数完全一致）──────────────────── */
 .panel {
   background: rgba(255, 255, 255, 0.10);
@@ -514,23 +473,14 @@ a:hover { text-decoration: underline; }
 
 /* ── 工具类 ──────────────────────────────────────────────── */
 .text-muted  { color: var(--text-muted); }
-.text-accent { color: var(--accent); }
-.text-danger { color: var(--danger); }
 .text-sm     { font-size: 12px; }
-.text-mono   { font-family: var(--font-mono); font-size: 12px; }
 .mt-sm { margin-top: var(--gap-sm); }
-.mt-md { margin-top: var(--gap-md); }
-.mt-lg { margin-top: var(--gap-lg); }
-.mb-sm { margin-bottom: var(--gap-sm); }
-.mb-md { margin-bottom: var(--gap-md); }
-.mb-lg { margin-bottom: var(--gap-lg); }
 .flex-row    { display: flex; align-items: center; gap: var(--gap-sm); }
 .flex-col    { display: flex; flex-direction: column; }
 .flex-1      { flex: 1; min-height: 0; min-width: 0; }
 .flex-between{ display: flex; align-items: center; justify-content: space-between; }
 .gap-sm { gap: var(--gap-sm); }
 .gap-md { gap: var(--gap-md); }
-.gap-lg { gap: var(--gap-lg); }
 
 /* ── 统计卡片 hover 渐变光晕（暗色玻璃版）────────────────── */
 .stat-card {

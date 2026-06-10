@@ -8,7 +8,7 @@
     "dev": "electron . --dev"
   },
   "dependencies": {
-    "@fontsource-variable/figtree": "^5.2.10",
-    "electron": "^35.0.0"
+    "electron": "^35.0.0",
+    "three": "^0.170.0"
   }
 }
