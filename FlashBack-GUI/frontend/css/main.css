@@ -35,21 +35,21 @@
   --bg-root:      #08080f;
   --bg-surface:   rgba(255, 255, 255, 0.04);
   --bg-elevated:  rgba(255, 255, 255, 0.08);
-  /* 强调色 */
-  --accent:        #7c75ff;
-  --accent-cyan:   #00c7b8;
-  --accent-purple: #9b8eff;
+  /* 强调色 — 青蓝渐变（对齐 ChinaCode） */
+  --accent:        #3b82f6;
+  --accent-cyan:   #06b6d4;
+  --accent-purple: #6366f1;
 
   /* 状态色 */
   --danger:   #f87171;
   --warning:  #fbbf24;
   --success:  #34d399;
-  --info:     #7c75ff;
+  --info:     #3b82f6;
 
-  /* 文字 — 纯白高亮 */
-  --text-primary:    rgba(255, 255, 255, 1.0);
-  --text-secondary:  rgba(255, 255, 255, 0.95);
-  --text-muted:      rgba(255, 255, 255, 0.85);
+  /* 文字 — 三层透明度（对齐 frosted-glass 参考） */
+  --text-primary:    rgba(255, 255, 255, 0.95);
+  --text-secondary:  rgba(255, 255, 255, 0.80);
+  --text-muted:      rgba(255, 255, 255, 0.60);
 
   /* 边框 — 半透明白 */
   --border:        rgba(255, 255, 255, 0.08);
@@ -80,7 +80,7 @@
 
 html, body {
   height: 100%;
-  background: var(--bg-root);
+  background: linear-gradient(to bottom right, #000000, #0f172a, #000000);
   color: var(--text-primary);
   font-family: var(--font-body);
   font-size: 14px;
@@ -210,7 +210,7 @@ a:hover { text-decoration: underline; }
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 12px rgba(124,117,255,0.35);
+  box-shadow: 0 2px 12px rgba(59,130,246,0.35);
 }
 .sidebar-logo .logo-icon svg { width: 18px; height: 18px; color: #fff; }
 .sidebar-logo .logo-text {
@@ -490,7 +490,7 @@ a:hover { text-decoration: underline; }
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 100% 100%, rgba(124,117,255,0.12), transparent 70%);
+  background: radial-gradient(circle at 100% 100%, rgba(59,130,246,0.12), transparent 70%);
   opacity: 0;
   transition: opacity 0.4s var(--ease);
   pointer-events: none;
