@@ -238,26 +238,24 @@ a:hover { text-decoration: underline; }
 }
 .sidebar-logo .logo-icon svg { width: 18px; height: 18px; color: #fff; }
 .sidebar-logo .logo-text {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: #fff;
   line-height: 1.2;
 }
 .sidebar-logo .logo-sub {
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.50);
-  font-family: var(--font-mono);
-  letter-spacing: 0.5px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.60);
+  letter-spacing: 0.2px;
 }
 
 /* 分组标签 */
 .sidebar-section-label {
-  font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.50);
+  color: rgba(255, 255, 255, 0.70);
   text-transform: uppercase;
-  letter-spacing: 1.2px;
+  letter-spacing: 0.6px;
   padding: 10px 10px 4px;
 }
 
@@ -278,7 +276,7 @@ a:hover { text-decoration: underline; }
   color: rgba(255, 255, 255, 0.88);
   transition: all var(--transition);
   text-decoration: none;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
 }
 .sidebar-nav a svg {
@@ -326,8 +324,7 @@ a:hover { text-decoration: underline; }
   animation: pulse 2s infinite;
 }
 .sidebar-footer .version {
-  font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-muted);
 }
 
@@ -476,6 +473,8 @@ a:hover { text-decoration: underline; }
   border: 1px solid rgba(255, 255, 255, 0.20);
   border-radius: 24px;
   position: relative;
+  z-index: 1;
+  isolation: isolate;
 }
 .glass > * {
   position: relative;
@@ -496,6 +495,8 @@ a:hover { text-decoration: underline; }
   transition: transform 0.4s var(--ease), background 0.4s var(--ease), border-color 0.4s var(--ease);
   cursor: default;
   position: relative;
+  z-index: 1;
+  isolation: isolate;
 }
 .panel:hover {
   background: rgba(255, 255, 255, 0.15);

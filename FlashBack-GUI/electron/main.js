@@ -10,6 +10,12 @@ const { spawn } = require('child_process');
 const path = require('path');
 const http = require('http');
 
+// ── GPU 渲染优化（修复 Electron Chromium 文字合成）──────
+app.commandLine.appendSwitch('enable-gpu-rasterization');
+app.commandLine.appendSwitch('disable-software-rasterizer');
+app.commandLine.appendSwitch('enable-zero-copy');
+app.commandLine.appendSwitch('disable-http-cache');
+
 // ── 配置 ──────────────────────────────────────────────────
 const BACKEND_PORT = 18920;
 const BACKEND_HOST = '127.0.0.1';
@@ -85,6 +91,8 @@ function createWindow() {
     },
   });
 
+  // 禁用磁盘缓存 — 确保每次加载最新的 CSS/JS
+  mainWindow.webContents.session.clearCache();
   mainWindow.loadURL(BACKEND_URL);
 
   mainWindow.on('closed', () => {
