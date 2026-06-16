@@ -1,0 +1,241 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/basic_menu.css"></head><style>.evenflow_scale{-ms-transition:transform .25s ease;transition:transform .25s ease;cursor:pointer}.evenflow_scale:hover{-ms-transform:scale(1.28,1.28);transform:scale(1.28,1.28);cursor:pointer}</style><body><div id="app"></div><script type="text/x-template" id="main"><div class="basic-box" align="center">
+  <br><br>
+  <div class="map-basic-box">
+	<table>
+	  <tbody>
+		<tr>
+		  <td align="left" colspan="9" style="font-size:14px;color:#707070" v-if="globalConfig.opmode == 'gw' || globalConfig.opmode == 'wisp'">
+			{{ lang_t('index.connection_status') }}: 
+			<span v-if="Configured && wanStrategy == '2'" id="wanStatus" style="color:#060;font-weight:bold;">
+			  {{ wanWay }}/{{ wanStatus }}
+			</span>
+			<span v-if="Configured && wanStrategy == '1'" style="color:#060;font-weight:bold;">
+			  {{ wanStatus }}
+			</span>
+		    <span v-if="Configured == false" style="color:#060">
+			  {{ wanStatus }}
+			</span>
+			&nbsp;&nbsp;
+			<span v-show="wanIp!=''">
+			  ({{ wanIp }})
+			</span>
+			<span style="margin-left: 10px;" v-show="wanMode==3||wanMode==4||wanMode==6">
+				<button style="background-color: green;color: #fff;padding: 2px 4px;" :disabled="linkBool" @click="linkDialFun('1')">{{lang_t('wan.connect')}}</button>
+				|
+				<button style="background-color: darkred;color: #fff;padding: 2px 4px;" :disabled="!linkBool" @click="linkDialFun('0')">{{lang_t('wan.disconnect')}}</button>
+			</span>
+		  </td>
+		</tr>
+		<tr>
+		  <td align="left" colspan="9" style="color:#707070" v-if="globalConfig.opmode == 'gw' || globalConfig.opmode == 'wisp'">
+			{{ lang_t('index.online_time') }}: 
+			<span id="wanTime">
+			  {{ wanConnTime }}
+			</span>
+		  </td>
+		</tr>
+		<tr><td colspan="9">&nbsp;</td></tr>
+		<tr>
+		  <td align="center" @click="netAction">
+			<img src="/static/images/map/net.png"  :title="lang_t('menu.wan')" class="evenflow_scale">
+		  </td>
+		  <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		  <td><table>
+			<tr>
+			  <td align="left">
+			    <img src="/static/images/map/down.png"> 
+			    <span class="down">
+				  {{ down }}{{ parent_down >1024 ? "MB/s" : "KB/s"}}
+			    </span>
+			  </td>
+			</tr>
+			<tr>
+			  <td><a class="round" v-for="i in 3">●</a>
+				<x-icon size="2.2" :color="wan_connect_src" :type="wan_connect_type"></x-icon>
+				<a class="round" v-for="i in 3">●</a>
+			  </td>
+			</tr>
+			<tr><td align="left">
+			  <img src="/static/images/map/up.png"> 
+			  <span class="up">
+			    {{ up }}{{ parent_up >1024 ? "MB/s" : "KB/s"}}
+			  </span>
+			</td></tr>
+		  </table></td>
+		  <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		  <td align="center">
+			<img src="/static/images/map/router.png">
+			<br>
+			<span>{{ model }}</span>
+		  </td>
+		  <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		  <td><table>
+			<tr><td style="height:38px" align="left"><img :src="wifi2_src" ></td></tr>
+			<tr><td><a class="round" v-for="i in 8">●</a></td></tr>
+			<tr>
+			  <td style="padding-left: 6px;" align="left">
+				<span v-if="wifiDualband != '0'" style="margin-right: 20px"><img :src="wifi5_src"></span>
+				<span v-if="wifiDualband == '2'"><img :src="wifi5_src2"></span>
+			  </td>
+			</tr>
+		  </table></td>
+		  <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+		  <td align="center" class="cursor" @click="clientsAction">
+			<img src="/static/images/map/clients.png" :title="lang_t('menu.devices')" class="evenflow_scale">
+			<span id="clientsNum" class="clients" v-if="globalConfig.opmode!='rpt'&&globalConfig.opmode!='br'">
+			  {{ userNum }}
+			</span>
+		  </td>
+		</tr>
+	  </tbody>
+	</table>
+	<br>
+	<table align="center">
+	  <tr>
+	    <td class="port" v-for="(imgdata,v) in wanImg"><img :src="imgdata.img" class="cursor"></td>
+	  </tr>
+	  <tr>
+		<td class="port" v-for="(data,v) in wanImg">
+		  <span v-show="data.color == 'black'">{{ data.name }}</span>
+		  <span v-show="data.color == 'blue'" style="color:#72b4e6">{{ data.name }}</span>
+		  <span v-show="data.color == 'yellow'" style="color:#e99900">{{ data.name }}</span>
+		</td>
+	  </tr>
+	</table>
+  </div>      
+  <br>
+  <div>
+	<span style="font-size:18px; color:#707070">{{ lang_t('menu.home') }}</span>
+	<div class="map-basic-box" style="clear:both;display:table;text-align:left;">
+	  <table align="center">
+		<tr>
+		  <td style="width:50%"><table class="t_table1">
+		    <tbody>
+			<tr>
+			  <td style="width: 40%;">{{ lang_t('index.version') }}:</td>
+			  <td>{{ fmVersion }}</td>
+			</tr>
+			<tr>
+			  <td>{{ lang_t('index.up_time') }}:</td>
+			  <td>{{ upTime }}</td>
+			</tr>
+			</tbody>
+		  </table></td>
+		  <td width="100"></td>
+		  <td style="width:50%"><table class="t_table1">
+			<tbody>
+			<tr>
+				<td style="width: 40%;">{{ lang_t('index.mac') }}:</td>
+				<td>{{ wanMac }}</td>
+			</tr>
+			<tr>
+			  <td  style="width: 40%;">{{ lang_t('index.build_time') }}:</td>
+			  <td>{{ publishTime }}</td>
+			</tr>
+			<tr>
+			  <td>{{ lang_t('index.op_mode') }}:</td>
+			  <td>{{ currentMode }}</td>
+			</tr>
+			</tbody>
+		  </table></td>
+		</tr>
+		<tr>
+		  <td style="width:50%"><table class="t_table1">
+			<tbody>
+			<tr>
+			  <td style="width: 40%;">{{ lang_t('index.radio') }} <b v-show="wifiDualband !='0'">2.4G</b>:</td>
+			  <td>{{ wifiOff2g == '0' ? lang_t('common.on') : lang_t('common.off')}}</td>
+			</tr>
+			<tr>
+			  <td>{{ lang_t('index.ssid') }} <b v-show="wifiDualband !='0'">2.4G</b>:</td>
+			  <td style="white-space:pre;">{{ ssid2g }}</td>
+			</tr>
+			<tr v-if="key != ''">
+			  <td>{{ lang_t('wifi.pass_type') }} <b v-show="wifiDualband !='0'">2.4G</b>:</td>
+			  <td>WPA/WPA2-PSK</td>
+			</tr>
+			<tr>
+				<td style="width: 40%;">{{ lang_t('wifi.pass') }}&nbsp;<b>2.4G</b>:</td>
+				<td style="word-wrap:break-word;word-break:break-all;">
+					<div class="col2">
+						<div v-if="(key == '')">
+						  <span>{{ lang_t('wifi.dispass') }}</span>
+						</div>
+						<div v-else>
+						  <span v-show="key_state == true">
+							{{ key }}
+							<img src="/static/images/ueye.png" @click="key_state_change()" class="cursor">
+						  </span>
+						  <span v-show="key_state == false">
+							********
+							<img src="/static/images/eye.png" @click="key_state_change()" class="cursor">
+						  </span>
+						</div>
+					</div>
+				</td>
+			</tr>
+
+			</tbody>
+		  </table></td>
+		  <td width="100"></td>
+		  <td v-if="wifiDualband != '0'" style="width: 50%;"><table class="t_table1">
+			<tbody>
+			<tr>
+			  <td v-if="wifiDualband == '1'" style="width: 40%;">{{ lang_t('index.radio') }} <b>5G</b>:</td>
+			  <td v-if="wifiDualband == '2'">{{ lang_t('index.radio') }} <b>5G (1)</b>:</td>
+			  <td>{{ wifiOff5g == '0'? lang_t('common.on') : lang_t('common.off') }}</td>
+			</tr>
+			<tr>
+			  <td>{{ lang_t('index.ssid') }} <b>5G</b>:</td>
+			  <td style="white-space:pre;">{{ ssid5g }}</td>
+			</tr>
+			<tr v-if="key5g != ''">
+			  <td>{{ lang_t('wifi.pass_type') }} <b>5G</b>:</td>
+			  <td>WPA/WPA2-PSK</td>
+			</tr>
+			<tr>
+				<td>{{ lang_t('wifi.pass') }}&nbsp;<b>5G</b>:</td>
+				<td style="word-wrap:break-word;word-break:break-all;">
+					<div class="col2">
+						<div v-if="(key5g == '')">
+						  <span>{{ lang_t('wifi.dispass') }}</span>
+						</div>
+						<div v-else>
+						  <span v-show="key5g_state == true">
+							{{ key5g }}
+							<img src="/static/images/ueye.png" @click="key5g_state_change()" class="cursor">
+						  </span>
+						  <span v-show="key5g_state == false">
+							********
+							<img src="/static/images/eye.png" @click="key5g_state_change()" class="cursor">
+						  </span>
+						</div>
+					</div>
+				</td>
+			</tr>
+			</tbody>
+		  </table></td>
+		</tr>
+		<tr v-if="isRptMode">
+		  <td style="width:50%"><table class="t_table1">
+			<tbody>
+			<tr>
+			  <td style="width: 40%;">{{ lang_t('index.conn_status') }}:</td>
+			  <td>{{ rptConnStatus == 'success'? lang_t('index.rpt_conn') : lang_t('index.rpt_disconn')}}</td>
+			</tr>
+		    </tbody>
+		  </table></td>
+		  <td width="100"></td>
+		  <td style="width:50%"><table class="t_table1">
+			<tbody>
+			<tr>
+			  <td style="width: 40%;">{{ lang_t('index.rptmsg_ssid') }}:</td>
+			  <td style="white-space:pre;">{{ apcliSsid }}</td>
+			</tr>
+			</tbody>
+		  </table></td>
+		</tr>
+	  </table>
+	</div>   
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,Configured:!1,wanImg:[],wifi2_src:"/static/images/map/wifi2g.png",wifi2_src_on:"/static/images/map/wifi2g.png",wifi2_src_off:"/static/images/map/wifi2g_off.png",wifi5_src:"/static/images/map/wifi5g.png",wifi5_src2:"/static/images/map/wifi5g.png",wifi5_src_on:"/static/images/map/wifi5g.png",wifi5_src_off:"/static/images/map/wifi5g_off.png",wifi5_src2:"/static/images/map/wifi5g.png",wifi5_src_on2:"/static/images/map/wifi5g.png",wifi5_src_off2:"/static/images/map/wifi5g_off.png",wan_connect_src:"#8E8E8E",wan_connect_type:"error",parent_up:"",parent_down:"",wifiDualband:"0",state:!0,wanWay:"",wanStatus:"",wanIp:"",upTime:"",up:"",down:"",model:"",userNum:"",wanMac:"",publishTime:"",wifiOff2g:"",wifiOff5g:"",wifiOff5g2:"",ssid2g:"",ssid5g:"",ssid5g2:"",wan4g_flag:"",wanStrategy:"",wanConnTime:"",rptConnStatus:"",opmode:"",fmVersion:"",apcliBssid:"",apcliSsid:"",isRptMode:!1,key_state:!1,key5g_state:!1,key:"",key5g:"",wanMac:"",linkBool:!1,wanMode:""}},computed:{currentMode:function(){return this.lang_t("opmode."+this.globalConfig.opmode)}},created:function(){"rpt"!=this.globalConfig.opmode&&"wisp"!=this.globalConfig.opmode||(this.isRptMode=!0);var i=this;i.getSysState(),i.getNetInfo(),setInterval(function(){i.getNetInfo()},5e3)},methods:{key_state_change:function(){this.key_state?this.key_state=!1:this.key_state=!0},key5g_state_change:function(){this.key5g_state?this.key5g_state=!1:this.key5g_state=!0},getSysState:function(){var a=this;uiPost.getSysStatusCfg(function(i){a.wifiDualband=i.wifiDualband,a.model=i.model,a.userNum=i.userNum,a.fmVersion=i.fmVersion,a.wanMac=i.wanMac,a.wifiOff2g=i.wifiOff,a.wifi2_src="0"==i.wifiOff?a.wifi2_src_on:a.wifi2_src_off,"0"!=i.wifiDualband&&(a.wifiOff5g=i.wifiOff5g,a.wifi5_src="0"==i.wifiOff5g?a.wifi5_src_on:a.wifi5_src_off),"2"==i.wifiDualband&&(a.wifiOff5g2=i.wifiOff5g2,a.wifi5_src2="0"==i.wifiOff5g2?a.wifi5_src_on2:a.wifi5_src_off2),a.ssid2g=i.ssid,a.ssid5g=i.ssid5g,a.ssid5g2=i.ssid5g2,i.key&&(a.key=i.key),i.key5g&&(a.key5g=i.key5g);var n=new Date(Date.parse(i.buildTime.replace(/-/g,"/"))),t=n.getFullYear()+"-"+(n.getMonth()+1)+"-"+n.getDate()+" "+n.getHours()+":"+n.getMinutes()+":"+n.getSeconds();a.publishTime=t,a.isRptMode&&(a.apcliSsid=i.apcliSsid,a.apcliBssid=i.apcliBssid)})},getNetInfo:function(){var s=this;uiPost.getNetInfoCfg(function(i){if(null==i.cpuRatio)return!1;s.wan4g_flag=i.wan4gflag,s.wanStrategy=i.wanStrategy,s.userNum=i.lanUserNum,s.wanConnTime=s.reTime(i.wanConnTime),s.upTime=s.reTime(i.upTime);var n=i.portLinkStatus;for(var t in s.wanImg=[],n)s.wanImg[t]={},1==n[t].link?"WAN1"==n[t].name?(s.wanImg[t].img="/static/images/map/wan.png",s.wanImg[t].color="blue"):(s.wanImg[t].img="/static/images/map/lan.png",s.wanImg[t].color="yellow"):(s.wanImg[t].img="/static/images/map/port.png",s.wanImg[t].color="black"),"WAN1"==n[t].name?s.wanImg[t].name="WAN":s.wanImg[t].name=n[t].name;s.Configured=!0,s.wanIp=i.wanIp;var a=i.up,e=i.down;s.parent_up=i.up,s.parent_down=i.down,s.up=1024<a?(a/1024).toFixed(1):a,s.down=1024<e?(e/1024).toFixed(1):e;var o=!1;"1"==i.wanStrategy?"1"==i.wan4gflag?(o=!0,s.wanStatus="4G "+s.lang_t("index.connected")):s.wanStatus="4G "+s.lang_t("index.disconnected"):"connected"==i.wanConnStatus?(o=!0,s.Connected=!0,s.wanStatus=s.lang_t("index.connected"),s.wan_connect_src="#2EA8DC",s.wan_connect_type="tick"):(s.Connected=!1,s.wanStatus=s.lang_t("index.disconnected"),s.wan_connect_src="#8E8E8E",s.wan_connect_type="error"),s.linkBool=o,s.wanMode=i.wanMode,"0"==i.wanMode?s.wanWay=s.lang_t("index.static_ip"):"1"==i.wanMode?s.wanWay="DHCP":"3"==i.wanMode?s.wanWay="PPPoE":"4"==i.wanMode?s.wanWay="PPTP":"6"==i.wanMode&&(s.wanWay="L2TP"),s.rptConnStatus=i.rptConnStatus})},reTime:function(i){var n=i.split(";"),t="";return t+=n[0]+" "+this.lang_t("index.day")+", ",t+=n[1]+" "+this.lang_t("index.hour")+", ",t+=n[2]+" "+this.lang_t("index.min")+", ",t+=n[3]+" "+this.lang_t("index.sec")},netAction:function(){"br"!=this.globalConfig.opmode&&"rpt"!=this.globalConfig.opmode&&(self.location.href="/basic/wan.html?time="+(new Date).getTime())},clientsAction:function(){"rpt"!=globalConfig.opmode&&"br"!=globalConfig.opmode&&(location.href="/basic/device.html?time="+(new Date).getTime())},wifi2gAction:function(){var i=this;i.wifi2_src==i.wifi2_src_on?i.wifi2_src_off:i.wifi2_src_on;var n="";n=i.wifi2_src==i.wifi2_src_on?"1":"0";var t={};t.wifiOff=n,t.addEffect="1",t.wifiIdx="0",uiPost.setWiFiBasicCfg(t,function(i){var n=0;n=i.wtime&&"0"!=i.wtime?i.wtime:30,Cstool.Count(n,"js",function(){location.href=location.href})})},linkDialFun:function(i){uiPost.setManualDialCfg({dialStatus:i},function(i){var n=5;i&&i.wtime&&(n=i.wtime),Cstool.Count(n,"js",function(){location.href=location.href})})},wifi5gAction:function(){var i=this;i.wifi5_src==i.wifi5_src_on?i.wifi5_src_off:i.wifi5_src_on;var n="";n=i.wifi5_src==i.wifi5_src_on?"1":"0";var t={};t.wifiOff=n,t.addEffect="1",t.wifiIdx="1",uiPost.setWiFiBasicCfg(t,function(i){var n=0;n=i.wtime&&"0"!=i.wtime?i.wtime:30,Cstool.Count(n,"js",function(){location.href=location.href})})}}}</script><script src="/static/js/main.js"></script></body></html>

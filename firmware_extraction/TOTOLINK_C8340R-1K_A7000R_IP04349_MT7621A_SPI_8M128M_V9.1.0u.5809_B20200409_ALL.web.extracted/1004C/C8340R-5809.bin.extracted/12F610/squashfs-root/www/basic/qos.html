@@ -1,0 +1,136 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/basic_menu.css"><link rel="stylesheet" href="/static/css/loading.css"></head><body><div id="app"></div><script type="text/x-template" id="main"><div class="basic-box" >
+  <x-help :text="qosTitle"></x-help>
+  <br>
+  <div class="fun-box">
+	<span class="basic-title">{{ lang_t('qos.state') }}</span>
+	&nbsp;&nbsp;
+	<x-switch v-model="qosState" @change="stateChange"></x-switch>
+  </div>
+  <div v-show="qosState" class="fun-box smartflow">
+    <table class="table">
+	  <tbody>
+		<tr>
+		  	<td class="fun-left">{{ lang_t('qos.up') }}</td>
+		  	<td>
+            	<input type="text" :maxlength="maxLen" v-model="qos_up_bw" v-verify="rateRules" data-name="qos_up_bw">
+            	&nbsp;&nbsp;
+            	<small>({{ lang_t('wan.range') }}: 100~{{maxLoad}}Kbps)</small>
+          	</td>
+		</tr>
+		<tr>
+		  	<td class="fun-left">{{ lang_t('qos.down') }}</td>
+		  	<td>
+            	<input type="text" :maxlength="maxLen" v-model="qos_down_bw" v-verify="rateRules" data-name="qos_down_bw" >
+            	&nbsp;&nbsp;
+            	<small>({{ lang_t('wan.range') }}: 100~{{maxLoad}}Kbps)</small>
+          	</td>
+		</tr>
+	  </tbody>
+	  <tbody>
+		  <tr><td colspan="2"></td></tr>
+		  <tr>
+		  	<td class="fun-left"></td>
+		  	<td>
+		  		  <button type="button" class="btn" @click="applyFun">{{ lang_t('common.apply') }}</button>
+		    </td>
+		  </tr>
+	  </tbody>
+    </table>
+  </div>
+  <div v-show="qosState"  class="fun-box smartflow">
+  	<table>
+  		<tr><td height="5">{{ lang_t('rule.qos_list') }}</td></tr>
+	    <tr>
+	    	<td align="right">
+		  	<x-icon type="add" cursor="pointer" @click="addRuleVal">{{ lang_t('common.add') }}</x-icon>
+			<x-icon type="del" cursor="pointer" @click="trashFun('all')">{{ lang_t('common.delete') }}</x-icon>
+			</td>
+		</tr>
+	  	  <tr><td height="5"></td></tr>
+		  <tr>
+		  	<td><table class="t_table3 table-bordered table-striped">
+			  <thead> 
+				  <tr>
+					<th>{{ lang_t('rule.ip') }}</th>
+					<th>{{ lang_t('rule.max_up_speed') }}</th>
+					<th>{{ lang_t('rule.max_down_speed') }}</th>
+					<th v-if="globalConfig.tradQos">{{ lang_t('rule.users_num') }}</th>
+					<th v-if="globalConfig.tradQos">{{ lang_t('rule.priority') }}</th>
+					<th>{{ lang_t('rule.operate') }}</th>
+					<th>{{ lang_t('common.select') }}<x-checkbox v-model="selectall" @change="selectAll"></x-checkbox></th>
+				  </tr>
+			  </thead>
+			  <tr v-show="addShow">
+				<td>
+					<input type="text" class="ip" v-model="ip" v-verify="formRules" data-name="ip" maxlength="15">
+					<img src="/static/images/search.png" class="cursor" :title="lang_t('common.scan')" @click="scanFun('ip')">
+				</td>
+				<td><input type="text" class="num" v-model="maxUpload" v-verify="formRules" data-name="maxUpload" :maxlength="maxLen"></td>
+				<td><input type="text" class="num" v-model="maxDownload " v-verify="formRules" data-name="maxDownload" :maxlength="maxLen"></td>
+				<td v-if="globalConfig.tradQos"><input type="text" class="num" v-model="conNum" v-verify="formRules" data-name="conNum" maxlength="4">
+				</td>
+				<td v-if="globalConfig.tradQos">
+				  	<select v-model="priority" class="protocol-select">
+					  <option value="0">0</option>
+					  <option value="1">1</option>
+					  <option value="2">2</option>
+					  <option value="3">3</option>
+					  <option value="4">4</option>
+				    </select>
+				</td>
+			    <td><button :disabled="disable_addBtn" @click="addRule"><img src="/static/images/added.png" :title="lang_t('common.add')" class="cursor"></button></td>
+			    <td></td>
+			  </tr>
+			  <tbody>
+				<tr v-for="(rule,v) in ruleList">
+					<td>
+						<div v-if="edit[rule.idx-1]">
+							<input type="text" class="ip" v-model="editIp[rule.idx-1]" v-verify="formRules" :data-name="'ip'+Number(rule.idx-1)" maxlength="15"  @input="watchValue(rule.idx-1)">
+							<img src="/static/images/search.png" class="cursor" :title="lang_t('common.scan')" @click="scanFun('ip',rule.idx-1)">
+						</div>
+						<span v-else>{{ rule.ip }}</span>
+					</td>
+					<td>
+						<div v-if="edit[rule.idx-1]">
+						  	<input type="text" class="num" v-model="editUp[rule.idx-1]" v-verify="formRules" :data-name="'maxUpload'+Number(rule.idx-1)" :maxlength="maxLen" @input="watchValue(rule.idx-1)">
+						</div>
+					  	<span v-else>{{ rule.maxUpload }}</span>
+					</td>
+					<td>
+						<input type="text" class="num" v-model="editDown[rule.idx-1]" v-verify="formRules" :data-name="'maxDownload'+Number(rule.idx-1)" :maxlength="maxLen" v-if="edit[rule.idx-1]" @input="watchValue(rule.idx-1)">
+						<span v-else>{{ rule.maxDownload }}</span>
+					</td>
+					<td v-if="globalConfig.tradQos">
+						<input type="text" class="num" v-model="editUserNum[rule.idx-1]" v-verify="formRules" :data-name="'conNum'+Number(rule.idx-1)" maxlength="4" v-if="edit[rule.idx-1]" @input="watchValue(rule.idx-1)">
+						<span v-else>{{ rule.conNum }}</span>
+					</td>
+					<td v-if="globalConfig.tradQos">
+						<select v-model="editPriority[rule.idx-1]" class="protocol-select select-drop" v-if="edit[rule.idx-1]" @change="watchValue(rule.idx-1)">
+						  <option value="0">0</option>
+						  <option value="1">1</option>
+						  <option value="2">2</option>
+						  <option value="3">3</option>
+						  <option value="4">4</option>
+						</select>
+						<span v-else>{{ rule.priority  }}</span>
+					</td>
+					<td>
+						<img :src="operate[rule.idx-1]" :title="lang_t('rule.edit')" class="cursor" @click="editFun(rule.idx-1)">
+						&nbsp;&nbsp;
+						<img src="/static/images/trash.png" :title="lang_t('common.delete')" class="cursor" @click="trashFun(rule.idx-1)">
+					</td>
+					<td>
+						<x-checkbox v-model="select[rule.idx-1]"></x-checkbox>
+					</td>
+				</tr>
+			    <tr v-show="dataTotal==0">
+				  <td colspan="12">{{ lang_t('common.no_data') }}</td>
+			    </tr>
+			  	</tbody>
+	          </table></td>
+	        </tr>
+			<tr><td><x-page :total="dataTotal" @on-page="pageChange" :data="data"></x-page></td></tr>
+      </table>
+  </div>
+   <x-modal v-model="modelShow" :title="lang_t('common.ip_mac')" show="ip,mac" :listData="listData" @on-select="selectFun"></x-modal>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,qosState:!1,selectall:!1,operate:[],select:[],data:[],edit:[],ruleList:[],editIp:[],editUp:[],editDown:[],dataTotal:0,addShow:!1,qos_up_bw:"100000",qos_down_bw:"100000",qosVersion:"",ip:"",maxUpload:"",maxDownload:"",conNum:"0",priority:"0",editUserNum:[],editPriority:[],listData:[],tempType:"",modelShow:!1,disable_addBtn:!1,maxLoad:1e5,maxLen:6}},watch:{select:function(){var t=0;for(var e in this.select)this.select[e]&&t++;t==this.select.length?this.selectall=!0:this.selectall=!1}},computed:{qosTitle:function(){var t=this.lang_t("qos.help2",[this.lang_t("qos.state")]);return"2.0"==this.globalConfig.qosVersion&&(t=this.lang_t("qos.help1")),t},modeName:function(){return[this.lang_t("qos.smart_flow"),this.lang_t("qos.ip_flow")]},rateRules:function(){var i=this;return{qos_up_bw:function(t,e){var a=cs.num_range(t,100,i.maxLoad);0==a?e(i.lang_t("qos.up")+i.lang_t("rule.msg12")):1==a?e(i.lang_t("qos.up")+i.lang_t("rule.msg24")):2==a?e(i.lang_t("qos.up")+i.lang_t("rule.msg56",[100,i.maxLoad])):99==a&&e()},qos_down_bw:function(t,e){var a=cs.num_range(t,100,i.maxLoad);0==a?e(i.lang_t("qos.down")+i.lang_t("rule.msg12")):1==a?e(i.lang_t("qos.down")+i.lang_t("rule.msg24")):2==a?e(i.lang_t("qos.down")+i.lang_t("rule.msg56",[100,i.maxLoad])):99==a&&e()}}},formRules:function(){var i=this;return{ip:function(t,e){var a=cs.ip(t);0==a?e(i.lang_t("rule.ip")+i.lang_t("network.msg1")):1==a?e(i.lang_t("rule.ip")+i.lang_t("network.msg2")):2==a||3==a||4==a?e(i.lang_t("rule.ip")+i.lang_t("network.msg6")):i.lanIp==t?e(i.lang_t("rule.ip")+i.lang_t("rule.msg2")):e()},maxUpload:function(t,e){var a=cs.num_range(t,100,i.qos_up_bw);0==a?e(i.lang_t("rule.max_up_speed")+i.lang_t("rule.msg12")):1==a?e(i.lang_t("rule.max_up_speed")+i.lang_t("rule.msg24")):2==a?e(i.lang_t("rule.max_up_speed")+i.lang_t("rule.msg56",[100,i.qos_up_bw])):99==a&&e()},maxDownload:function(t,e){var a=cs.num_range(t,100,i.qos_down_bw);0==a?e(i.lang_t("rule.max_down_speed")+i.lang_t("rule.msg12")):1==a?e(i.lang_t("rule.max_down_speed")+i.lang_t("rule.msg24")):2==a?e(i.lang_t("rule.max_down_speed")+i.lang_t("rule.msg56",[100,i.qos_down_bw])):99==a&&e()},conNum:function(t,e){var a=cs.num_range(t,0,2e3);0==a?e(i.lang_t("rule.users_num")+i.lang_t("rule.msg12")):1==a?e(i.lang_t("rule.users_num")+i.lang_t("rule.msg24")):2==a?e(i.lang_t("rule.users_num")+i.lang_t("rule.msg56",[0,2e3])):99==a&&e()}}}},created:function(){var e=this;uiPost.getSmartQosCfg(function(t){e.qosState="1"==t.qos_enable,e.qos_up_bw=t.qos_up_bw,e.qos_down_bw=t.qos_down_bw,"1000"==t.bandWidth&&(e.maxLoad=1e6,e.maxLen=7),t.qos_rules&&(e.ruleList=t.qos_rules,e.dataTotal=e.ruleList.length,e.data=t.qos_rules,e.tableInit(t.qos_rules))})},methods:{pageChange:function(t,e){this.ruleList=e},scanFun:function(t,e){var a=this;this.tempIdx=e,this.tempType=t,uiPost.getOnlineMsg(function(t){a.listData=t,a.modelShow=!0})},selectFun:function(t){"number"!=typeof this.tempIdx?"mac"==this.tempType?this.mac=t.mac:this.ip=t.ip:"mac"==this.tempType?this.editMac[this.tempIdx]=t.mac:this.editIp[this.tempIdx]=t.ip},stateChange:function(t){var e={};e.qos_enable=t?"1":"0",e.addEffect="0",this.setPostFun(e)},selectAll:function(t){var e=!1;t&&(e=!0);var a=this.select.length;this.select=[];for(var i=0;i<a;i++)this.select[i]=e},addRuleVal:function(){this.addShow=!0},addRule:function(){var e=this;if(e.disable_addBtn=!0,16<=e.dataTotal)return Cstool.Msg({content:this.lang_t("rule.msg30",[16])}),e.disable_addBtn=!1;for(i=0;i<e.dataTotal;i++)if(e.ip==e.data[i].ip)return Cstool.Msg({content:this.lang_t("rule.msg11")}),e.disable_addBtn=!1;var a={};Cstool.Verify(this.formRules,function(t){t||(e.disable_addBtn=!1),t&&(a.ip=e.ip,a.maxUpload=e.maxUpload,a.maxDownload=e.maxDownload,globalConfig.tradQos&&(a.conNum=e.conNum,a.priority=e.priority),e.setPostFun(a))})},applyFun:function(){var e=this,a={};Cstool.Verify(this.rateRules,function(t){t&&(a.qos_enable=1==e.qosState?"1":"0",a.qos_up_bw=e.qos_up_bw,a.qos_down_bw=e.qos_down_bw,a.addEffect="3",e.setPostFun(a))})},setPostFun:function(t){uiPost.setSmartQosCfg(t,function(t){var e=1;t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href})})},editFun:function(t){"/static/images/edit.png"==this.operate[t]?this.edit[t]?(this.edit.splice(t,1),this.edit.splice(t,0,!1)):(this.edit.splice(t,1),this.edit.splice(t,0,!0)):this.modefyFun(t)},modefyFun:function(e){var a=this,s={};if(a.dataTotal)for(i=0;i<a.dataTotal&&(i==e&&i++,i!=a.dataTotal);i++)if(a.editIp[e]==a.data[i].ip)return Cstool.Msg({content:this.lang_t("rule.msg11"),title:""}),!1;Cstool.Verify(this.formRules,function(t){t&&(s.ip=a.editIp[e],s.maxUpload=a.editUp[e],s.maxDownload=a.editDown[e],globalConfig.tradQos&&(s.conNum=a.editUserNum[e],s.priority=a.editPriority[e]),s.idx=String(e+1),s.addEffect="2",a.setPostFun(s))},a.dataTotal,e)},trashFun:function(t){var e={};this.ruleList;if("all"!=t)e[this.data[t].delRuleName]=String(t),Cstool.Msg({content:this.lang_t("rule.msg15"),type:"confirm",ok:function(){uiPost.delSmartQosCfg(e,function(t){var e=1;t&&(t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href}))})}});else{var a=0;for(var i in this.select)this.select[i]&&(a++,e[[this.data[i].delRuleName]]=String(i),Cstool.Msg({content:a==this.select.length?this.lang_t("rule.msg26"):this.lang_t("rule.msg15"),type:"confirm",ok:function(){uiPost.delSmartQosCfg(e,function(t){var e=1;t&&(t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href}))})}}));if(0==a)return Cstool.Msg({content:this.lang_t("rule.msg14")}),!1}},watchValue:function(t){this.editIp[t]!=this.data[t].ip||this.editUp[t]!=this.data[t].maxUpload||this.editDown[t]!=this.data[t].maxDownload||globalConfig.tradQos&&(this.editUserNum[t]!=this.data[t].conNum||this.editPriority[t]!=this.data[t].priority)?"/static/images/edited.png"!=this.operate[t]&&(this.operate.splice(t,1),this.operate.splice(t,0,"/static/images/edited.png")):(this.operate.splice(t,1),this.operate.splice(t,0,"/static/images/edit.png"))},tableInit:function(t){for(var e in t)this.edit[e]=!1,this.select[e]=!1,this.operate[e]="/static/images/edit.png",this.editIp[e]=t[e].ip,this.editUp[e]=t[e].maxUpload,this.editDown[e]=t[e].maxDownload,globalConfig.tradQos&&(this.editUserNum[e]=t[e].conNum,this.editPriority[e]=t[e].priority)}}}</script><script src="/static/js/main.js"></script></body></html>

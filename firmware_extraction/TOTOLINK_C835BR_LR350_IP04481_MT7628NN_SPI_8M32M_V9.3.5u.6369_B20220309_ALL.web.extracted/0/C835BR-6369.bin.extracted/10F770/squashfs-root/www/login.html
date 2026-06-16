@@ -1,0 +1,43 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/login.css"></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <img src="/static/images/login.png">
+  <form method="POST" ref="loginfrm" @keyup.enter.prevent @keydown.enter.prevent>
+  <input type="hidden" name="username" value="admin">
+  <div class="login-box" align="center">
+    <table style="border-collapse: separate;border-spacing: 0 5px;">
+      <tr>
+        <td colspan="2">
+          <div style="display:flex;">
+            <input v-model="password" type="password" name="password" ref='input' v-verify="formRules" data-name="password" data-type="pass" :maxlength="32" v-if="!globalConfig.hidePasswordInput" @keyup.enter="handleSubmit()">&nbsp;
+            <button type="button" class="btn btn-dis" @click="handleSubmit()" :disabled="!globalConfig.hidePasswordInput&&!password" style="height:31.2px;background: #0576a7;" v-if="!verifySupport">{{ lang_t('login.login_btn') }}</button>
+          </div>
+            <div style="max-width:300px;;display:block;word-break: break-all;word-wrap: break-word;" v-show="verify_password">
+                <p style="margin-top:1px;margin-bottom:1px;color:#f00;">
+                    <x-icon type="error">{{ lang_t('login.msg1') }}</x-icon>
+                </p>
+            </div>
+        </td>
+      </tr>
+      <tr v-if="!globalConfig.hidePasswordInput && !globalConfig.projectOwnerTw">
+        <td colspan="2">
+          <a class="forgot" @click="forgetPwd()">{{ lang_t('login.forgot_pass') }}</a>
+        </td>
+      </tr>	  
+      <tr v-if="verifyShow">
+        <td style="width: 100px;">
+          <input type="text" v-model="verify" style="width: 60px;text-align: center;" maxlength="4" @keyup.enter="handleSubmit()">
+        </td>
+        <td>
+          <div id="verify-code" :title="lang_t('login.switch_verify')"></div>
+          <x-icon size="0.8" :type="verifyType" v-show="verifyType"></x-icon>
+        </td>
+      </tr>
+      <tr v-if="verifySupport&&!isVerifyOff">
+        <td colspan="2">
+          <button type="button" class="btn btn-dis" @click="handleSubmit()" :disabled="!globalConfig.hidePasswordInput&&!password" style="height:31.2px;background: #0576a7;">{{ lang_t('login.login_btn') }}</button>
+        </td>
+      </tr>
+    </table>
+    <div v-if="isVerifyOff" style="color:#fff;">{{lang_t('login.exceed_error',[3, timeout])}}</div>
+  </div>
+  </form>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,password:"",verify:"",verify_password:!1,verifyShow:globalConfig.loginVerifySupport,verifySupport:globalConfig.loginVerifySupport,isVerifyOff:!1,verifyType:"",timeout:0}},computed:{formRules:function(){var o=this;return{password:function(i,t){o.verify_password=0==cs.string(i)}}}},created:function(){var o=this;uiPost.getLoginCfg(function(i){if(o.verifySupport&&"1"==i.limit&&0<parseInt(i.timeout)){o.isVerifyOff=!0,o.timeout=parseInt(i.timeout);var t=window.setInterval(function(){1==o.timeout&&(window.clearInterval(t),location.reload()),o.timeout--},1e3)}else"1"==i.loginFlag&&Cstool.Msg({content:o.verifySupport?lang_t("login.msg9"):lang_t("login.msg6"),ok:function(){o.focuspass()}})})},methods:{focuspass:function(){this.$refs.input&&this.$refs.input.focus()},handleSubmit:function(){if(!this.isVerifyOff){var i="/cgi-bin/cstecgi.cgi?action=login";this.verifySupport&&!this.validate()&&(i+="&verify=error");var t=this.$refs.loginfrm;t.action=i,t.submit()}},forgetPwd:function(){Cstool.Msg({content:lang_t("login.msg5")})},verifyTimeFun:function(){var i=this,t=window.setTimeout(function(){i.verifyShow=!1},6e4);this.verifyTimeout=function(){window.clearTimeout(t),i.verifyTimeFun()}},loadVerify:function(){var i=document.createElement("script");i.src="/static/js/verify.js",i.onload=function(){this.gVerify=new GVerify({id:"verify-code"}),this.verifyTimeFun()}.bind(this),document.body.appendChild(i)},validate:function(){var i=this.gVerify.validate(this.verify);return this.verifyType=i?"tick":"error",i}},mounted:function(){this.focuspass(),this.verifySupport&&this.loadVerify()}}</script><script src="/static/js/main.js"></script></body></html>

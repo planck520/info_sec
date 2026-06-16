@@ -1,0 +1,6 @@
+BEGIN
+  eid         = EID_TENDA_ATE
+  name        = tenda_ate
+  flags       = EIF_MDM|EIF_MESSAGING_CAPABLE
+END
+

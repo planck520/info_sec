@@ -1,0 +1,5 @@
+BEGIN
+  eid         = EID_MESH_LINK_PROBE
+  name        = mesh_link_probe
+  flags       = EIF_MDM|EIF_MESSAGING_CAPABLE|EIF_LAUNCH_ON_BOOT
+END

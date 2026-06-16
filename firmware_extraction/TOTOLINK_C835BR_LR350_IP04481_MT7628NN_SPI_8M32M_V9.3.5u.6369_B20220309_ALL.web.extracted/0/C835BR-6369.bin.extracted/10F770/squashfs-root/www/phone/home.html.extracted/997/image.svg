@@ -1,0 +1,22 @@
+<svg width="110" height="110" xmlns="http://www.w3.org/2000/svg">
+      <text style="fill:#fff;" font-size="14" x="44" y="48" width="110" height="110" stroke="#fff">{{ cpuOccupy }}%</text>
+      <circle 
+        cx="55" 
+        cy="55" 
+        r="42.5" 
+        stroke-width="12" 
+        stroke="#81afd4" 
+        fill="none">
+      </circle>
+      <circle 
+        cx="55" 
+        cy="55" 
+        r="42.5" 
+        stroke-width="12" 
+        stroke="#a3a0fb" 
+        fill="none" 
+        transform="matrix(0,-1,1,0,0,110)" 
+        stroke-dasharray="" 
+        :style="cpuOccupyPercent">
+    </circle>
+    </svg>

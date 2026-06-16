@@ -1,0 +1,17 @@
+{
+    "netControl": "1",
+    "led": "1",
+    "cloud":"0",
+    "ddns":"1",
+    "upnp":"0",
+    "tr069":"1",
+    "iptv":"1",
+    "wl_mode": "wisp",
+    "virtualServer": "0",
+    "firewall": "high",
+    "dmz": "0",
+    "staticRoute": "1",
+    "macFilterType":"black",
+    "sleepMode":"1",
+    "elink": "0"
+}

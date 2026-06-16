@@ -1,0 +1,31 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title>TOTOLINK</title><meta content="width=device-width,initial-scale=1,user-scalable=no" name="viewport"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><link rel="stylesheet" href="/static/css/phone/main.css"><style>option{color:#23537b}.row-right{float:right;padding-top:20px}.select_input_header{margin-top:15px}.select_input_header select{width:125px;border:0;padding-left:10px;color:#fff;appearance:none;-moz-appearance:none;-webkit-appearance:none;background:url(/static/images/phone/select_off.png) 110px no-repeat}.select_input_header select:focus{background:url(/static/images/phone/select_on.png) 110px no-repeat}</style></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+	<div class="row-right select_input_header" style="padding-right: 10px;">
+		<span class="right">
+		  <select v-model="currentLang" @change="langChange">
+			<option v-for="(_lang,v) in langUl" :value="v">{{ v == 'auto' ? lang_t('common.auto') : _lang }}</option>
+		  </select>
+		</span>
+	</div>
+	<br><br><br><br>
+  <form method="post" id="loginfrm" action="/cgi-bin/cstecgi.cgi?action=login&flag=1">
+	<div class="login-top">
+	  <img src="/static/images/phone/administrator.png">
+	  <br><br>
+	  <span>{{ lang_t('login.admin_login') }}</span>
+	</div>
+	<input v-model="user" type="text" name="username" v-show="0">
+	<div class="login-middle">
+	  <img src="/static/images/phone/password.png">
+	  <input v-model="password" type="password" v-pass data-type="pass" name="password" id="password" :maxlength="32" :placeholder="lang_t('login.msg8')">
+	  <hr>
+	</div>
+	<div style="padding-left: 30px;">
+		<span>
+		 <a style="color:#ffffff" @click="forgetPwd()">{{ lang_t('login.forgot_pass') }}</a>
+		</span>
+	</div>
+	<div class="login-bottom">
+		<button class="login-btn" @click="loginFun">{{ lang_t('login.login_btn') }}</button>
+	</div>
+  </form>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/phone_layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,languages:languages,lang:$.lang,lang_t:lang_t,currentLang:"cn",langUl:{},password:"",user:""}},created:function(){var t=this;this.langInit(),uiPost.getLoginCfg(function(n){t.user=n.loginUser,"1"==n.loginFlag&&Cstool.Mark({content:t.lang_t("login.msg6"),l_text:t.lang_t("common.back"),ok:function(){document.getElementById("password").focus()}})})},methods:{langInit:function(){var n={};for(var t in this.languages)cs.isInArray(this.globalConfig.showLanguage,t)&&(n[t]=this.languages[t]);this.langUl=n,this.globalConfig.langAutoFlag&&this.globalConfig.showAutoLang?this.currentLang="auto":this.currentLang=this.globalConfig.defaultLang,"vi"!=this.currentLang&&"vn"!=this.currentLang||(cs.isInArray(globalConfig.showLanguage,"vi")?this.currentLang="vi":this.currentLang="vn")},loginFun:function(){if(""==this.password)return Cstool.Mark({content:this.lang_t("login.msg1"),l_text:this.lang_t("common.back")}),!1;document.getElementById("loginfrm").submit()},forgetPwd:function(){return Cstool.Mark({content:this.lang_t("login.msg5"),l_text:this.lang_t("common.back")}),!1},langChange:function(){var n,t,a=this.currentLang,g="0",o={};if("auto"==a){t=cs.autoLang();for(var i=this.globalConfig.showLanguage,l=0,s=0;l<i.length;l++)if(i[l]==t){s=1;break}0==s&&(t="en"),cs.isInArray(i,t)||(t="1"==data.showAutoLang?i[1]:i[0]),"vn"==(n=t)&&(n="vi"),language.switch(n),g="1"}else"vn"==(n=a)&&(n="vi"),language.switch(n),g="0",t=a;localStorage.setItem("lang",t),o.lang=t,o.langAutoFlag=g,uiPost.setLanguageCfg(o,function(){})}}}</script><script src="/static/js/main.js"></script></body></html>

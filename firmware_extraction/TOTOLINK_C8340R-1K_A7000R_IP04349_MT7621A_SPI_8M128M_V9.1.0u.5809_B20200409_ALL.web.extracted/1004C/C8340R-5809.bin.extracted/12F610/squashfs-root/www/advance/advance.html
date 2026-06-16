@@ -1,0 +1,121 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <adv-child-menu childType="wifi"></adv-child-menu>
+  <div class="advance-box">
+  	<x-help :text="lang_t('wifi.help_adv')"></x-help>
+	<br><br>
+	<div class="fun-box">
+	  <table class="table" v-show="wifiDualband != '0'">
+	    <tr>
+		  <td class="btn-tab-m">
+			  <a @click="wifiChange('0')" :class="['btn-tab',wifiActive == '0' ? 'btn-tab-active' : '']">2.4GHz</a>
+			  <a v-show="wifiDualband == '1'" @click="wifiChange('1')" :class="['btn-tab',wifiActive == '1' ? 'btn-tab-active' : '']">5GHz</a>
+			  <a v-show="wifiDualband == '2'" @click="wifiChange('1')" :class="['btn-tab',wifiActive == '1' ? 'btn-tab-active' : '']">5GHz(1)</a>
+			  <a v-show="wifiDualband == '2'" @click="wifiChange('2')" :class="['btn-tab',wifiActive == '2' ? 'btn-tab-active' : '']">5GHz(2)</a>
+		  </td>
+	    </tr>       
+	  </table>
+	  <br v-show="wifiDualband != '0'">
+	  <table class="table">
+	    <tbody>
+		<tr> 
+		  <td class="fun-left">{{ lang_t('wifi.bg_protect_mode') }}</td>
+		  <td>
+            <select v-model="bgProtection">
+			  <option value=0>{{ lang_t('wifi.auto') }}</option>
+			  <option value=1>{{ lang_t('wifi.off') }}</option>
+			  <option value=2>{{ lang_t('wifi.on') }}</option>
+			</select>
+          </td>
+		</tr>
+		<tr> 
+          <td class="fun-left">{{ lang_t('wifi.beacon') }}</td>
+          <td>
+            <input type="text" class="text" v-model="beaconPeriod" maxlength="3" v-verify="fromRule" data-name="beaconPeriod">&nbsp;&nbsp;
+			<small>({{ lang_t('wifi.range') }}:20~999)</small>
+          </td>
+        </tr>
+        <tr> 
+          <td class="fun-left">{{ lang_t('wifi.data_beacon_rate') }}</td>
+          <td>
+          	<input type="text" class="text" v-model="dtimPeriod" maxlength="3" v-verify="fromRule" data-name="dtimPeriod">&nbsp;&nbsp;
+			<small>({{ lang_t('wifi.range') }}:1~255)</small>
+          </td>
+        </tr>
+        <tr> 
+          <td class="fun-left">{{ lang_t('wifi.fragment') }}</td>
+          <td>
+            <input type="text" class="text" v-model="fragThreshold" maxlength="4" v-verify="fromRule" data-name="fragThreshold">&nbsp;&nbsp;
+			<small>({{ lang_t('wifi.range') }}:256~2346)</small>
+          </td>
+        </tr>
+        <tr> 
+          <td class="fun-left">{{ lang_t('wifi.rts') }}</td>
+          <td>
+            <input type="text" class="text" v-model="rtsThreshold" maxlength="4" v-verify="fromRule" data-name="rtsThreshold">&nbsp;&nbsp;
+			<small>({{ lang_t('wifi.range') }}:1~2347)</small>
+          </td>
+        </tr>
+		<tr> 
+		  <td class="fun-left">{{ lang_t('wifi.tx_power') }}</td>
+		  <td>
+            <select v-model="txPower">
+			  <option value=0>100%</option>
+			  <option value=1>75%</option>
+			  <option value=2>50%</option>
+			  <option value=3>35%</option>
+			  <option value=4>15%</option>
+			</select>
+          </td>
+		</tr>
+		<tr> 
+		  <td class="fun-left">{{ lang_t('wifi.preamble') }}</td>
+		  <td>
+            <select v-model="txPreamble">
+			  <option value=0>{{ lang_t('wifi.long') }}</option>
+			  <option value=1>{{ lang_t('wifi.short') }}</option>
+			</select>
+          </td>
+		</tr>
+		<tr> 
+          <td class="fun-left">{{ lang_t('wifi.sta_num') }}</td>
+          <td>
+            <input type="text" class="text" v-model="maxSta" maxlength="2" v-verify="fromRule" data-name="maxSta">&nbsp;&nbsp;
+			<small>({{ lang_t('wifi.range') }}:1~32)</small>
+          </td>
+        </tr>
+        <tr> 
+          <td class="fun-left">{{ lang_t('wifi.ap_isolated') }}</td>
+          <td>
+          	<x-checkbox v-model="noForwarding"></x-checkbox>
+          </td>
+        </tr>
+        <tr v-show="wifiActive == '0'">
+          <td class="fun-left">{{ lang_t('wifi.coexistence') }}</td>
+          <td>
+          	<x-checkbox v-model="htBSSCoexistence"></x-checkbox>
+          </td>
+        </tr>
+        <tr>
+          <td class="fun-left">{{ lang_t('wifi.wmm_capable') }}</td>
+          <td>
+            <x-checkbox v-model="wmmCapable"></x-checkbox>
+          </td>
+		</tr>
+		<tr v-if="globalConfig.bandSteeringSupport && wifiActive != '0'">
+		  <td class="fun-left">{{ lang_t('wifi.band_steer') }}</td>
+		  <td>
+		    <x-checkbox v-model="bandSteering"></x-checkbox>
+		  </td>
+		</tr>
+		<tr><td colspan="2"></td></tr>
+		<tr>
+		  <td class="fun-left"></td>
+		  <td>
+			<button type="button" class="btn" @click="applyFun">{{ lang_t('common.apply') }}</button>
+		  </td>
+		</tr>
+	    </tbody> 
+	  </table>
+    </div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,wifiActive:"0",wifiDualband:"0",bgProtection:"0",beaconPeriod:"20",dtimPeriod:"1",fragThreshold:"256",rtsThreshold:"1",maxSta:"32",txPower:"0",txPreamble:"1",noForwarding:!1,wmmCapable:!1,htBSSCoexistence:!1,bandSteering:!1}},computed:{fromRule:function(){var e=this;return{beaconPeriod:function(i,t){var n=cs.num_range(i,20,999);1==cs.num(i)?t(e.lang_t("wifi.beacon")+e.lang_t("wifi.msg7")):99!=n?t(e.lang_t("wifi.msg8",[20,999])):t()},dtimPeriod:function(i,t){var n=cs.num_range(i,1,255);1==cs.num(i)?t(e.lang_t("wifi.data_beacon_rate")+e.lang_t("wifi.msg7")):99!=n?t(e.lang_t("wifi.msg9",[1,255])):t()},fragThreshold:function(i,t){var n=cs.num_range(i,256,2346);1==cs.num(i)?t(e.lang_t("wifi.fragment")+e.lang_t("wifi.msg7")):99!=n?t(e.lang_t("wifi.msg10",[256,2346])):t()},rtsThreshold:function(i,t){var n=cs.num_range(i,1,2347);1==cs.num(i)?t(e.lang_t("wifi.rts")+e.lang_t("wifi.msg7")):99!=n?t(e.lang_t("wifi.msg11",[1,2347])):t()},maxSta:function(i,t){var n=cs.num_range(i,1,32);1==cs.num(i)?t(e.lang_t("wifi.sta_num")+e.lang_t("wifi.msg7")):99!=n?t(e.lang_t("rule.msg56",[1,32])):t()}}}},created:function(){this.wifiActive=cs.local(this.wifiActive),this.advInit(this.wifiActive)},methods:{wifiChange:function(i){this.wifiActive=i,this.advInit(i)},advInit:function(t){var n=this,i={};i.wifiIdx=t,uiPost.getWiFiAdvancedCfg(i,function(i){n.wifiDualband=i.wifiDualband,n.wmmCapable="1"==i.wmmCapable,"1"==t&&globalConfig.bandSteeringSupport&&(n.bandSteering="1"==i.bandSteering),n.noForwarding="1"==i.noForwarding,n.htBSSCoexistence="1"==i.htBSSCoexistence,n.bgProtection=i.bgProtection,n.beaconPeriod=i.beaconPeriod,n.dtimPeriod=i.dtimPeriod,n.fragThreshold=i.fragThreshold,n.rtsThreshold=i.rtsThreshold,n.txPreamble=i.txPreamble,n.txPower=i.txPower,n.maxSta=i.maxSta,n.bandSteering="1"==i.bandSteering})},applyFun:function(){var n=this,t={};Cstool.Verify(this.fromRule,function(i){i&&("0"==n.wifiActive&&(t.htBSSCoexistence=n.htBSSCoexistence?"1":"0"),t.wifiIdx=n.wifiActive,t.bgProtection=n.bgProtection,t.beaconPeriod=n.beaconPeriod,t.dtimPeriod=n.dtimPeriod,t.txPreamble=n.txPreamble,t.fragThreshold=n.fragThreshold,t.rtsThreshold=n.rtsThreshold,t.txPower=n.txPower,t.maxSta=n.maxSta,t.noForwarding=n.noForwarding?"1":"0",t.wmmCapable=n.wmmCapable?"1":"0",globalConfig.bandSteeringSupport&&"0"!=n.wifiActive&&(t.bandSteering=n.bandSteering?"1":"0"),uiPost.setWiFiAdvancedCfg(t,function(i){var t=10;i.wtime&&"0"!=i.wtime?(t=i.wtime,Cstool.Count(t,"js",function(){cs.local(n.wifiActive,"href")})):cs.local(n.wifiActive,"href")}))})}}}</script><script src="/static/js/main.js"></script></body></html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <!--子菜单-->
+  <adv-child-menu childType="tools"></adv-child-menu>  
+  <div class="advance-box">
+	<br>
+  <br>
+	<div class="fun-box">
+      <table class="table">  
+        <tbody>
+        <tr>
+          <td>
+            <span class="basic-title">{{ lang_t('firmware.msg9') }}</span>
+          </td>
+        </tr>
+	    <tr>
+		  <td class="fun-left2">{{ lang_t('firmware.firmware_ver') }}</td>
+		  <td>{{ version }}</td>
+		</tr>
+		<tr>
+		  <td class="fun-left2">{{ lang_t('firmware.build_time') }}</td>
+		  <td>{{ buildTime }}</td>
+		</tr>
+  	  	</tbody>
+	   </table>
+      <br>
+      <table class="table">  
+        <tbody>
+        <tr><td><b>{{ lang_t('firmware.local_upgrade') }}</b></td></tr>  
+        <tr><td>{{ lang_t('firmware.local_upgrade_msg') }}</td></tr>
+        
+		<tr>
+          <td>
+            <x-checkbox v-model="loaddef">{{ lang_t('firmware.upgrade_with_reset') }}</x-checkbox>
+           <br>
+           <br>
+            <input type="file" id="f_upload" @change="filechange">
+          </td>
+        </tr>
+        <tr>
+          <td v-show="showUpdateBtn">
+            <button type="button" class="btn"  @click="submit_upgrade" >{{ lang_t('firmware.upgrade') }}</button>
+          </td>
+        </tr>
+        <br>
+        <tr><td><b>{{ lang_t('firmware.cloud_upgrade') }}</b></td></tr>
+        <tr><td>{{ lang_t('firmware.cloud_upgrade_msg') }}</td></tr>
+        <tr>
+          <td>
+			<button type="button" class="btn" @click="cloudCheck" :disabled="cloudCheck_en">{{ lang_t('firmware.check') }}</button>
+          </td>
+        </tr>
+       <tr v-if="result != 0">
+          <td v-if="result == 4 && cloudStatus != 1">{{ lang_t('firmware.found_newfw')}}:&nbsp;&nbsp;&nbsp;<span style="font-weight:bold;color:#EA7105;">{{newVersion}}</span> {{lang_t('firmware.manual_upgrade') }} 
+            &nbsp;&nbsp;
+			<button type="button" class="btn btn-primary all-but" id="cloud_upload" @click.prevent="cloudUpgrade" >{{ lang_t('firmware.upgrade') }}</button>
+          </td>
+          <td v-else-if="result == 1">{{ lang_t('firmware.check_internet_result') }}</td>
+          <td v-else-if="result == 3">{{ lang_t('firmware.newcloudUpdateing') }}</td>
+		  <td v-else-if="result == 5">{{ lang_t('firmware.cloudUpdateing') }}</td>
+          <td v-else-if="result == 2">{{ lang_t('firmware.check_if_newver') }}</td>
+          <td v-else-if="cloudStatus == 1" style="color:blue"><b>{{ lang_t('firmware.upload') }}</b></td>
+        </tr>
+        </tbody> 
+      </table>
+      <br><br><br>
+      <div v-show="globalConfig.gameSpeedSupport || globalConfig.appfilterSupport">
+        <table class="table">
+          <tbody>
+          <tr>
+            <td>
+              <span class="basic-title">{{ lang_t('firmware.msg5') }}</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="fun-left2">{{ lang_t('firmware.msg10') }}</td>
+            <td>{{ traitVersion }}</td>
+          </tr>
+          </tbody>
+        </table>
+        <table class="table">
+          <tbody>
+          <tr><td><b>{{ lang_t('firmware.local_upgrade') }}</b></td></tr>
+          <tr><td>{{ lang_t('firmware.msg6') }}</td></tr>
+          <tr>
+            <td>
+              <input type="file" id="t_upload" @change="traitFileChange">
+            </td>
+          </tr>
+          <br>
+          <!--特征库在线更新-->
+          <tr><td><b>{{ lang_t('firmware.cloud_upgrade') }}</b></td></tr>
+          <tr><td>{{ lang_t('firmware.msg7') }}</td></tr>
+          <tr>
+            <td>
+              <button type="button" class="btn" @click="traitCloudCheck">{{ lang_t('firmware.check') }}</button>
+            </td>
+          </tr>
+          <tr v-if="Tresult != 0">
+            <td v-if="Tresult == 4">{{ lang_t('firmware.msg8') }}:&nbsp;&nbsp;&nbsp;<span style="font-weight:bold;color:#EA7105;">{{traitNewVersion}}</span> {{lang_t('firmware.manual_upgrade') }}
+              &nbsp;&nbsp;
+              <button type="button" class="btn btn-primary all-but" @click.prevent="traitCloudUpgrade">{{ lang_t('firmware.upgrade') }}</button>
+            </td>
+            <td v-else-if="Tresult == 1">{{ lang_t('firmware.check_internet_result') }}</td>
+            <td v-else-if="Tresult == 3">{{ lang_t('firmware.newcloudUpdateing') }}</td>
+            <td v-else-if="Tresult == 2">{{ lang_t('firmware.check_if_newver') }}</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,result:"",buildTime:"",newVersion:"",loaddef:!1,version:"",platform:"",contentLength:"",fileName:"",customUpgrade:"",upgradeAction:"/cgi-bin/cstecgi.cgi?action=upload",setUpgradeFW:"0",maxSize:0,filename:"",selectbox:!1,showUpdateBtn:!1,cloudCheck_en:!1,firmupdatepercent:0,traitUploadAction:"",traitMaxSize:"",traitVersion:"",cloudStatus:"",traitNewVersion:"",Tresult:""}},created:function(){var a=this;uiPost.FirmwareUpgrade(function(t){if(a.hardModel=t.hardModel,a.flashSize=t.flashSize,a.version=t.fmVersion,a.platform=t.platform,a.contentLength=t.ContentLength,a.fileName=t.FileName,a.customUpgrade=t.customUpgrade,-1!=t.buildTime.indexOf("-"))a.buildTime=t.buildTime;else{for(var e=t.buildTime.replace(/\s+/g," "),o=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],n=0;n<12;n++)if(e.split(" ")[0]==o[n])var i=n+1;a.buildTime=e.split(" ")[2]+"-"+i+"-"+e.split(" ")[1]+" "+e.split(" ")[3]}a.cloudFw=t.cloudFw,a.maxSize=parseInt(t.maxSize),a.lanip=t.lanIp,""!=t.upgradeAction&&(a.upgradeAction=t.upgradeAction),""!=t.setUpgradeFW&&(a.setUpgradeFW=t.setUpgradeFW)}),uiPost.uploadQosConfig(function(t){a.traitVersion=t.version,""!=t.importAction&&(a.traitUploadAction=t.importAction),""!=t.maxSize&&(a.traitMaxSize=parseInt(t.maxSize))})},methods:{filechange:function(){var t=document.getElementById("f_upload"),e=t.files[0].name,o=t.files[0];if(e.indexOf(".web")<0&&e.indexOf(".bin")<0)return Cstool.Msg({content:this.lang_t("firmware.msg2")}),t.value="",!1;this.upload(o,"")},traitFileChange:function(){var t=document.getElementById("t_upload"),e=t.files[0].name,o=t.files[0];return e.indexOf(".gz")<0?(Cstool.Msg({content:this.lang_t("firmware.msg2")}),t.value="",!1):1<=o.size/this.traitMaxSize?(Cstool.Msg({content:this.lang_t("firmware.msg3")}),t.value="",!1):void this.traitUpload(o)},traitUpload:function(t){var e=this;upload.fileUpload({data:t,url:e.traitUploadAction,success:function(t){"1"==t.settingERR?Cstool.Msg({content:e.lang_t("firmware.upload_success"),ok:function(){null!=t.wtime&&0!=t.wtime?Cstool.Count(t.wtime,"up",function(){parent.location.href=location.origin+"/login.html"}):parent.location.href=location.origin+"/login.html"}}):Cstool.Msg({content:e.lang_t("firmware.MM_fwupload_error")})},error:function(t){Cstool.Msg({content:e.lang_t("firmware.MM_fwupload_error")})}})},traitCloudUpgrade:function(){uiPost.setUpgradeApplib(function(t){location.host;null!=t.wtime&&0!=t.wtime?Cstool.Count(t.wtime,"up",function(){parent.location.href=location.origin+"/login.html"}):parent.location.href=location.origin+"/login.html"})},cloudUpgrade:function(){var o=this,t={},n=0;o.cloudCheck_en=!0,o.loaddef?t.resetFlags="1":t.resetFlags="0","1"==this.setUpgradeFW?uiPost.setUpgradeFW(t,function(t){n=null!=t.wtime&&""!=t.wtime&&0!=t.wtime?Number(t.wtime):120;var e=setInterval(function(){uiPost.getCloudDownloadStatus(function(t){o.cloudStatus=t.cloudupg_download,"2"==t.cloudupg_download?(clearInterval(e),Cstool.Count(n,"up",function(){parent.location.href="http://"+location.host+"/login.html"})):"3"==t.cloudupg_download&&(o.cloudCheck_en=!1)})},1e3)}):uiPost.CloudACMunualUpdate(t,function(t){n=null!=t.wtime&&""!=t.wtime&&0!=t.wtime?Number(t.wtime):240;var e=location.host;Cstool.Count(n,"up",function(){parent.location.href="http://"+e+"/login.html"})})},cloudCheck:function(){this.newCloudCheck()},newCloudCheck:function(){var o=this,t=0;uiPost.CloudSrvVersionCheck(function(){var e=setInterval(function(){if(30<=t)return t=0,o.result=2,clearInterval(e),!1;uiPost.getCloudSrvCheckStatus(function(t){"1"==t.cloudFwStatus?(o.result=1,clearInterval(e)):"2"==t.cloudFwStatus?(o.result=2,clearInterval(e)):"4"==t.cloudFwStatus?(o.newVersion=t.newVersion,o.result=4,clearInterval(e)):"5"==t.cloudFwStatus?(o.result=5,clearInterval(e)):o.result=3}),t++},1e3)})},traitCloudCheck:function(){var o=this,t=0;uiPost.CloudSrcApplibVerCheck(function(){var e=setInterval(function(){if(30<=t)return t=0,o.result=2,clearInterval(e),!1;uiPost.getCloudSrvAppLibCheckStatus(function(t){"1"==t.cloudApplibStatus?(o.Tresult=1,clearInterval(e)):"2"==t.cloudApplibStatus?(o.Tresult=2,clearInterval(e)):"4"==t.cloudApplibStatus?(o.traitNewVersion=t.newVersion,o.Tresult=4,clearInterval(e)):o.result=3}),t++},1e3)})},submit_upgrade:function(){var t={};if(""==$("#f_upload").val())return Cstool.Msg({content:this.lang_t("firmware.msg1")}),!1;var e=document.getElementById("f_upload").files[0],o=e.size;if(1<=o/(1024*this.flashSize*1024))return Cstool.Msg({content:this.lang_t("firmware.msg3")}),!1;this.loaddef?t.resetFlags="1":t.resetFlags="0",t.FileName=e.name,t.ContentLength=o,uiPost.setUpgradeFW(t,function(t){var e=240;null!=t.wtime&&""!=t.wtime&&(e=t.wtime),Cstool.Count(e,"up",function(){parent.location.href=location.origin+"/login.html"})})},upload:function(t){var e=this;Cstool.Msg({type:"no",content:this.lang_t("firmware.uploading")}),upload.fileUpload({data:t,url:e.upgradeAction,success:function(t){"1"==t.upgradeStatus?(Cstool.Msg({content:e.lang_t("firmware.upload_success"),type:"no",time:2}),e.showUpdateBtn=!0):(e.showUpdateBtn=!1,Cstool.Msg({content:e.lang_t('firmware["'+t.upgradeERR+'"]')}))},error:function(t){e.showUpdateBtn=!1,Cstool.Msg({content:e.lang_t("firmware.MM_fwupload_error")})}})}}}</script><script src="/static/js/main.js"></script></body></html>

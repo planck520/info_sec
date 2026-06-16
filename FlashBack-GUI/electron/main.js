@@ -5,7 +5,7 @@
    - 窗口控制（最小化 / 最大化 / 关闭）
    ============================================================ */
 
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
 const http = require('http');
@@ -112,6 +112,26 @@ function setupIPC() {
   });
   ipcMain.on('window:close', () => {
     if (mainWindow) mainWindow.close();
+  });
+
+  ipcMain.handle('dialog:select-directory', async (_event, title) => {
+    if (!mainWindow) return null;
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: title || '选择目录',
+      properties: ['openDirectory', 'createDirectory'],
+    });
+    if (result.canceled || !result.filePaths.length) return null;
+    return result.filePaths[0];
+  });
+
+  ipcMain.handle('dialog:select-file', async (_event, title) => {
+    if (!mainWindow) return null;
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: title || '选择固件二进制文件',
+      properties: ['openFile'],
+    });
+    if (result.canceled || !result.filePaths.length) return null;
+    return result.filePaths[0];
   });
 }
 

@@ -1,0 +1,411 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <div class="advance-box" style="padding-top: 90px;">
+	<div  ref="advbox" style="width:980px;margin-left:40px;">
+	  <div style="width: 100%;">
+		<div class="map-adv-head">
+	  	  <img src="/static/images/status.png">
+		  <span class="star-title">{{ lang_t('index.performance') }}</span>
+		</div>
+		<div style="width:100%;text-align:center;white-space:nowrap;margin-top:5px;padding:5.5px;background:#f0f7fa;">
+		  <div style="display:inline-block;width:20%;">
+			<svg width="110" height="110">
+		 	  <text style="fill:black;" font-size="20" x="35" y="60" width="110" height="110">{{ cpuOccupy }}%</text>
+			  <circle cx="55" cy="55" r="47.5" stroke-width="12" stroke="#d3e4f0" fill="none"></circle>
+			  <circle cx="55" cy="55" r="47.5" stroke-width="12" stroke="#72b4e6" fill="none" transform="matrix(0,-1,1,0,0,110)" stroke-dasharray="" :style="cpuOccupyPercent"></circle>
+			</svg>
+			<br>
+		    CPU
+		  </div>
+		  <div style="display:inline-block;width:20%;">
+			<svg width="110" height="110">
+			  <text style="fill:black;" font-size="20" x="35" y="60" width="110" height="110">{{ ramOccupy }}%</text>
+			  <circle cx="55" cy="55" r="47.5" stroke-width="12" stroke="#f0e4cd" fill="none"></circle>
+			  <circle cx="55" cy="55" r="47.5" stroke-width="12" stroke="#e99900" fill="none" transform="matrix(0,-1,1,0,0,110)" stroke-dasharray="" :style="ramOccupyPercent"></circle>
+			</svg>
+			<br>
+			{{ lang_t('index.memory') }}
+		  </div>
+		  <div style="display:inline-block;width:20%;">
+		 	<svg width="110" height="110">
+			  <text style="fill:black;" font-size="19" :x="String(downOccupy).length<5?'39':'23'" y="55" width="110" height="110">{{ downOccupy }}</text>
+			  <text text style="fill:black;" font-size="14" x="40" y="75">{{ parent_down }}</text>
+			  <circle cx="55" cy="55" r="47.5" stroke-width="12" stroke="#f7c3c3" fill="none"></circle>
+			  <circle cx="55" cy="55" r="47.5" stroke-width="12" stroke="#f17472" fill="none" transform="matrix(0,-1,1,0,0,110)" stroke-dasharray="" :style="downOccupyPercent"></circle>
+			</svg>
+			<br>
+			{{ lang_t('index.donwload') }}
+		  </div>
+		  <div style="display:inline-block;width:20%;">
+			<svg width="110" height="110">
+		  	  <text style="fill:black;" font-size="19" :x="String(upOccupy).length<5?'39':'23'" y="55" width="110" height="110">{{ upOccupy }}</text>
+			  <text text style="fill:black;" font-size="14" x="40" y="75">{{ parent_up }}</text>
+			  <circle cx="55" cy="55" r="47.5" stroke-width="12" stroke="#dceae7" fill="none"></circle>
+			  <circle cx="55" cy="55" r="47.5" stroke-width="12" stroke="#8fe2ce" fill="none" transform="matrix(0,-1,1,0,0,110)" stroke-dasharray="" :style="upOccupyPercent"></circle>
+			</svg>
+			<br>
+			{{ lang_t('index.upload') }}
+		  </div>
+		  <div style="display:inline-block;width:20%;" v-if="globalConfig.opmode!='rpt'&&globalConfig.opmode!='br'">
+			<svg width="110" height="110">
+			  <text style="fill:black;" font-size="20" x="45" y="60" width="110" height="110">{{ lanUserNum }}</text>
+			  <circle cx="55" cy="55" r="47.5" stroke-width="12" stroke="#CCCCFF" fill="none"></circle>
+			  <circle cx="55" cy="55" r="47.5" stroke-width="12" stroke="#7c7cef" fill="none" transform="matrix(0,-1,1,0,0,110)" stroke-dasharray="" :style="userNumOccupyPercent"></circle>
+			</svg>
+			<br>
+			{{ lang_t('index.user_num') }}
+		  </div>
+		</div>
+	  </div>
+		
+      <div style="white-space:nowrap;width:100%;margin-top:5px;">
+		<div class="adv-info" v-if="!wanShow">
+		  <div class="adv-info-head">
+		  	<div style="padding:5px 10px;">
+		  	  <img src="/static/images/net.png">
+			  <span class="star-title">{{ lang_t('index.internet') }}</span>
+			  <span class="star-box" v-if="!wanShow">
+				<a href="#" class="star" :class="wanipv4_class" v-show="ipv6Support" @click="statuShow('wanipv4')">IPv4</a>
+				<a href="#" :class="wanipv6_class" v-if="ipv6Support" @click="statuShow('wanipv6')">IPv6</a>
+			  </span>
+		  	</div>
+		  </div>
+		  <div class="adv-info-box">
+			<table class="t_table2">
+			  <tbody v-show="wanipv4" class="wanipv4" valign="top">
+			  <tr>
+				<td width="50%">{{ lang_t('index.connection_status') }}:</td>
+				<td v-if="Configured">{{ wanWay }} / <span v-if ="wanStatus == 'connected'" style="color:#008000;">{{ lang_t('wan.connected') }}</span>
+					<span v-else style="color:#dd514c;">{{ lang_t('wan.disconnected') }}</span>
+					<p v-if="globalConfig.wanDetectStrategy=='1'&&detectStatus!='2'">
+						<a style="color: red;text-decoration: underline;" @click="failMsgFun">{{lang_t('wan.failtip')}}</a>
+					</p>
+				</td>
+				<td v-else><span v-if ="wanStatus == 'connected'" style="color:#008000;">{{ lang_t('wan.connected') }}</span>
+					<span v-else style="color:#dd514c;">{{ lang_t('wan.disconnected') }}</span>
+				</td>
+			</tr>
+			  <tr v-show="wanMode==3||wanMode==4||wanMode==6">
+				<td></td>
+				<td>
+					<button style="background-color: green;color: #fff;padding: 2px 4px;" :disabled="linkBool" @click="linkDialFun('1')">{{lang_t('wan.connect')}}</button>&nbsp;|&nbsp;<button style="background-color: darkred;color: #fff;padding: 2px 4px;" :disabled="!linkBool" @click="linkDialFun('0')">{{lang_t('wan.disconnect')}}</button>
+				</td>
+			  </tr>
+			  <tr v-if="wanStrategyinfo">
+				<td>{{ lang_t('index.online_way') }}:</td>
+				<td>{{wanStrategyinfo}}</td>
+			  </tr>
+			  <tr>
+				<td>{{ lang_t('index.online_time') }}:</td>
+				<td>{{wanConnTime}}</td>
+			  </tr>
+			  <tr>
+				<td>{{ lang_t('index.ip') }}:</td>
+				<td>{{ wanIp }}</td>
+			  </tr>
+			  <tr>
+				<td>{{ lang_t('index.gateway') }}:</td>
+				<td>{{ wanGw }}</td>
+			  </tr>
+			  <tr>
+				<td>{{ lang_t('index.pri_dns') }}:</td>
+				<td>{{ wanPriDns }}</td>
+			  </tr>
+			  <tr>
+				<td>{{ lang_t('index.sec_dns') }}:</td>
+				<td>{{ wanSecDns }}</td>
+			  </tr>
+			  <tr>
+				<td>MAC:</td>
+				<td>{{ wanMac }}</td>
+			  </tr>
+				<tr v-if="modemInfos">
+					<td>{{ lang_t('index.4gstatus') }}:</td>
+					<td>{{ registStatusMsg }}</td>
+				</tr>
+				<tr v-for="(value,k) in modemInfos" :key="k" v-if="k!='registerStatus'">
+					<td>{{k.toUpperCase()}}:</td>
+					<td>{{ value }}</td>
+				</tr>
+			</tbody>
+			  <tbody v-show="wanipv6" class="wanipv6">
+			  <tr>
+				<td width="50%">{{ lang_t('index.connection_status') }}:</td>
+				<td>{{ ipv6WanStatus }}</td>
+			  </tr>
+			  <tr>
+				<td>{{ lang_t('index.link_type') }}:</td>
+				<td>{{ ipv6WanLinkType }}</td>
+			  </tr>
+			  <tr>
+				<td>{{ lang_t('index.origin_type') }}:</td>
+				<td>{{ ipv6WanOriginType }}</td>
+			  </tr>
+			  <tr>
+				<td>{{ lang_t('index.global_address') }}:</td>
+				<td>{{ ipv6WanGlobalAddree }}</td>
+			  </tr>
+			  <tr>
+				<td>{{ lang_t('index.link_local_address') }}:</td>
+				<td>{{ ipv6WanLinkAddree }}</td>
+			  </tr>
+			  <tr>
+				<td>{{ lang_t('index.gateway') }}:</td>
+				<td>{{ ipv6WanGw }}</td>
+			  </tr>
+			  <tr>
+				<td>{{ lang_t('index.dns_server') }}:</td>
+				<td>{{ ipv6WanDns }}</td>
+			  </tr>
+			  </tbody> 
+			  <tbody v-if="globalConfig.LTEInfoSupport">	
+				<tr>
+				    <td>Cell ID:</td>
+					<td>{{cellid}}</td>
+				</tr>	
+				<tr>
+					<td>Channel:</td>
+					<td>{{channel_4g}}</td>
+				</tr>
+				<tr>
+					<td>Band:</td>
+					<td>{{band}}</td>
+				</tr>
+		  	    <tr>
+			  	 	<td>RSRP:</td>		
+			  		<td>{{rsrp}} dBm</td>
+			    </tr>
+			    <tr>
+			  		<td>RSRQ:</td>	
+			  		<td>{{rsrq}} dBm</td>
+			    </tr>
+			    <tr>
+			  		<td>RSSI:</td>	
+			  		<td>{{rssi_4g}} dBm</td>
+			    </tr>
+			    <tr>
+			  		<td>SINR:</td>	
+			  		<td>{{sinr}} dBm</td>
+			    </tr>
+		 		 </tbody>
+			</table>
+		  </div>
+		</div>
+
+		<div class="adv-info">
+		  <div class="adv-info-head">
+		  	<div style="padding:5px 10px;">
+		  	  <img src="/static/images/wifi.png">
+			  <span class="star-title">{{ lang_t('index.wireless') }}</span>
+			  <span class="star-box">
+				<a href="#" :class="wifi2g_class" @click="statuShow('wifi2g')">2.4GHz</a>
+				<a href="#" :class="wifi5g_class" @click="statuShow('wifi5g')" v-if="wifiDualband != '0'">5GHz</a>
+			  </span>
+		  	</div>
+		  </div>
+		  <div class="adv-info-box">
+			<table class="t_table2">
+			  <tbody v-show="wifi2g" class="wifi2g">
+			  <tr>
+				<td width="50%">{{ lang_t('index.radio') }}:</td>
+				<td>{{ wifiOff == '0'? lang_t('common.on') : lang_t('common.off') }}</td>
+			  </tr>
+			  <tr>
+				<td>SSID:</td>
+				<td>{{ ssid }}</td>
+			  </tr>
+			  <tr v-if="wifiOff == '0'">
+				<td>{{ lang_t('index.channel') }}:</td>
+				<td>{{ current_channel }}</td>
+			  </tr>
+			  <tr>
+				<td>MAC:</td>
+				<td>{{ bssid }}</td>
+			  </tr>
+			  <tr v-if="key != ''&&ecrWay!='0'">
+				  <td>{{ lang_t('wifi.encryption') }}</td>
+				  <td>{{encryptionWay}}</td>
+			  </tr>
+			  <tr>
+					<td>{{ lang_t('wifi.pass') }}:</td>
+					<td style="white-space:normal;">
+						<div class="col2">
+							<div v-if="(key == ''||ecrWay=='0')" >
+							  <span>{{ lang_t('wifi.dispass') }}</span>
+							</div>
+							<div v-else>
+							   <div v-show="key_state == false">
+								   ********
+								   <img src="/static/images/eye.png" @click="key_state_change()" class="cursor">
+								</div>
+								<div v-show="key_state == true">
+									<span style="white-space: pre-wrap;">{{ key }}</span>
+									<img src="/static/images/ueye.png" @click="key_state_change()" class="cursor">
+								</div>
+		
+							</div>
+						</div>
+					</td>
+				  </tr>
+			  </tbody>
+			  <tbody v-show="wifi5g && wifiDualband != '0'" class="wifi5g">
+			  <tr>
+				<td width="50%" v-if="wifiDualband == '1'">{{ lang_t('index.radio') }}:</td>
+				<td width="50%" v-if="wifiDualband == '2'">{{ lang_t('index.radio') }}:</td>
+				<td>{{ wifiOff5g == '0'? lang_t('common.on') : lang_t('common.off') }}</td>
+			  </tr>
+			  <tr>
+				<td>SSID:</td>
+				<td>{{ ssid5g }}</td>
+			  </tr>
+			  <tr v-if="wifiOff5g=='0'">
+				<td>{{ lang_t('index.channel') }}:</td>
+				<td>{{ current_channel5g }}</td>
+			  </tr>
+			  <tr>
+				<td>MAC:</td>
+				<td>{{ bssid5g }}</td>
+			  </tr>
+			  <tr v-if="key5g != ''&&ecrWay_5g!='0'">
+				  <td>{{ lang_t('wifi.encryption') }}</td>
+				  <td>{{encryptionWay_5g}}</td>
+			  </tr>
+			  <tr>
+					<td>{{ lang_t('wifi.pass') }}:</td>
+					<td style="white-space: normal;">
+						<div>
+							<div v-if="(key5g == ''||ecrWay_5g=='0')">
+							  <div>{{ lang_t('wifi.dispass') }}</div>
+							</div>
+							<div v-else>
+							  <div v-if="key5g_state == true">
+								<span style="white-space: pre-wrap;">{{ key5g }}</span>
+								<img src="/static/images/ueye.png" @click="key5g_state_change()" class="cursor">
+							  </div>
+							  <div v-if="key5g_state == false">
+								********
+								<img src="/static/images/eye.png" @click="key5g_state_change()" class="cursor">
+							  </div>
+							</div>
+						</div>
+					</td>
+				  </tr>
+			  </tbody>
+			  <tbody v-show="wifi5g && wifiDualband == '2'" class="wifi5g">
+			  <tr>
+				<td width="50%">{{ lang_t('index.radio') }}:</td>
+				<td>{{ wifiOff5g2 == '0'? lang_t('common.on') : lang_t('common.off') }}</td>
+			  </tr>
+			  <tr>
+				<td>SSID:</td>
+				<td>{{ ssid5g2 }}</td>
+			  </tr>
+			  <tr v-if="wifiOff5g2 == '0'">
+				<td>{{ lang_t('index.channel') }}:</td>
+				<td>{{ current_channel5g2 }}</td>
+			  </tr>
+			  <tr>
+				<td>MAC:</td>
+				<td>{{ bssid5g2 }}</td>
+			  </tr>
+			  </tbody>
+			  <tbody v-if="isRptMode&&((globalConfig.rptWifiIdx=='0'&&wifi2g)||(globalConfig.rptWifiIdx=='1'&&wifi5g))">
+			  <tr>
+			    <td>{{ lang_t('index.rpt_status') }}:</td>
+				<td>{{ rptConnStatus == 'success'? lang_t('index.rpt_conn') : lang_t('index.rpt_disconn')}}</td>
+			  </tr>
+			  <tr>
+				<td>{{ lang_t('index.rptmsg_ssid') }}:</td>
+				<td>{{ apcliSsid }}</td>
+			  </tr>
+			  <tr>
+				<td>{{ lang_t('index.rptmsg_mac') }}:</td>
+				<td>{{ apcliBssid }}</td>
+			  </tr>
+			  </tbody>
+			</table>
+		  </div>
+		</div>
+
+		<div class="adv-info">
+		  <div class="adv-info-head">
+		  	<div style="padding:6px 10px;">
+			  <img src="/static/images/port.png">
+			  <span class="star-title">LAN</span>
+		 	  <span class="star-box" v-if="!wanShow">
+				<a href="#" :class="lanipv4_class" v-show="ipv6Support" @click="statuShow('lanipv4')">IPv4</a>
+				<a href="#" :class="lanipv6_class" v-if="ipv6Support" @click="statuShow('lanipv6')">IPv6</a>
+			  </span>
+		  	</div>
+		  </div>
+		  <div class="adv-info-box">
+			<table class="t_table2">
+			  <tbody v-show="lanipv4" class="lanipv4">
+			  <tr>
+				<td width="50%">{{ lang_t('index.ip') }}:</td>
+				<td>{{ lanIp }}</td>
+			  </tr>
+			  <tr>
+				<td>{{ lang_t('index.dhcp_server') }}:</td>
+				<td>{{ lanDhcpServer == '1' ? lang_t('common.on') : lang_t('common.off') }}</td>
+			  </tr>
+			  <tr>
+				<td>MAC:</td>
+				<td>{{ lanMac }}</td>
+			  </tr>			  
+			  </tbody>
+			  <tbody v-show="lanipv6" class="lanipv6">
+			  <tr>
+				<td width="50%">{{ lang_t('index.global_address') }}:</td>
+				<td>{{ ipv6LanGlobalAddree }}</td>
+			  </tr>
+			  <tr>
+				<td>{{ lang_t('index.link_local_address') }}:</td>
+				<td>{{ ipv6LanLinkAddree }}</td>
+			  </tr>
+			  <!--<tr>
+				<td>{{ lang_t('index.gateway') }}:</td>
+				<td>{{ ipv6LanGw }}</td>
+			  </tr>-->
+			  </tbody>
+			</table>
+		  </div>
+		</div>
+
+		<div class="adv-info">
+		  <div class="adv-info-head">
+		  	<div style="padding:5.25px 10px;">
+		  	  <img src="/static/images/system.png">
+			  <span class="star-title">{{ lang_t('index.system') }}</span>
+		  	</div>
+		  </div>
+		  <div class="adv-info-box">
+			<table class="t_table2">
+			  <tbody>
+			  <tr>
+				<td width="50%">{{ lang_t('index.model') }}:</td>
+				<td>{{ model }}</td>
+			  </tr>
+			  <tr>
+				<td>{{ lang_t('index.version') }}:</td>
+				<td>{{ fmVersion }}</td>
+			  </tr>
+			  <tr>
+				<td>{{ lang_t('index.up_time') }}:</td>
+				<td>{{ upTime }}</td>
+			  </tr>
+			  <tr>
+				<td>{{ lang_t('index.build_time') }}:</td>
+				<td>{{ buildTime }}</td>
+			  </tr>
+			  <tr>
+				<td>{{ lang_t('index.op_mode') }}:</td>
+				<td>{{ currentMode }}</td>
+			  </tr>
+			  </tbody>
+			</table>
+		  </div>
+		</div>
+	  </div>
+	</div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,Configured:!1,ipv6Support:!1,wanipv4:!0,wanipv6:!1,lanipv4:!0,lanipv6:!1,wifi2g:!0,wifi5g:!1,wanipv4_class:"star star-active",wanipv6_class:"star star-m",lanipv4_class:"star star-active",lanipv6_class:"star star-m",wifi2g_class:"star star-active",wifi5g_class:"star star-m",cpuOccupy:0,ramOccupy:0,downOccupy:0,upOccupy:0,parent_up:"",parent_down:"",lanUserNum:0,registStatus:"",wifiDualband:"0",state:!0,wanShow:!1,wanWay:"",wanStatus:"",ipv6WanWay:"",ipv6WanStatus:"",onlineTime:"",wanIp:"",wanGw:"",wanPriDns:"",wanSecDns:"",wanMac:"",ipv6WanLinkType:"",ipv6WanOriginType:"",ipv6WanGlobalAddree:"",ipv6WanLinkAddree:"",ipv6WanGw:"",ipv6WanDns:"",wifiOff:"",ssid:"",channel:"",bssid:"",wifiOff5g:"",ssid5g:"",channel5g:"",bssid5g:"",wifiOff5g2:"",ssid5g2:"",channel5g2:"",bssid5g2:"",lanIp:"",lanDhcpServer:"",lanMac:"",ipv6LanGlobalAddree:"",ipv6LanLinkAddree:"",ipv6LanGw:"",model:"",fmVersion:"",upTime:"",buildTime:"",imei:"",imsi:"",wan4g_flag:"0",wanStrategyinfo:"",modemInfos:null,wanConnTime:"",rptConnStatus:"",opmode:"",autoChanne:"",autoChannel5g:"",autoChannel5g2:"",cellid:"",channel_4g:"",band:"",rsrp:"",rsrq:"",rssi_4g:"",sinr:"",cpuOccupyPercent:{"stroke-dasharray":2*Math.PI*47.5*.7+" "+2*Math.PI*47.5*(1-.7)},ramOccupyPercent:{"stroke-dasharray":2*Math.PI*47.5*.7+" "+2*Math.PI*47.5*(1-.7)},upOccupyPercent:{"stroke-dasharray":2*Math.PI*47.5*.7+" "+2*Math.PI*47.5*(1-.7)},downOccupyPercent:{"stroke-dasharray":2*Math.PI*47.5*.7+" "+2*Math.PI*47.5*(1-.7)},userNumOccupyPercent:{"stroke-dasharray":2*Math.PI*47.5*.7+" "+2*Math.PI*47.5*(1-.7)},isRptMode:!1,detectStatus:"2",apcliSsid:"",apcliBssid:"",key:"",key5g:"",key_state:!1,key5g_state:!1,linkBool:!1,wanMode:"",wpaMode:"",wpaMode5g:"",encryptionWay_5g:"",encryptionWay:"",ecrWay:"",ecrWay_5g:""}},computed:{registStatusMsg:function(){switch(this.registStatus){case"idle":case"connected":case"searching":case"noSim":case"simPinLock":case"simPukLock":case"noModem":return this.lang_t("index."+this.registStatus);default:return""}},currentMode:function(){return this.lang_t("opmode."+this.globalConfig.opmode)},current_channel:function(){return"0"==this.channel?this.lang_t("index.auto")+" ("+this.autoChannel+")":this.channel},current_channel5g:function(){return"0"==this.channel5g?this.lang_t("index.auto")+" ("+this.autoChannel5g+")":this.channel5g},current_channel5g2:function(){return"0"==this.channel5g2?this.lang_t("index.auto")+" ("+this.autoChannel5g2+")":this.channel5g}},mounted:function(){var a=this;980<window.innerWidth&&(a.$refs.advbox.style.width=window.screen.width-310+"px"),"br"!=a.globalConfig.opmode&&"rpt"!=a.globalConfig.opmode||(a.wanShow=!0)},created:function(){var a=this;"rpt"!=a.globalConfig.opmode&&"wisp"!=a.globalConfig.opmode||(a.isRptMode=!0),a.ipv6Support=a.globalConfig.ipv6Support,a.getSysState(),a.getNetInfo(),setInterval(function(){a.getNetInfo()},5e3)},updated:function(){this.checkPassType(2),this.checkPassType(5)},methods:{key_state_change:function(){this.key_state?this.key_state=!1:this.key_state=!0},key5g_state_change:function(){this.key5g_state?this.key5g_state=!1:this.key5g_state=!0},checkPassType:function(a){var n="WPA2-PSK";if(globalConfig.wifiWepWpaSupport)switch(((2==a?this.ecrWay:this.ecrWay_5g)||"").toString()){case"1":n=lang_t("wifi.open_key");break;case"2":n=lang_t("wifi.shared_key");break;case"3":n="WPA-PSK";break;case"4":n="WPA2-PSK";break;case"5":n="WPA/WPA2-PSK";break;default:n=lang_t("wifi.dispass")}else(2==a?"2"==this.wpaMode:"2"==this.wpaMode5g)&&(n="WPA2/WPA3-PSK");2==a?this.encryptionWay=n:this.encryptionWay_5g=n},getSysState:function(){var e=this;uiPost.getSysStatusCfg(function(a){e.imei=a.imei,e.imsi=a.imsi,e.wifiDualband=a.wifiDualband,"1"==a.ipv6Enabled&&(e.ipv6WanLinkType=a.ipv6WanLinkType,e.ipv6WanOriginType=a.ipv6WanOriginType,e.ipv6WanGlobalAddree=a.ipv6WanGlobalAddree,e.ipv6WanLinkAddree=a.ipv6WanLinkAddree,e.ipv6WanGw=a.ipv6WanGw,e.ipv6WanDns=a.ipv6WanDns,e.ipv6LanGlobalAddree=a.ipv6LanGlobalAddree,e.ipv6LanLinkAddree=a.ipv6LanLinkAddree,e.ipv6LanGw=a.ipv6LanGw),e.bssid=a.bssid,e.wifiOff=a.wifiOff,e.ssid=a.ssid,e.channel=a.channel,a.key&&(e.key=a.key),e.autoChannel=a.autoChannel,"0"!=a.wifiDualband&&(e.bssid5g=a.bssid5g,e.wifiOff5g=a.wifiOff5g,e.ssid5g=a.ssid5g,e.channel5g=a.channel5g,e.autoChannel5g=a.autoChannel5g,a.key5g&&(e.key5g=a.key5g)),"2"==a.wifiDualband&&(e.bssid5g2=a.bssid5g2,e.wifiOff5g2=a.wifiOff5g2,e.ssid5g2=a.ssid5g2,e.channel5g2=a.channel5g2,e.autoChannel5g2=a.autoChannel5g2),e.ecrWay=a.encryptionWay,e.ecrWay_5g=a.encryptionWay_5g,e.wpaMode=a.wpaMode,e.wpaMode5g=a.wpaMode5g,e.lanIp=a.lanIp,e.lanDhcpServer=a.lanDhcpServer,e.lanMac=a.lanMac,e.model=a.model,e.fmVersion=a.fmVersion,e.upTime=e.reTime(a.upTime);var n=new Date(Date.parse(a.buildTime.replace(/-/g,"/"))),t=n.getFullYear()+"-"+(n.getMonth()+1)+"-"+n.getDate()+" "+n.getHours()+":"+n.getMinutes()+":"+n.getSeconds();e.buildTime=t,e.isRptMode&&(e.apcliSsid=a.apcliSsid,e.apcliBssid=a.apcliBssid),e.checkPassType(2),e.checkPassType(5)})},key5g_state_change:function(){this.key5g_state?this.key5g_state=!1:this.key5g_state=!0},getNetInfo:function(){var i=this;uiPost.getNetInfoCfg(function(a){if(null==a.cpuRatio)return!1;var n;i.lanUserNum=Math.round(Number(a.lanUserNum)),i.cpuOccupy=Math.round(Number(a.cpuRatio)),i.ramOccupy=Math.round(Number(a.memRatio)),n=2*Math.PI*47.5,i.cpuOccupyPercent={"stroke-dasharray":n*i.cpuOccupy/100+" "+n*(1-i.cpuOccupy/100)},i.ramOccupyPercent={"stroke-dasharray":n*i.ramOccupy/100+" "+n*(1-i.ramOccupy/100)},i.userNumOccupyPercent={"stroke-dasharray":n*i.lanUserNum/254+" "+n*(1-i.lanUserNum/254)},i.detectStatus=a.detectStatus,console.log(i.detectStatus),"2"!=a.detectStatus&&(i.detectMode=a.detectMode,i.detectFailCount=a.detectFailCount);var t=getFlow(1024*Number(a.up)).split(" "),e=getFlow(1024*Number(a.down)).split(" ");i.parent_up=t[1],i.parent_down=e[1],i.upOccupy=t[0],i.downOccupy=e[0],i.upOccupyPercent={"stroke-dasharray":n*a.up/5120+" "+n*(1-a.up/5120)},i.downOccupyPercent={"stroke-dasharray":n*a.down/5120+" "+n*(1-a.down/5120)},"wisp"!=globalConfig.opmode&&"gw"!=globalConfig.opmode||(i.wanStrategyinfo=a.modemNetType,i.modemInfos=a.modem||null,i.registStatus=(a.modem||{}).registerStatus,i.wanIp=a.wanIp,i.wanGw=a.wanGw,i.wanPriDns=a.wanPriDns,i.wanSecDns=a.wanSecDns,i.wanMac=a.wanMac,i.wanConnTime=i.reTime(a.wanConnTime),i.upTime=i.reTime(a.upTime),i.wanStatus=a.wanConnStatus,"0"==a.enabled?i.Configured=!1:(i.Configured=!0,i.linkBool="connected"==a.wanConnStatus,a.modemNetType?i.wanWay="Modem":(i.wanMode=a.wanMode,"0"==a.wanMode?i.wanWay=lang_t("index.static_ip"):"1"==a.wanMode?i.wanWay="DHCP":"3"==a.wanMode?i.wanWay="PPPoE":"4"==a.wanMode?i.wanWay="PPTP":"6"==a.wanMode?i.wanWay="L2TP":"7"==a.wanMode&&(i.wanWay="USE-NET"))),"1"==a.ipv6Enabled&&("connected"==a.ipv6ConnStatus?i.ipv6WanStatus=i.lang_t("index.connected"):i.ipv6WanStatus=i.lang_t("index.disconnected"),"0"==a.ipv6Mode?i.ipv6WanWay=i.lang_t("index.static_ip"):"1"==a.ipv6Mode?i.ipv6WanWay="DHCP":"3"==a.ipv6Mode?i.ipv6WanWay="PPPoE":"7"==a.ipv6Mode&&(i.ipv6WanWay="USE-NET"))),globalConfig.LTEInfoSupport&&(i.cellid=a.cellid,i.channel_4g=a.channel_4g,i.band=a.band,i.rsrp=a.rsrp,i.rsrq=a.rsrq,i.rssi_4g=a.rssi_4g,i.sinr=a.sinr),i.isRptMode&&(i.rptConnStatus=a.rptConnStatus)})},linkDialFun:function(a){uiPost.setManualDialCfg({dialStatus:a},function(a){var n=5;a&&a.wtime&&(n=a.wtime),Cstool.Count(n,"js",function(){location.href=location.href})})},reTime:function(a){var n=a.split(";"),t="";return t+=n[0]+" "+this.lang_t("index.day")+", ",t+=n[1]+" "+this.lang_t("index.hour")+", ",t+=n[2]+" "+this.lang_t("index.min")+", ",t+=n[3]+" "+this.lang_t("index.sec")},failMsgFun:function(){var a=this.lang_t("wan.msg33"),n=3,t=this.lang_t("wan.wired");"1"==this.detectMode&&(n=5,t="3G/4G"),"1"==this.detectStatus&&(a=this.lang_t("wan.msg34",[t,this.detectFailCount,n])),Cstool.Msg({content:a})},statuShow:function(a){"wanipv4"==a?(this.wanipv4=!0,this.wanipv6=!1,this.wanipv6_class="star star-m",this.wanipv4_class="star star-active"):"wanipv6"==a?(this.wanipv4=!1,this.wanipv6=!0,this.wanipv4_class="star star-m",this.wanipv6_class="star star-active"):"lanipv4"==a?(this.lanipv4=!0,this.lanipv6=!1,this.lanipv6_class="star star-m",this.lanipv4_class="star star-active"):"lanipv6"==a?(this.lanipv4=!1,this.lanipv6=!0,this.lanipv4_class="star star-m",this.lanipv6_class="star star-active"):"wifi2g"==a?(this.wifi2g=!0,this.wifi5g=!1,this.wifi5g_class="star star-m",this.wifi2g_class="star star-active"):"wifi5g"==a&&(this.wifi2g=!1,this.wifi5g=!0,this.wifi2g_class="star star-m",this.wifi5g_class="star star-active")}}}</script><script src="/static/js/main.js"></script></body></html>

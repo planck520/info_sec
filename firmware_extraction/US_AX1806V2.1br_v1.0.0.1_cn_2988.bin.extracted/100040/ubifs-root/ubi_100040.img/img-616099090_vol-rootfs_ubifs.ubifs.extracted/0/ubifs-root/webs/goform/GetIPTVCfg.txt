@@ -1,0 +1,8 @@
+{
+"iptvEn": "1",
+"iptvType": "shanghai",
+"list": "28,88",
+"vlanId": "85",
+"bindLan": "3",
+"delVlanTag": "1"
+}

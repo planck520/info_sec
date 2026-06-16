@@ -1,0 +1,129 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title>TOTOLINK</title><meta content="width=device-width,initial-scale=1,user-scalable=no" name="viewport"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><link rel="stylesheet" href="/static/css/phone/main.css"><link rel="stylesheet" href="/static/css/phone/home.css"></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <div class="menu-box menu-box-on" v-show="menuShow">
+    <div class="menu" :style="{height: menuHeight}">
+      <ul>
+        <li v-if="globalConfig.opmode=='wisp'||globalConfig.opmode=='gw'"><a class="parental" @click="goHref('parental')">{{ lang_t('menu.parental') }}</a></li>
+        <li v-if="(globalConfig.smartFlowSupport)&&(globalConfig.opmode=='wisp'||globalConfig.opmode=='gw')"><a class="qos" @click="goHref('qos')">{{ lang_t('menu.qos') }}</a></li>
+        <li v-if="globalConfig.modelType != '4g'"><a class="guest" @click="goHref('guest')">{{ lang_t('menu.guest') }}</a></li>
+        <li v-if="globalConfig.appfilterSupport"><a class="appfilter" @click="goHref('appfilter')">{{ lang_t('menu.appfilter') }}</a></li>
+        <!-- <li><a class="storage" href="storage.html">{{ lang_t('menu.storage') }}</a></li> -->
+        <li v-if="globalConfig.pptpServerSupport || globalConfig.l2tpServerSupport"><a class="vpn" @click="goHref('vpn')">{{ lang_t('menu.vpn') }}</a></li>
+        <li v-if="globalConfig.opmode=='wisp'||globalConfig.opmode=='gw'"><a class="urlfilter" @click="goHref('urlfilter')">{{ lang_t('menu.urlfilter') }}</a></li>
+        <li v-if="globalConfig.gameSpeedSupport"><a class="gamespeed" @click="goHref('gamespeed')">{{ lang_t('menu.gamespeed') }}</a></li>
+        <li v-if="globalConfig.opmode == 'gw' || globalConfig.opmode == 'br'"><a class="wifi_schedule" @click="goHref('wifi_schedule')">{{ lang_t('menu.wifi_schedule') }}</a></li>
+      </ul>
+    </div>
+    <div class="menu-box-off">
+      <img src="/static/images/phone/menu_app.png" @click="menuOffFun">
+      <p class="position">{{ lang_t('menu.application') }}</p>
+    </div>
+  </div>
+  <div>
+    <div class="position1 speed_down">
+      <img src="/static/images/phone/speed_down2.png" align="absmiddle" />
+      <span>{{ downOccupy }}</span>
+    </div>
+    <div class="position1 speed_up">
+      <img src="/static/images/phone/speed_up2.png" align="absmiddle" />
+      <span>{{ upOccupy }}</span>
+    </div>
+	  <div class="position wizard" @click="wizardBtnFun" v-if="globalConfig.opmode=='gw'">
+      <img src="/static/images/phone/wizard.png" align="absmiddle" />
+      <p>{{ lang_t('menu.wizard') }}</p>
+    </div>
+    <div class="position1 cpu">
+      <img src="/static/images/phone/cpu.png" style="position: absolute;bottom: 40px;left: 38px;">
+      <svg width="110" height="110" xmlns="http://www.w3.org/2000/svg">
+        <text style="fill:#fff;" font-size="14" x="44" y="48" width="110" height="110" stroke="#fff">{{ cpuOccupy }}%</text>
+        <!-- <image href="/static/images/phone/cpu.png" x="38" y="52" /> -->
+        <circle 
+		  cx="55" 
+		  cy="55" 
+		  r="42.5" 
+		  stroke-width="12" 
+		  stroke="#81afd4" 
+		  fill="none">
+		</circle>
+        <circle 
+		  cx="55" 
+		  cy="55" 
+		  r="42.5" 
+		  stroke-width="12" 
+		  stroke="#a3a0fb" 
+		  fill="none" 
+		  transform="matrix(0,-1,1,0,0,110)" 
+		  stroke-dasharray="" 
+		  :style="cpuOccupyPercent">
+		</circle>
+      </svg>
+      <p>CPU</p>
+    </div>
+    <div class="position1 ram">
+      <img src="/static/images/phone/ram.png" style="position: absolute;bottom: 50px;left: 40px;">
+      <svg width="110" height="110">
+        <text style="fill:#fff;" font-size="14" x="44" y="48" width="110" height="110" stroke="#fff">{{ ramOccupy }}%</text>
+        <!-- <image href="/static/images/phone/ram.png" x="38" y="62" /> -->
+        <circle 
+		  cx="55" 
+		  cy="55" 
+		  r="42.5" 
+		  stroke-width="12" 
+		  stroke="#81afd4" 
+		  fill="none">
+		</circle>
+        <circle 
+		  cx="55" 
+		  cy="55" 
+		  r="42.5" 
+		  stroke-width="12" 
+		  stroke="#e99900" 
+		  fill="none" 
+		  transform="matrix(0,-1,1,0,0,110)" 
+		  stroke-dasharray="" 
+		  :style="ramOccupyPercent">
+		</circle>
+      </svg>
+      <p>RAM</p>
+    </div>  
+    <div class="circle">
+      <img src="/static/images/phone/circle.png" />
+      <div class="position devices" @click="devicesBtnFun">
+		<img src="/static/images/phone/devices.png" />
+		<div class="system-badge-count system-badge-dot">
+          <p>{{ userNum }}</p>
+        </div>
+        <p>{{ lang_t('menu.devices') }}</p>
+      </div>
+      <div class="position wireless" @click="wifiBtnFun">
+		<img src="/static/images/phone/wifi.png" />
+        <p >{{ lang_t('menu.wifi_vi') }}</p>
+      </div>
+      <div class="position opmode" @click="opmodeBtnFun" v-if="globalConfig.opmodeSupport">
+        <img src="/static/images/phone/opmode.png" />
+        <p  style="white-space: nowrap;">{{ lang_t('menu.opmode') }}</p>
+      </div>
+      <div class="position internet" @click="wanBtnFun">
+       <span style="position:absolute;right:-30%;"><x-icon :type="wanStatusImg"></x-icon></span>
+        <img src="/static/images/phone/internet2.png" />
+		<p class="position">{{ lang_t('menu.wan') }}</p>
+      </div>
+      <div class="position router" @click="infoBtnFun">
+          <img src="/static/images/phone/router2.png" />
+          <p>{{ model }}</p>
+      </div>
+      <!--<div class="position wire"></div>-->
+    </div>
+    <div class="position app" v-show="!menuShow" @click="menuOnFun">
+      <img src="/static/images/phone/menu_app2.png" />
+      <p>{{ lang_t('menu.application') }}</p>
+    </div>
+    <div class="position pc" @click="pcBtnFun" v-if="showPc">
+        <img src="/static/images/phone/pc.png" style="width:40px">
+        <p style="white-space: nowrap;">{{ lang_t('menu.pc_version') }}</p>
+    </div>
+    <div class="position tools" @click="toolsBtnFun">
+      <img src="/static/images/phone/tools.png" />
+      <p>{{ lang_t('menu.tools') }}</p>
+    </div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/phone_layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,cpuOccupyPercent:{"stroke-dasharray":2*Math.PI*42.5*.7+" "+2*Math.PI*42.5*(1-.7)},ramOccupyPercent:{"stroke-dasharray":2*Math.PI*42.5*.7+" "+2*Math.PI*42.5*(1-.7)},menuShow:!1,cpuOccupy:0,ramOccupy:0,wanStatusImg:"error",model:"",userNum:0,upOccupy:0,downOccupy:0,menuHeight:"300px",showPc:!0}},created:function(){var n=this;(0<=location.href.indexOf("d.carystudio.com")||self!=top)&&(this.showPc=!1),this.menuHeight=.95*window.innerHeight+"px",n.netInit(),setInterval(function(){n.netInit()},5e3),uiPost.getSysStatusCfg(function(t){n.model=t.model})},methods:{goHref:function(t){location.href=t+".html?timestamp="+(new Date).getTime()},netInit:function(){var e=this;uiPost.getNetInfoCfg(function(t){if(null==t.cpuRatio)return!1;var n;e.cpuOccupy=Math.round(Number(t.cpuRatio)),e.ramOccupy=Math.round(Number(t.memRatio)),e.userNum=t.lanUserNum,n=2*Math.PI*42.5,e.cpuOccupyPercent={"stroke-dasharray":n*e.cpuOccupy/100+" "+n*(1-e.cpuOccupy/100)},e.ramOccupyPercent={"stroke-dasharray":n*e.ramOccupy/100+" "+n*(1-e.ramOccupy/100)},"connected"==t.wanConnStatus?e.wanStatusImg="tick":e.wanStatusImg="error",e.upOccupy=getFlow(1024*Number(t.up)),e.downOccupy=getFlow(1024*Number(t.down))})},menuOffFun:function(){this.menuShow=!1},menuOnFun:function(){this.menuShow=!0},wizardBtnFun:function(){location.href="wizard.html?time="+(new Date).getTime()},infoBtnFun:function(){location.href="info.html?time="+(new Date).getTime()},wanBtnFun:function(){"br"!=this.globalConfig.opmode&&"rpt"!=this.globalConfig.opmode&&(location.href="wan.html?time="+(new Date).getTime())},devicesBtnFun:function(){location.href="device.html?time="+(new Date).getTime()},opmodeBtnFun:function(){location.href="opmode.html?time="+(new Date).getTime()},wifiBtnFun:function(){location.href="wifi.html?time="+(new Date).getTime()},toolsBtnFun:function(){location.href="tools.html"},pcBtnFun:function(){Cstool.Mark({content:this.lang_t("menu.pc_msg"),ok:function(){location.href="/advance/index.html"}})}}}</script><script src="/static/js/main.js"></script></body></html>

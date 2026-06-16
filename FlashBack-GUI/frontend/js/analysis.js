@@ -14,6 +14,7 @@
     timer: null,
     startedAt: null,
     initialized: false,
+    autoScroll: true,
   };
 
   function $(id) { return document.getElementById(id); }
@@ -40,7 +41,14 @@
     const ts = timestamp || new Date().toLocaleTimeString('zh-CN', { hour12: false });
     div.innerHTML = '<span class="ts">[' + escapeHtml(ts) + ']</span> <span class="' + cls + '">●</span> ' + escapeHtml(message || '');
     term.appendChild(div);
-    term.scrollTop = term.scrollHeight;
+    trimTerminalLines(term, 200);
+    if (state.autoScroll) term.scrollTop = term.scrollHeight;
+  }
+
+  function trimTerminalLines(term, maxLines) {
+    while (term.children.length > maxLines) {
+      term.removeChild(term.firstElementChild);
+    }
   }
 
   function escapeHtml(value) {
@@ -61,8 +69,7 @@
     panel.innerHTML = [
       '<div class="section-hd"><span class="dot amber"></span> ANALYSIS CONFIG</div>',
       '<div class="panel-body analysis-form">',
-      '  <label class="analysis-field"><span>固件目录</span><div class="analysis-input-row"><input class="input" id="analysis-dir-input" placeholder="例如 D:\\firmware"><button class="btn btn-secondary btn-sm" id="analysis-scan-dir">扫描</button></div></label>',
-      '  <label class="analysis-field"><span>输出目录</span><input class="input" id="analysis-output-input" placeholder="例如 D:\\flashback-output"></label>',
+      '  <label class="analysis-field"><span>输出目录</span><div class="analysis-input-row"><input class="input" id="analysis-output-input" placeholder="例如 D:\\flashback-output"><button class="btn btn-secondary btn-sm" id="btn-select-output-dir">选择</button></div></label>',
       '  <div class="analysis-grid">',
       '    <label class="analysis-field"><span>分析模式</span><select class="select" id="analysis-mode"><option value="standard">标准模式</option><option value="nocache">禁用缓存</option><option value="nopropagator">禁用传播器</option></select></label>',
       '    <label class="analysis-field"><span>并行数</span><input class="input" id="analysis-parallel" type="number" min="1" max="4" value="1"></label>',
@@ -90,14 +97,23 @@
 
   function bindEvents() {
     const selectBtn = $('btn-select-dir');
-    const scanBtn = $('analysis-scan-dir');
+    const selectFileBtn = $('btn-select-file');
+    const outputBtn = $('btn-select-output-dir');
     const startBtn = $('btn-start-scan');
     const stopBtn = $('btn-stop-scan');
+    const autoBtn = $('btn-log-autoscroll');
+    const copyBtn = $('btn-log-copy');
+    const clearBtn = $('btn-log-clear');
 
     if (selectBtn) selectBtn.onclick = chooseFirmwareDir;
-    if (scanBtn) scanBtn.onclick = scanDirectory;
+    if (selectFileBtn) selectFileBtn.onclick = chooseFirmwareFile;
+    if (outputBtn) outputBtn.onclick = chooseOutputDir;
     if (startBtn) startBtn.onclick = startScan;
     if (stopBtn) stopBtn.onclick = stopScan;
+    if (autoBtn) autoBtn.onclick = toggleAutoScroll;
+    if (copyBtn) copyBtn.onclick = copyLogs;
+    if (clearBtn) clearBtn.onclick = clearLogs;
+    updateAutoScrollButton();
 
     const list = $('firmware-list');
     if (list) {
@@ -107,28 +123,105 @@
     }
   }
 
-  function chooseFirmwareDir() {
-    const input = $('analysis-dir-input');
-    const current = input ? input.value : state.firmwareDir;
-    const next = window.prompt('请输入固件目录完整路径：', current || '');
-    if (next == null) return;
-    state.firmwareDir = next.trim();
-    if (input) input.value = state.firmwareDir;
-    setText('dir-path', state.firmwareDir || '<not selected>');
-    if (state.firmwareDir) scanDirectory();
+  function updateAutoScrollButton() {
+    const btn = $('btn-log-autoscroll');
+    if (!btn) return;
+    btn.classList.toggle('active', state.autoScroll);
+    btn.textContent = state.autoScroll ? 'AUTO ON' : 'AUTO OFF';
   }
 
-  async function scanDirectory() {
-    const input = $('analysis-dir-input');
-    state.firmwareDir = (input && input.value.trim()) || state.firmwareDir;
+  function toggleAutoScroll() {
+    state.autoScroll = !state.autoScroll;
+    updateAutoScrollButton();
+    if (state.autoScroll) {
+      const term = $('terminal-body');
+      if (term) term.scrollTop = term.scrollHeight;
+    }
+  }
+
+  async function copyLogs() {
+    const term = $('terminal-body');
+    if (!term) return;
+    const text = Array.from(term.querySelectorAll('.terminal-line')).map(function (line) {
+      return line.textContent || '';
+    }).join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('日志已复制到剪贴板', 'success');
+    } catch (err) {
+      showToast('复制失败：' + err.message, 'error', 4000);
+    }
+  }
+
+  function clearLogs() {
+    const term = $('terminal-body');
+    if (!term) return;
+    term.innerHTML = '';
+    addLog('INFO', '日志已清空');
+  }
+
+  async function selectDirectory(title) {
+    if (window.electronAPI && typeof window.electronAPI.selectDirectory === 'function') {
+      return window.electronAPI.selectDirectory(title);
+    }
+    const resp = await api.get('/api/scan/select-dir', { title: title || '选择目录' });
+    return resp && resp.path;
+  }
+
+  async function selectFile(title) {
+    if (window.electronAPI && typeof window.electronAPI.selectFile === 'function') {
+      return window.electronAPI.selectFile(title);
+    }
+    const resp = await api.get('/api/scan/select-file', { title: title || '选择固件二进制文件' });
+    return resp && resp.path;
+  }
+
+  async function chooseFirmwareDir() {
+    let next = null;
+    try {
+      next = await selectDirectory('选择固件目录', state.firmwareDir);
+    } catch (err) {
+      showToast('打开目录选择窗口失败：' + err.message, 'error', 5000);
+      next = window.prompt('请输入固件目录完整路径：', state.firmwareDir || '');
+    }
+    if (!next) return;
+    await scanPath(String(next).trim());
+  }
+
+  async function chooseFirmwareFile() {
+    let next = null;
+    try {
+      next = await selectFile('选择固件二进制文件');
+    } catch (err) {
+      showToast('打开文件选择窗口失败：' + err.message, 'error', 5000);
+      next = window.prompt('请输入固件二进制文件完整路径：', '');
+    }
+    if (!next) return;
+    await scanPath(String(next).trim());
+  }
+
+  async function chooseOutputDir() {
+    const input = $('analysis-output-input');
+    let next = null;
+    try {
+      next = await selectDirectory('选择输出目录', input ? input.value : '');
+    } catch (err) {
+      showToast('打开输出目录选择窗口失败：' + err.message, 'error', 5000);
+      next = window.prompt('请输入输出目录完整路径：', input ? input.value : '');
+    }
+    if (next && input) input.value = String(next).trim();
+  }
+
+  async function scanPath(path) {
+    state.firmwareDir = path;
     if (!state.firmwareDir) {
-      showToast('请先输入固件目录', 'warn');
+      showToast('请先选择固件目录或二进制文件', 'warn');
       return;
     }
 
     setEngineTag('SCANNING', '#f59e0b');
     setText('dir-path', state.firmwareDir);
-    addLog('INFO', '扫描固件目录：' + state.firmwareDir);
+    addLog('INFO', '扫描分析对象：' + state.firmwareDir);
 
     try {
       const data = await api.get('/api/scan/dir', { path: state.firmwareDir });
@@ -136,14 +229,18 @@
       renderFirmwareList();
       setEngineTag('READY', '#22c55e');
       setText('stat-status', 'READY');
-      setText('stat-status-sub', '发现 ' + state.firmwares.length + ' 个固件');
-      showToast('发现 ' + state.firmwares.length + ' 个固件文件', 'success');
-      addLog('INFO', '目录扫描完成，发现 ' + state.firmwares.length + ' 个候选文件');
+      setText('stat-status-sub', '发现 ' + state.firmwares.length + ' 个候选对象');
+      showToast('发现 ' + state.firmwares.length + ' 个候选对象', 'success');
+      addLog('INFO', '对象扫描完成，发现 ' + state.firmwares.length + ' 个候选对象');
     } catch (err) {
       setEngineTag('ERROR', '#ef4444');
-      showToast('目录扫描失败：' + err.message, 'error', 5000);
+      showToast('对象扫描失败：' + err.message, 'error', 5000);
       addLog('ERROR', err.message);
     }
+  }
+
+  async function scanDirectory() {
+    return scanPath(state.firmwareDir);
   }
 
   function renderFirmwareList() {

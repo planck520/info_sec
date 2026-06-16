@@ -1,0 +1,12 @@
+{
+"guestEn": "1",
+"guestSsid": "Tenda_guest",
+"guestSecurity": "wpapsk",
+"guestWrlPwd":"12345678",
+"guestEn_5g": "1",
+"guestSecurity_5g": "wpa2psk",
+"guestSsid_5g": "Tenda_guest_5g",
+"guestWrlPwd_5g":"12345678",
+"wl_mode": "ap",
+"wl_en": "1"
+}

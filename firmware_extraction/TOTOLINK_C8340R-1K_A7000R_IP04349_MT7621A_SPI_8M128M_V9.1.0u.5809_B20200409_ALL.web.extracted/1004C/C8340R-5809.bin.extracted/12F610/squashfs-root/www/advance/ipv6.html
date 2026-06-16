@@ -1,0 +1,234 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"><style>.label-type{font-size:10.998px;font-weight:700;line-height:14px;color:#fff;text-shadow:0 -1px 0 rgba(0,0,0,.25);white-space:nowrap;vertical-align:baseline;background-color:#999;padding:1px 4px 2px;-webkit-border-radius:3px;-moz-border-radius:3px;border-radius:3px}.label-success{background-color:#468847}.lable-title{color:#ea7105;font-weight:700}input[type=text]:disabled{cursor:not-allowed;background-color:#eee;border-color:#ddd}</style></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <!--子菜单-->
+  <adv-child-menu childType="network"></adv-child-menu>   
+  <div class="advance-box">
+	<x-help :text="lang_t('ipv6.help')"></x-help>
+    <br><br>
+	<div class="fun-box">
+      <br>
+      <table class="table">                   
+        <tbody>
+        	<tr>
+			  <td class="fun-left">{{lang_t('ipv6_bak.connect_type')}}:</td>
+			  <td>
+				<select v-model="service" >
+					<option value="off">{{lang_t('rule.off')}}</option>
+					<option value="static">Native Static</option>
+					<option value="dhcp6">Native DHCPv6</option>
+					<option value="6in4">Tunnel 6in4</option>
+					<option value="6to4">Tunnel 6to4</option>
+					<option value="6rd">Tunnel 6rd</option>
+				</select>
+			  </td>
+		    </tr>
+		    <tr v-show="service!='off'">
+			  <td class="fun-left">{{lang_t('ipv6_bak.wan_type')}}:</td>
+			  <td>
+				<span :class="['label-type', wan_type!=''?'label-success':'']">IPoE: {{lang_t('ipv6.dynamic_ip')}}</span>
+			  </td>
+		    </tr>
+		</tbody>
+		<tbody v-if="(service=='6in4'||service=='6to4'||service=='6rd')&&service!='off'">
+		    <tr>
+			  <td class="fun-left"><span class="lable-title">{{lang_t('ipv6_bak.sit_title')}} (SIT)</span></td>
+			  <td></td>
+		    </tr>
+		    <tr v-if="service=='6in4'">
+			  <td class="fun-left">{{lang_t('ipv6_bak.remote')}} (IPv4):</td>
+			  <td>
+				<input type="text" v-model="remote_6in4" v-verify="formRules" data-name="remote_6in">
+			  </td>
+		    </tr>
+		    <tr v-if="service=='6to4'">
+			  <td class="fun-left">{{lang_t('ipv6_bak.relay_to')}} (IPv4):</td>
+			  <td>
+				<input type="text" v-model="relay_6to4" v-verify="formRules" data-name="relay_6to">
+			  </td>
+		    </tr>
+		    <tr v-if="service=='6rd'">
+			  <td class="fun-left">{{lang_t('ipv6_bak.relay_rd')}} (IPv4):</td>
+			  <td>
+				<input type="text" :disabled="dhcp_6rd=='1'" v-model="relay_6rd" v-verify="formRules" data-name="relay_6rd">
+			  </td>
+		    </tr>
+		    <tr v-if="service=='6rd'">
+			  <td class="fun-left">{{lang_t('ipv6_bak.rd_size')}}:</td>
+			  <td>
+				<input type="text" :disabled="dhcp_6rd=='1'" v-model="size_6rd" v-verify="formRules" data-name="size_6rd" style="width: 10%;" maxlength="2">
+			  </td>
+		    </tr>
+		    <tr>
+			  <td class="fun-left">{{lang_t('ipv6_bak.sit')}}:</td>
+			  <td>
+				<input type="text" v-model="sit_mtu" v-verify="formRules" data-name="sit_mtu" style="width: 10%;" maxlength="4">
+			  </td>
+		    </tr>
+		    <tr>
+			  <td class="fun-left">{{lang_t('ipv6_bak.sit_ttl')}}:</td>
+			  <td>
+				<input type="text" v-model="sit_ttl" v-verify="formRules" data-name="sit_ttl" style="width: 10%;" maxlength="3">
+			  </td>
+		    </tr>
+        </tbody>
+		<tbody v-show="service!='off'">
+		    <tr>
+			  <td class="fun-left"><span class="lable-title">{{lang_t('ipv6_bak.set')}} WAN IPv6</span></td>
+			  <td></td>
+		    </tr>
+		    <tr v-show="service=='static'||service=='6in4'">
+			  <td class="fun-left">{{lang_t('ipv6_bak.wan_addr')}}:</td>
+			  <td>
+			  	<x-ipv6-addr v-model="wan_addr"></x-ipv6-addr>
+			  </td>
+		    </tr>
+		    <tr v-if="service=='static'||service=='6in4'">
+			  <td class="fun-left">{{lang_t('ipv6_bak.wan_size')}}:</td>
+			  <td>
+				<input type="text" v-model="wan_size" maxlength="3" v-verify="formRules" data-name="wan_size" style="width: 10%;">
+			  </td>
+		    </tr>
+		    <tr v-show="service=='static'||service=='6in4'">
+			  <td class="fun-left">{{lang_t('ipv6_bak.wan_gw')}}:</td>
+			  <td>
+			  	<x-ipv6-addr v-model="wan_gate"></x-ipv6-addr>
+			  </td>
+		    </tr>
+		    <tr v-show="service=='dhcp6'">
+			  <td class="fun-left">{{lang_t('ipv6_bak.get_wan')}}:</td>
+			  <td>
+				<select v-model="wan_dhcp">
+					<option value="0">Stateless: RA</option>
+					<option value="1">Stateful: DHCPv6 IA-NA</option>
+					<option value="2">{{lang_t('ipv6_bak.two')}}</option>
+				</select>
+			  </td>
+		    </tr>
+		    <tr v-show="service=='dhcp6' && wan_dhcp!='1'">
+			  <td class="fun-left">{{lang_t('ipv6_bak.priv')}} (RFC 4941)</td>
+			  <td>
+				<select v-model="wan_priv">
+					<option value="0">{{lang_t('common.no')}} (*)</option>
+					<option value="1">{{lang_t('common.yes')}}</option>
+				</select>
+			  </td>
+		    </tr>
+		    <tr v-show="service=='6rd'">
+			  <td class="fun-left">{{lang_t('ipv6_bak.get_rd')}}:</td>
+			  <td>
+				<select v-model="dhcp_6rd">
+					<option value="0">{{lang_t('common.no')}}</option>
+					<option value="1">{{lang_t('common.yes')}}</option>
+				</select>
+			  </td>
+		    </tr>
+		    <tr v-show="service=='6rd'&&dhcp_6rd=='0'">
+			  <td class="fun-left">6RD IPv6 {{lang_t('ipv6_bak.per_size')}}:</td>
+			  <td>
+				<x-ipv6-addr v-model="wan_addr"></x-ipv6-addr>
+			  </td>
+		    </tr>
+		    <tr v-if="service=='6rd'&&dhcp_6rd=='0'">
+			  <td class="fun-left">6RD {{lang_t('ipv6_bak.per_len')}}:</td>
+			  <td>
+				<input type="text" v-model="wan_size" maxlength="3" v-verify="formRules" data-name="wan_size" style="width: 10%;">
+			  </td>
+		    </tr>
+        </tbody>
+        <tbody v-show="service!='off'">
+        	<tr>
+			  <td class="fun-left"><span class="lable-title">
+{{lang_t('ipv6_bak.dns_wan')}}</span></td>
+			  <td></td>
+		    </tr>
+		    <tr v-show="service=='dhcp6'">
+			  <td class="fun-left">{{lang_t('ipv6_bak.auto_dns')}}:</td>
+			  <td>
+				<x-switch v-model="dns_auto_fake"></x-switch>
+			  </td>
+		    </tr>
+		    <tr v-show="!dns_auto_fake || service!='dhcp6'">
+			  <td class="fun-left">{{lang_t('ipv6_bak.server')}} 1:</td>
+			  <td>
+			  	<x-ipv6-addr v-model="dns1"></x-ipv6-addr>
+			  </td>
+		    </tr>
+		    <tr v-show="!dns_auto_fake || service!='dhcp6'">
+			  <td class="fun-left">{{lang_t('ipv6_bak.server')}} 2:</td>
+			  <td>
+				<x-ipv6-addr v-model="dns2"></x-ipv6-addr>
+			  </td>
+		    </tr>
+		    <tr v-show="!dns_auto_fake || service!='dhcp6'">
+			  <td class="fun-left">{{lang_t('ipv6_bak.server')}} 3:</td>
+			  <td>
+				<x-ipv6-addr v-model="dns3"></x-ipv6-addr>
+			  </td>
+		    </tr>
+        </tbody>
+        <tbody v-show="service!='off'">
+        	<tr>
+			  <td class="fun-left"><span class="lable-title">{{lang_t('ipv6_bak.lan_set')}}</span></td>
+			  <td></td>
+		    </tr>
+		    <tr v-show="service=='dhcp6'">
+			  <td class="fun-left">{{lang_t('ipv6_bak.get_lan')}}:</td>
+			  <td>
+				<x-switch v-model="lan_auto_fake"></x-switch>
+			  </td>
+		    </tr>
+		    <tr v-show="service!='6to4'&&service!='6rd'&&(!lan_auto_fake||service!='dhcp6')">
+			  <td class="fun-left">{{lang_t('ipv6_bak.lan_addr')}}:</td>
+			  <td>
+			  	<x-ipv6-addr v-model="lan_addr"></x-ipv6-addr>
+			  </td>
+		    </tr>
+		    <tr v-if="service!='6to4'&&service!='6rd'&&(!lan_auto_fake||service!='dhcp6')">
+			  <td class="fun-left">{{lang_t('ipv6_bak.lan_per_len')}}:</td>
+			  <td>
+				<input type="text" v-model="lan_size" maxlength="2" v-verify="formRules" data-name="lan_size" style="width: 10%;">
+			  </td>
+		    </tr>
+		    <tr>
+			  <td class="fun-left">{{lang_t('ipv6_bak.radv')}}:</td>
+			  <td>
+				<x-switch v-model="lan_radv_fake"></x-switch>
+			  </td>
+		    </tr>
+		    <tr v-show="lan_radv_fake">
+			  <td class="fun-left">{{lang_t('ipv6_bak.lan_dhcp')}}:</td>
+			  <td>
+				<select v-model="lan_dhcp">
+					<option value="0">{{lang_t('common.no')}}</option>
+					<option value="1">Stateless (*)</option>
+					<option value="2">Stateful</option>
+					<option value="3">Stateless & Stateful</option>
+				</select>
+			  </td>
+		    </tr>
+		    <tr v-if="lan_radv_fake&&(lan_dhcp=='2'||lan_dhcp=='3')">
+			  <td class="fun-left">{{lang_t('ipv6_bak.lan_bool')}}:</td>
+			  <td>
+				<input type="text" style="width: 10%;" class="text3" maxlength="4" v-model="lan_sfps_fake1">-<input type="text" style="width: 10%;" class="text3" maxlength="4" v-model="lan_sfps_fake2">
+			  </td>
+		    </tr>
+		    <tr v-show="lan_radv_fake&&(lan_dhcp=='2'||lan_dhcp=='3')">
+			  <td class="fun-left">{{lang_t('ipv6_bak.lease')}}:</td>
+			  <td>
+				<input type="text" v-model="lan_sflt" maxlength="6" v-verify="formRules" data-name="lan_sflt">
+				<small>[120..604800]</small>
+			  </td>
+		    </tr>
+        </tbody>
+		<tbody>
+		<tr><td colspan="2"></td></tr>
+		<tr>
+		  <td class="fun-left"></td>
+		  <td>
+			<button type="button" class="btn" @click="submitData">{{ lang_t('common.apply') }}</button>
+		  </td>
+	    </tr>
+		</tbody>
+	  </table>
+    </div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{lang_t:lang_t,service:"off",remote_6in4:"",relay_6to4:"",relay_6rd:"",size_6rd:"",sit_mtu:"",sit_ttl:"",wan_addr:[],wan_size:"64",wan_gate:[],wan_dhcp:"0",wan_priv:"0",dhcp_6rd:"0",dns_auto_fake:!1,dns1:[],dns2:[],dns3:[],lan_auto_fake:!1,lan_addr:[],lan_size:"48",lan_radv_fake:!1,lan_dhcp:"0",wan_type:"",lan_sflt:"1800",lan_sfps_fake1:"",lan_sfps_fake2:""}},computed:{formRules:function(){var r=this;return{remote_6in:function(a,n){if("6in4"==r.service){var e=cs.ip(a);1==e?n(r.lang_t("network.msg2")):2==e||3==e||4==e?n(r.lang_t("network.msg6")):n()}},relay_6to:function(a,n){if("6to4"==r.service){var e=cs.ip(a);1==e?n(r.lang_t("network.msg2")):2==e||3==e||4==e?n(r.lang_t("network.msg6")):n()}},relay_6rd:function(a,n){if("6rd"==r.service){var e=cs.ip(a);1==e?n(r.lang_t("network.msg2")):2==e||3==e||4==e?n(r.lang_t("network.msg6")):n()}},wan_size:function(a,n){99!=cs.num_range(a,1,128)?n(r.lang_t("rule.msg56",[1,128])):n()},lan_size:function(a,n){("dhcp6"==r.service&&!r.lan_auto_fake||"static"==r.service||"6in4"==r.service)&&(99!=cs.num_range(a,48,64)?n(r.lang_t("rule.msg56",[48,64])):n())},sit_mtu:function(a,n){99!=cs.num_range(a,1280,1480)?n(r.lang_t("rule.msg56",[1280,1480])):n()},sit_ttl:function(a,n){99!=cs.num_range(a,1,255)?n(r.lang_t("rule.msg56",[1,255])):n()},size_6rd:function(a,n){99!=cs.num_range(a,0,32)?n(r.lang_t("rule.msg56",[0,32])):n()},lan_sflt:function(a,n){var e=cs.num_range(a,120,604800);!r.lan_radv_fake||"2"!=r.lan_dhcp&&"3"!=r.lan_dhcp||(99!=e?n(r.lang_t("rule.msg56",[120,604800])):n())}}}},created:function(){var n=this;uiPost.getIpv6Cfg(function(a){n.service=a.service,n.remote_6in4=a.remote6in4,n.relay_6to4=a.relay6to4,n.relay_6rd=a.relay6rd,n.size_6rd=a.size6rd,n.sit_mtu=a.sitMtu,n.sit_ttl=a.sitTtl,n.wan_addr=n.ipv6ToValue(a.wanAddr),n.wan_size=a.wanSize,n.wan_gate=n.ipv6ToValue(a.wanGate),n.wan_dhcp=a.wanDhcp,n.wan_priv=a.wanPriv,n.dhcp_6rd=a.dhcp6rd,n.dns_auto_fake="1"==a.dnsAutoFake,n.dns1=n.ipv6ToValue(a.dns1),n.dns2=n.ipv6ToValue(a.dns2),n.dns3=n.ipv6ToValue(a.dns3),n.lan_auto_fake="1"==a.lanAutoFake,n.lan_addr=n.ipv6ToValue(a.lanAddr),n.lan_size=a.lanSize,n.lan_radv_fake="1"==a.lanRadvFake,n.lan_dhcp=a.lanDhcp,n.wan_type=a.wanType,n.lan_sfps_fake1=a.lanSfpsFake1,n.lan_sfps_fake2=a.lanSfpsFake2,n.lan_sflt=a.lanSflt})},methods:{ipv6ToValue:function(a){return"object"!=typeof a?a.split(":"):(":::::::"==(a=a.join(":"))&&(a=""),a)},submitData:function(){var _=this,l={};Cstool.Verify(this.formRules,function(a){if(a||"off"==_.service){if("off"!=_.service){if("6rd"==_.service&&"0"==_.dhcp_6rd||"static"==_.service||"6in4"==_.service){var n=_.ipv6ToValue(_.wan_addr);if(!_.verifyFun(n,"wan_addr"))return;if(l.wanAddr=n,l.wanSize=_.wan_size,"6rd"!=_.service){var e=_.ipv6ToValue(_.wan_gate);if(!_.verifyFun(e,"wan_gw"))return;l.wanGate=e}}if("dhcp6"==_.service&&!_.dns_auto_fake||"dhcp6"!=_.service){var r=_.ipv6ToValue(_.dns1),i=_.ipv6ToValue(_.dns2),t=_.ipv6ToValue(_.dns3);if(""!=r&&!_.verifyFun(r,"server","1"))return;if(""!=i&&!_.verifyFun(i,"server","2"))return;if(""!=t&&!_.verifyFun(t,"server","3"))return;l.dns1=_.ipv6ToValue(_.dns1),l.dns2=_.ipv6ToValue(_.dns2),l.dns3=_.ipv6ToValue(_.dns3)}if("dhcp6"==_.service&&!_.lan_auto_fake||"static"==_.service||"6in4"==_.service){var s=_.ipv6ToValue(_.lan_addr);if(!_.verifyFun(s,"lan_addr"))return;l.lanAddr=s,l.lanSize=_.lan_size}if("dhcp6"==_.service&&(l.dnsAutoFake=_.dns_auto_fake?"1":"0",l.lanAutoFake=_.lan_auto_fake?"1":"0",l.wanDhcp=_.wan_dhcp,"1"!=_.wan_dhcp&&(l.wanPriv=_.wan_priv)),"6rd"==_.service&&(l.dhcp6rd=_.dhcp_6rd),l.lanRadvFake=_.lan_radv_fake?"1":"0",_.lan_radv_fake&&(l.lanDhcp=_.lan_dhcp,"2"==_.lan_dhcp||"3"==_.lan_dhcp)){if(!_.verifyFun(_.lan_sfps_fake1,"lan_bool"))return;if(!_.verifyFun(_.lan_sfps_fake2,"lan_bool"))return;l.lanSfpsFake1=_.lan_sfps_fake1,l.lanSfpsFake2=_.lan_sfps_fake2,l.lanSflt=_.lan_sflt}"dhcp6"!=_.service&&"static"!=_.service&&("6in4"==_.service&&(l.remote6in4=_.remote_6in4),"6to4"==_.service&&(l.relay6to4=_.relay_6to4),"6rd"==_.service&&(l.relay6rd=_.relay_6rd,l.size6rd=_.size_6rd),l.sitMtu=_.sit_mtu,l.sitTtl=_.sit_ttl)}l.service=_.service,uiPost.setIpv6Cfg(l,function(){Cstool.Count(30,"js",function(){location.href=location.href})})}})},verifyFun:function(a,n,e){return null==e&&(e=""),0!=(-1<a.indexOf(":")?cs.isIpv6(a):checkIpv6DigitRange(a))||(Cstool.Msg({content:this.lang_t("ipv6_bak."+n)+e+this.lang_t("ipv6.msg2")}),!1)}}}</script><script src="/static/js/main.js"></script></body></html>

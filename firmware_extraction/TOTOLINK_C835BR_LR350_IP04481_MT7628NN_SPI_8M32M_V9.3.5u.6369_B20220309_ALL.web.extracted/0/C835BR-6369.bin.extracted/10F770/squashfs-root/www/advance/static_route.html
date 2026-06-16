@@ -1,0 +1,168 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <!--子菜单-->
+  <adv-child-menu childType="equipment"></adv-child-menu>  
+  <div class="advance-box">
+	<x-help :text="lang_t('static_route.help2')"></x-help>
+	<br><br><br><br>
+	<div class="fun-box">
+		<div v-if="globalConfig.addFlag=='1'">
+			<div><b>{{lang_t('static_route.setup')}}</b></div>
+			<hr style="background-color:#2ea8dc;height: 1px;width: 85%;">
+			<table class="table">
+				<tbody>
+					<tr>
+						<td class="fun-left">{{lang_t('static_route.dyn')}}</td>
+						<td>
+							<x-switch v-model="enable" @change="dynamicSubmit(0)"></x-switch>
+						</td>
+					</tr>
+				</tbody>
+				<tbody v-show="enable">
+					<tr>
+						<td class="fun-left">NAT</td>
+						<td>
+							<x-radio v-model="nat" pos="col" :name="['common.disabled','common.enabled']"></x-radio>
+						</td>
+					</tr>
+					<tr>
+						<td class="fun-left">{{ lang_t('static_route.send') }}</td>
+						<td>
+							<x-radio v-model="ripSend" pos="col" :name="['common.disabled','RIP 1','RIP 2']"></x-radio>
+						</td>
+					</tr>
+					<tr>
+						<td class="fun-left">{{ lang_t('static_route.recv') }}</td>
+						<td>
+							<x-radio v-model="ripRecv" pos="col" :name="['common.disabled','RIP 1','RIP 2']"></x-radio>
+						</td>
+					</tr>
+				</tbody>
+				<tbody v-show="enable">
+					<tr>
+						<td class="fun-left"></td>
+						<td>
+							<button class="btn" @click="dynamicSubmit(1)">{{ lang_t('common.apply') }}</button>
+							<!-- <button class="btn" @click="dynamicSubmit(2)">{{ lang_t('common.reset') }}</button> -->
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<div style="margin-top:20px;"><b>{{ lang_t('menu.static_route') }}</b></div>
+			<hr style="background-color:#2ea8dc;height: 1px;width: 85%;">
+			<table class="table">
+				<tbody>
+					<tr>
+						<td class="fun-left">{{ lang_t('static_route.sta') }}</td>
+						<td>
+							<x-switch v-model="enableStatic" @change="handleSubmit"></x-switch>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+      <table v-show="enableStatic">
+      	<tr><td align="right">
+      		<x-icon type="add" cursor="pointer" @click="addRuleVal">{{ lang_t('common.add') }}</x-icon>
+			<x-icon type="del" cursor="pointer" @click="trashFun('all')">{{ lang_t('common.delete') }}</x-icon>
+      	</td></tr>
+        <tr><td height="5"></td></tr>
+        <tr>
+          <td><table class="t_table3 table-bordered table-striped" style="width: 850px;">
+           	<thead>
+			<tr>
+				<th>{{ lang_t('static_route.comment') }}</th>
+              	<th>{{ lang_t('static_route.port') }}</th>
+              	<th>{{ lang_t('static_route.destip1') }}</th>
+              	<th>{{ lang_t('static_route.mask') }}</th>
+              	<th>{{ lang_t('static_route.gw') }}</th>
+              	<th>{{ lang_t('static_route.metric') }}</th>
+              	<th style="min-width: 60px;">{{ lang_t('rule.operate') }}</th>
+              	<th style="min-width: 60px;">{{ lang_t('common.select') }}<x-checkbox v-model="selectall" @change="selectAll"></x-checkbox></th>
+            </tr>
+			</thead>
+            <tr v-show="addShow">
+            	<td>
+				  	<input type="text" v-verify="formRules" data-name="desc" class="desc" v-model="desc" :maxlength="descLen">
+				  </td>
+			  	<td>
+					<select v-model="iface" class="time-select">
+						<option value="lan">LAN</option>
+						<!-- <option value="MAN">MAN</option> -->
+						<option value="wan">WAN</option>
+					</select>
+			  	</td>
+		 	  	<td>
+		 	  		<input type="text" v-verify="formRules" data-name="ip" class="ip" v-model="ip"  maxlength="15" @input="faultTolerance">
+		 	  	</td>
+			  	<td>
+			  		<input type="text" v-verify="formRules" data-name="mask" class="ip" v-model="mask"  maxlength="15" @input="faultTolerance">
+			  	</td>
+			  	<td>
+			  		<input type="text" v-verify="formRules" data-name="gw" class="ip" v-model="gw"  maxlength="15">
+			  	</td>
+			  	<td>
+			  		<input type="text" v-verify="formRules" data-name="metric" class="ip" v-model="metric"  maxlength="4">
+			  	</td>
+			  	<td><button :disabled="disable_addBtn" @click="addRule"><img src="/static/images/added.png" :title="lang_t('common.add')" class="cursor"></button></td>
+			  <td></td>
+		  	</tr>
+		  	<tbody>
+			<tr v-for="(rule,v) in ruleList">
+			  <td>
+			  	<input type="text" class="desc" v-model="editDesc[rule.idx-1]" v-verify="formRules" :data-name="'desc'+Number(rule.idx-1)" :maxlength="descLen" v-if="edit[rule.idx-1]" @input="watchValue(rule.idx-1)">
+			  	<span v-else>{{ rule.desc }}</span>
+			  </td>
+			  <td>
+			  	<div v-if="edit[rule.idx-1]">
+			  		<select v-model="editIface[rule.idx-1]" @change="watchValue(rule.idx-1)" class="time-select">
+						<option value="lan">LAN</option>
+						<!-- <option value="man">MAN</option> -->
+						<option value="wan">WAN</option>
+					</select>
+				</div>
+			  	<span v-else>{{ rule.iface }}</span>
+			  </td>
+			  <td>
+			  	<div v-if="edit[rule.idx-1]">
+				  	<input type="text" class="ip" v-model="editIp[rule.idx-1]"  maxlength="15" v-verify="formRules" :data-name="'ip'+Number(rule.idx-1)" @input="watchValue(rule.idx-1,'ip')">
+				</div>
+			  	<span v-else>{{ rule.ip }}</span>
+			  </td>
+			  <td>
+			  	<div v-if="edit[rule.idx-1]">
+				  	<input type="text" class="ip" v-model="editMask[rule.idx-1]" maxlength="15" v-verify="formRules" :data-name="'mask'+Number(rule.idx-1)" @input="watchValue(rule.idx-1,'mask')">
+				</div>
+			  	<span v-else>{{ rule.mask }}</span>
+			  </td>
+			  <td>
+			  	<div v-if="edit[rule.idx-1]">
+				  	<input type="text" class="ip" v-model="editGw[rule.idx-1]"  maxlength="15" v-verify="formRules" :data-name="'gw'+Number(rule.idx-1)" @input="watchValue(rule.idx-1)">
+				</div>
+			  	<span v-else>{{ rule.gw }}</span>
+			  </td>
+			  <td>
+			  	<div v-if="edit[rule.idx-1]">
+				  	<input type="text" class="ip" v-model="editMetric[rule.idx-1]" v-verify="formRules" maxlength="4" :data-name="'metric'+Number(rule.idx-1)" @input="watchValue(rule.idx-1)">
+				</div>
+			  	<span v-else>{{ rule.metric }}</span>
+			  </td>
+			  <td>
+				<img :src="operate[rule.idx-1]" :title="lang_t('rule.edit')" class="cursor" @click="editFun(rule.idx-1)">
+				&nbsp;&nbsp;
+				<img src="/static/images/trash.png" :title="lang_t('common.delete')" class="cursor" @click="trashFun(rule.idx-1)">
+			  </td>
+			  <td>
+				<x-checkbox v-model="select[rule.idx-1]"></x-checkbox>
+			  </td>
+			</tr>
+			<tr v-show="dataTotal==0">
+              <td colspan="12">{{ lang_t('common.no_data') }}</td>
+            </tr>
+		  	</tbody>
+		  </table></td>
+	    </tr>
+		<tr><td><x-page :total="dataTotal" @on-page="pageChange" :data="data"></x-page></td></tr>			
+	  </table>
+    </div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,selectall:!1,select:[],operate:[],edit:[],iface:"LAN",addShow:!1,ip:"",desc:"",mask:"",gw:"",metric:"",ruleList:[],data:[],editDesc:[],editIface:[],editIp:[],editMask:[],editGw:[],editMetric:[],wanIp:"",lanIp:"",disable_addBtn:!1,dataTotal:0,enable:!1,nat:"0",ripSend:"0",ripRecv:"0",enableStatic:!1,descLen:globalConfig.descLen}},watch:{select:function(){var t=0;for(var i in this.select)this.select[i]&&t++;t==this.select.length?this.selectall=!0:this.selectall=!1}},computed:{formRules:function(){var a=this;return{desc:function(t,i){var e=cs.commentstr(t);1==e||2==e?i(a.lang_t("rule.msg4")):0!=e&&99!=e||i()},ip:function(t,i){var e=cs.ip(t);4==e&&"0"==t.split(".")[3]&&(e=99),t?99!=e?i(a.lang_t("static_route.msg5")):i():i(a.lang_t("static_route.msg4"))},mask:function(t,i){var e=cs.mask(t);t?0==e||1==e?i(a.lang_t("static_route.msg9")):i():i(a.lang_t("static_route.msg8"))},gw:function(t,i){var e=cs.ip(t);t?99!=e?i(a.lang_t("static_route.msg7")):i():i(a.lang_t("static_route.msg6"))},metric:function(t,i){var e=cs.num_range(t,1,9999);0==e?i(a.lang_t("static_route.msg10")):99!=e?i(a.lang_t("static_route.msg11")):i()}}}},created:function(){var i=this;"1"==globalConfig.addFlag&&this.dynamicCfg(),uiPost.getStaticRoute(function(t){"1"==globalConfig.addFlag?i.enableStatic="1"==t.enable:i.enableStatic=!0,i.lanIp=t.lanIp,i.wanIp=t.wanIp,t.rule&&(i.ruleList=t.rule,i.dataTotal=i.ruleList.length,i.data=t.rule,i.tableInit(t.rule))})},methods:{pageChange:function(t,i){this.ruleList=i},selectAll:function(t){var i=!1;(this.selectall=t)&&(i=!0);var e=this.select.length;this.select=[];for(var a=0;a<e;a++)this.select[a]=i},addRuleVal:function(){this.addShow=!0},dynamicCfg:function(){var i=this;uiPost.getDynamicRoute(function(t){i.enable="1"==t.enable,i.nat=t.nat,i.ripSend=t.ripSend,i.ripRecv=t.ripRecv})},faultTolerance:function(t){/^\d+$/.test(t)?this.editIp[t]=this.ipMaskTolerance(this.editIp[t],this.editMask[t]):this.ip=this.ipMaskTolerance(this.ip,this.mask)},ipMaskTolerance:function(t,i){var e=t.split("."),a=i.split(".");if(4!=e.length||""==e[3]||4!=a.length||99!=cs.mask(i))return t;for(var s=[],n=0;n<4;n++)s.push(e[n]&a[n]);return s.join(".")},handleSubmit:function(){var t={enable:this.enableStatic?"1":"0",addEffect:"0"};uiPost.setStaticRoute(t,function(t){var i=1;t.wtime&&"0"!=t.wtime&&(i=t.wtime),Cstool.applyLoad(i,function(){location.href=location.href})})},dynamicSubmit:function(t){var i={};i.enable=this.enable?"1":"0",i.nat=this.nat,i.ripSend=this.ripSend,i.ripRecv=this.ripRecv,0===t&&this.enable||uiPost.setDynamicRoute(i,function(t){var i=1;t.wtime&&"0"!=t.wtime&&(i=t.wtime),Cstool.applyLoad(i,function(){location.href=location.href})})},addRule:function(){var e=this;if(e.disable_addBtn=!0,e.dataTotal){if(16<=e.dataTotal)return Cstool.Msg({content:this.lang_t("rule.msg30",[16])}),e.disable_addBtn=!1;for(i=0;i<e.dataTotal;i++)if(this.ip.replace(/\.\d{1,3}$/,".")==this.data[i].ip.replace(/\.\d{1,3}$/,"."))return Cstool.Msg({content:this.lang_t("static_route.msg12")}),e.disable_addBtn=!1}var a={};Cstool.Verify(this.formRules,function(t){t||(e.disable_addBtn=!1),t&&(a.mask=e.mask,a.ip=e.ip,a.gw=e.gw,a.iface=e.iface,a.metric=e.metric,a.desc=e.desc,a.addEffect="1",uiPost.setStaticRoute(a,function(t){var i=1;t.wtime&&"0"!=t.wtime&&(i=t.wtime),Cstool.applyLoad(i,function(){location.href=location.href})}))})},editFun:function(t){selectIe(),"/static/images/edit.png"==this.operate[t]?this.edit[t]?(this.edit.splice(t,1),this.edit.splice(t,0,!1)):(this.edit.splice(t,1),this.edit.splice(t,0,!0)):this.modefyFun(t)},modefyFun:function(e){var a=this,s={};if(a.dataTotal)for(i=0;i<a.dataTotal&&(i==e&&i++,i!=a.dataTotal);i++)if(this.editIp[e].replace(/\.\d{1,3}$/,".")==this.data[i].ip.replace(/\.\d{1,3}$/,"."))return Cstool.Msg({content:this.lang_t("static_route.msg12")}),!1;Cstool.Verify(this.formRules,function(t){t&&(s.mask=a.editMask[e],s.ip=a.editIp[e],s.gw=a.editGw[e],s.iface=a.editIface[e],s.desc=a.editDesc[e],s.metric=a.editMetric[e],s.idx=String(e+1),s.addEffect="2",uiPost.setStaticRoute(s,function(t){var i=1;t&&(t.wtime&&"0"!=t.wtime&&(i=t.wtime),Cstool.applyLoad(i,function(){location.href=location.href}))}))},a.dataTotal,e)},trashFun:function(t){var i={};this.ruleList;if("all"!=t)i["delRule"+t]=String(t),Cstool.Msg({content:this.lang_t("rule.msg15"),type:"confirm",ok:function(){uiPost.delStaticRoute(i,function(t){var i=1;t.wtime&&"0"!=t.wtime&&(i=t.wtime),Cstool.applyLoad(i,function(){location.href=location.href})})}});else{var e=0;for(var a in this.select)this.select[a]&&(e++,i["delRule"+a]=String(a));if(0==e)return Cstool.Msg({content:this.lang_t("rule.msg14")}),!1;Cstool.Msg({content:e==this.select.length?this.lang_t("rule.msg26"):this.lang_t("rule.msg15"),type:"confirm",ok:function(){uiPost.delStaticRoute(i,function(t){var i=1;t.wtime&&"0"!=t.wtime&&(i=t.wtime),Cstool.applyLoad(i,function(){location.href=location.href})})}})}},watchValue:function(t,i){var e=this.data[t];this.editDesc[t]!=e.desc||this.editIface[t]!=e.iface||this.editIp[t]!=e.ip||this.editMask[t]!=e.mask||this.editGw[t]!=e.gw||this.editMetric[t]!=e.metric?"/static/images/edited.png"!=this.operate[t]&&(this.operate.splice(t,1),this.operate.splice(t,0,"/static/images/edited.png")):(this.operate.splice(t,1),this.operate.splice(t,0,"/static/images/edit.png")),null!=i&&this.faultTolerance(t)},tableInit:function(t){for(var i in t)this.edit[i]=!1,this.select[i]=!1,this.operate[i]="/static/images/edit.png",this.editDesc[i]=t[i].desc,this.editIface[i]=t[i].iface,this.editIp[i]=t[i].ip,this.editMask[i]=t[i].mask,this.editGw[i]=t[i].gw,this.editMetric[i]=t[i].metric}}}</script><script src="/static/js/main.js"></script></body></html>

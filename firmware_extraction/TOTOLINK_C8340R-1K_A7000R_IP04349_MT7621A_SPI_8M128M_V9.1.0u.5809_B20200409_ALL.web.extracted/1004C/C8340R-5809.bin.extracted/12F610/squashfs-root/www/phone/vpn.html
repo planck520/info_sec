@@ -1,0 +1,193 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title>TOTOLINK</title><meta content="width=device-width,initial-scale=1,user-scalable=no" name="viewport"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><link rel="stylesheet" href="/static/css/phone/main.css"><link rel="stylesheet" href="/static/css/phone/common.css"><style>::-webkit-scrollbar{display:none}.main-pad{padding:1% 3% 1% 3%;margin-top:-5px}.input{color:#777}</style></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <phone-back :title="phoneTitle" type="custom" @on-click="backFun"></phone-back>
+  <div v-show="homepage">
+	<white-header imgSrc="/static/images/phone/vpn.png" :title="lang_t('menu.vpn')" :isBack="true">
+	  <div class="left-img-1">
+	    <img src="/static/images/phone/set.png" v-if="setpage" @click="pageChange(1)"/>
+		<img src="/static/images/phone/set_dis.png" v-else @click="pageChange(1)"/>
+	  </div>
+	  <div class="left-img-2">
+	    <img src="/static/images/phone/account_dis.png" v-if="setpage" @click="pageChange(0)"/>
+		<img src="/static/images/phone/account.png" v-else @click="pageChange(0)"/>
+	  </div>
+	</white-header>
+  </div>
+  <div v-if="setpage">
+  	<div class="row-content">
+	  <div class="row-group">
+	    <div class="row-right select_input">
+		  <span>
+		    <select v-model="selectType" @change="changeType">
+			  <option value ="0" v-if="globalConfig.l2tpServerSupport">L2TP</option>
+			  <option value ="1" v-if="globalConfig.pptpServerSupport">PPTP</option>
+		    </select>
+		  </span>
+	    </div>
+	    <div class="row-left">
+		  <p>{{ lang_t('wan.proto') }}:</p>
+	    </div>
+	  </div>
+	  <div class="row-group">
+	    <div class="switch-right">
+		  <x-switch v-model="serverState" @change="changeServerState"></x-switch>
+	    </div>
+	    <div class="row-left">
+		  <p style="padding-top:12px;">{{ lang_t('vpn.state') }}:</p>
+	    </div>
+	  </div>
+	  <div class="row-group">
+		<div class="row-right">
+		  <input class="right" v-model="sip" type="text" :maxlength="15">
+		</div>
+		<div class="row-left">
+		  <p>{{ lang_t('vpn.start_ip') }}:</p>
+		</div>
+	  </div>
+	  <div class="row-group">
+		<div class="row-right">
+		  <input class="right" v-model="eip" type="text" :maxlength="15">
+		</div>
+		<div class="row-left">
+		  <p>{{ lang_t('vpn.end_ip') }}:</p>
+		</div>
+	  </div>
+	  <div class="row-group">
+		<div class="row-right">
+		  <input class="right" v-model="server" type="text" :maxlength="15">
+		</div>
+		<div class="row-left">
+		  <p>{{ lang_t('vpn.server') }}:</p>
+		</div>
+	  </div>
+	  <div class="row-group">
+		<div class="row-right">
+		  <input class="right" v-model="priDns" type="text" :maxlength="15">
+		</div>
+		<div class="row-left">
+		  <p>{{ lang_t('wan.pri_dns') }}:</p>
+		</div>
+	  </div>
+	  <div class="row-group">
+		<div class="row-right">
+		  <input class="right" v-model="secDns" type="text" :maxlength="15">
+		</div>
+		<div class="row-left">
+		  <p>{{ lang_t('wan.sec_dns') }}:</p>
+		</div>
+	  </div>
+	  <div class="row-group"  v-show="selectType == '1'">	<!--pptp-->
+		<div class="row-right select_input">
+		  <span>
+		    <select v-model="mppe" id="mppe_pptp">
+			  <option value ="0">{{ lang_t('vpn.optional') }}</option>
+			  <option value ="1">{{ lang_t('vpn.not_encrypted') }}</option>
+			  <option value ="2">{{ lang_t('vpn.encryption') }}</option>
+			</select>
+		  </span>
+		</div>
+		<div class="row-left">
+		  <p>MPPE:</p>
+		</div>
+	  </div>
+	  <div class="row-group">
+		<div class="row-right">
+		  <input class="right" v-model="mtu" type="text" :maxlength="15">
+		</div>
+		<div class="row-left">
+		  <p>MTU:</p>
+		</div>
+	  </div>
+	  <div class="row-group">
+		<div class="row-right">
+		  <input class="right" v-model="mru" type="text" :maxlength="15">
+		</div>
+		<div class="row-left">
+		  <p>MRU:</p>
+		</div>
+	  </div>
+    </div>
+    <div class="login-bottom">
+	  <button class="login-btn" @click="applyFun">{{ lang_t('common.apply') }}</button>
+    </div>
+  </div>
+  <!--账号信息列表-->
+  <div v-else>
+    <br v-show="homepage">
+  	<div class="white-layout">
+	  <div class="main-pad">
+	    <div class="list-main" v-show="homepage" >
+		  <div class="row list3" v-for="(rule,v) in accountData" @click="showSetPageClick(v)" v-if="rule.type != '4'">
+		    <div class="left-img">
+			  <img src="/static/images/phone/user.png">
+			  <p>{{ rule.desc }}</p>
+		    </div>
+		    <div class="msg">
+			  {{ lang_t('rule.account_type') }}: 
+			  <span v-if="rule.type == '0'">{{ lang_t('rule.all') }}</span>
+			  <span v-else-if="rule.type == '1'">PPPOE</span>
+			  <span v-else-if="rule.type == '2'">PPTP</span>
+			  <span v-else-if="rule.type == '3'">L2TP</span>
+			  <br><br>
+			  <p>{{ lang_t('rule.account') }}: {{ rule.user }}</p>
+			  <p>{{ lang_t('rule.pass') }}: {{ rule.pass }}</p>
+		    </div>
+		    <div class="right-img">
+			  <img src="/static/images/phone/sign_right.png">
+		    </div>
+		  </div>
+		  <br>
+		  <div style="text-align:center;padding-bottom:1%;">
+		    <x-icon type="add" size="2" color="#69A7DA" @click="addRuleClick"></x-icon>
+		  </div>
+	    </div>
+		<!--修改和添加规则页面-->
+	    <div class="list-main" v-show="!homepage">
+		  <div class="row-group">
+			<div class="row-right">
+			  <input class="right input" v-model="desc" type="text" :maxlength="10">
+			</div>
+			<div class="row-left">
+			  <p>{{ lang_t('rule.description') }}:</p>
+			</div>
+		  </div>
+		  <div class="row-group">
+			<div class="row-right select_input2">
+			  <span>
+				<select v-model="protoType">
+				  <option value="0" v-if="globalConfig.pptpServerSupport && globalConfig.l2tpServerSupport">{{ lang_t('rule.all') }}</option>
+				  <option value ="1" v-show="">PPPOE</option>
+				  <option value ="2" v-if="globalConfig.pptpServerSupport">PPTP</option>
+				  <option value ="3" v-if="globalConfig.l2tpServerSupport">L2TP</option>
+				</select>
+			  </span>
+			</div>
+			<div class="row-left">
+			  <p>{{ lang_t('rule.account_type') }}:</p>
+			</div>
+		  </div>
+		  <div class="row-group">
+			<div class="row-right">
+			  <input class="right input" v-model="user" type="text" :maxlength="32">
+			</div>
+			<div class="row-left">
+			  <p>{{ lang_t('rule.account') }}:</p>
+			</div>
+		  </div>
+		  <div class="row-group">
+			<div class="row-right">
+			  <input class="right input" v-model="pass" type="text" v-pass :maxlength="32">
+			</div>
+			<div class="row-left">
+			  <p>{{ lang_t('rule.pass') }}:</p>
+			</div>
+		  </div>
+		  <div class="login-bottom">
+			<button class="login-btn-blue" @click="applyBtn">{{ lang_t('common.apply') }}</button>
+		    <br><br>
+		    <button v-show="this.tempIdx !== ''" class="login-btn-red" @click="deleteBtn">{{ lang_t('common.delete') }}</button>
+		  </div>
+	    </div>
+      </div>
+    </div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/phone_layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,accountData:[],homepage:!0,serverState:!1,selectType:"0",setpage:!0,optList:["L2TP","PPTP"],protoType:"0",desc:"",user:"",pass:"",sip:"",eip:"",server:"",priDns:"",secDns:"",mppe:"0",mtu:"",mru:"",tempIdx:0,editState:"add"}},computed:{phoneTitle:function(){return this.homepage||this.setpage?"":this.lang_t("menu.vpn")}},created:function(){if(""!=location.search){var t=location.search.replace("?","");"2"==t?this.pageChange(0):this.selectType=t}this.globalConfig.l2tpServerSupport||(this.selectType="1"),this.changeType(this.selectType)},methods:{backFun:function(){this.homepage?location.href="/phone/home.html":this.homepage=!0},applyFun:function(){var e=this,t={};0!=this.verifyFun()&&("0"==this.selectType?(this.serverState?(t.enable="1",t.sip=this.sip,t.eip=this.eip,t.server=this.server,t.priDns=this.priDns,t.secDns=this.secDns,t.mtu=this.mtu,t.mru=this.mru):t.enable="0",uiPost.setL2tpServerCfg(t,function(t){Cstool.Mark({type:"load",time:2,content:e.lang_t("common.effective"),success:function(){Cstool.Flag({content:e.lang_t("common.set_success"),btnText:e.lang_t("common.back"),ok:function(){location.href="http://"+location.host+"/phone/vpn.html?0"}})}})})):(this.serverState?(t.enable="1",t.sip=this.sip,t.eip=this.eip,t.server=this.server,t.priDns=this.priDns,t.secDns=this.secDns,t.mtu=this.mtu,t.mru=this.mru,t.mppe=this.mppe):t.enable="0",uiPost.setPptpServerCfg(t,function(t){Cstool.Mark({type:"load",time:2,content:e.lang_t("common.effective"),success:function(){Cstool.Flag({content:e.lang_t("common.set_success"),btnText:e.lang_t("common.back"),ok:function(){location.href="http://"+location.host+"/phone/vpn.html?1"}})}})})))},verifyFun:function(){var t,e=this.errorFun,s=this;return 0==(t=cs.ip(this.sip))?(e(s.lang_t("vpn.start_ip")+s.lang_t("network.msg1")),!1):1==t?(e(s.lang_t("vpn.start_ip")+s.lang_t("network.msg2")),!1):2==t||3==t||4==t?(e(s.lang_t("vpn.start_ip")+s.lang_t("network.msg6")),!1):0==(t=cs.ip(this.eip))?(e(s.lang_t("vpn.end_ip")+s.lang_t("network.msg1")),!1):1==t?(e(s.lang_t("vpn.end_ip")+s.lang_t("network.msg2")),!1):2==t||3==t||4==t?(e(s.lang_t("vpn.end_ip")+s.lang_t("network.msg6")),!1):0==(t=cs.ip(this.server))?(e(s.lang_t("vpn.server")+s.lang_t("vpn.msg1")),!1):99!=t?(e(s.lang_t("vpn.server")+s.lang_t("vpn.msg6")),!1):0==(t=cs.ip(this.priDns))?(e(s.lang_t("vpn.pri_dns")+s.lang_t("vpn.msg1")),!1):99!=t?(e(s.lang_t("vpn.pri_dns")+s.lang_t("vpn.msg6")),!1):""!=this.secDns&&"0.0.0.0"!=this.secDns&&99!=(t=cs.ip(this.secDns))?(e(s.lang_t("vpn.sec_dns")+s.lang_t("vpn.msg6")),!1):0==(t=cs.num_range(this.mtu,1400,1500))?(e("MTU"+s.lang_t("vpn.msg1")),!1):1==t?(e("MTU"+s.lang_t("vpn.msg5")),!1):2==t?(e("MTU"+s.lang_t("vpn.msg7")),!1):0==(t=cs.num_range(this.mru,1400,1500))?(e("MRU"+s.lang_t("vpn.msg1")),!1):1==t?(e("MRU"+s.lang_t("vpn.msg5")),!1):2!=t||(e("MRU"+s.lang_t("vpn.msg7")),!1)},errorFun:function(t){Cstool.Mark({content:t,l_text:this.lang_t("common.back")})},pageChange:function(t){var e=this;1==t?(e.setpage=!0,setTimeout(function(){e.abledFun(e.serverState)},50)):(e.setpage=!1,uiPost.getVpnAccountCfg(function(t){e.accountData=t.rule,e.abledFun(!0)})),$(document).ready(function(){$("select").change(function(){$("select").blur()})})},changeType:function(t){var e=this;"0"==("string"==typeof t?t:this.selectType)?uiPost.getL2tpServerCfg(function(t){e.serverState="1"==t.enable,e.sip=t.sip,e.eip=t.eip,e.server=t.server,e.priDns=t.priDns,e.secDns=t.secDns,e.mtu=t.mtu,e.mru=t.mru,e.abledFun(e.serverState)}):uiPost.getPptpServerCfg(function(t){e.serverState="1"==t.enable,e.sip=t.sip,e.eip=t.eip,e.server=t.server,e.priDns=t.priDns,e.secDns=t.secDns,e.mtu=t.mtu,e.mru=t.mru,e.mppe=t.mppe,e.abledFun(e.serverState)})},changeServerState:function(t){this.serverState?this.abledFun(this.serverState):this.applyFun()},showSetPageClick:function(t){this.editState="edit",this.homepage=!1,this.tempIdx=t,this.protoType=this.accountData[t].type,this.desc=this.accountData[t].desc,this.user=this.accountData[t].user,this.pass=this.accountData[t].pass},addRuleClick:function(){this.editState="add",this.homepage=!1,this.protoType="0",this.desc="",this.user="",this.pass="",this.tempIdx=""},applyBtn:function(){var e=this,t={};t.type=this.protoType,t.desc=this.desc,t.user=this.user,t.pass=this.pass;var s=cs.commentstr(t.desc);if(1==s||2==s)return this.errorFun(this.lang_t("rule.msg4")),!1;if(!t.user)return this.errorFun(this.lang_t("rule.account")+this.lang_t("rule.msg12")),!1;if(1==cs.string(t.user))return this.errorFun(this.lang_t("rule.account")+this.lang_t("rule.msg22")),!1;if(!t.pass)return this.errorFun(this.lang_t("rule.pass")+this.lang_t("rule.msg12")),!1;if(1==cs.string(t.pass))return this.errorFun(this.lang_t("rule.pass")+this.lang_t("rule.msg22")),!1;if("edit"==this.editState)t.idx=String(this.tempIdx+1),t.addEffect="2";else{if(10<=this.accountData.length)return this.errorFun(this.lang_t("rule.msg30",[10])),!1;t.addEffect="1"}uiPost.setVpnAccountCfg(t,function(t){Cstool.Mark({type:"load",time:2,content:e.lang_t("common.effective"),success:function(){Cstool.Flag({content:e.lang_t("common.set_success"),btnText:e.lang_t("common.back"),ok:function(){location.href="http://"+location.host+"/phone/vpn.html?2"}})}})})},deleteBtn:function(){var s=this,t={};t["delRule"+this.tempIdx]=String(this.tempIdx),Cstool.Mark({content:s.lang_t("vpn.msg8"),ok:function(){uiPost.delVpnAccountCfg(t,function(t){var e=2;t&&t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.Mark({type:"load",time:e,content:s.lang_t("common.deletion"),success:function(){location.href="http://"+location.host+"/phone/vpn.html?2"}})})}})},abledFun:function(t){t?($('input[type="text"]').attr("disabled",!1),"1"==this.selectType&&$("#mppe_pptp").attr("disabled",!1)):($('input[type="text"]').attr("disabled",!0),"1"==this.selectType&&$("#mppe_pptp").attr("disabled",!0))}}}</script><script src="/static/js/main.js"></script></body></html>

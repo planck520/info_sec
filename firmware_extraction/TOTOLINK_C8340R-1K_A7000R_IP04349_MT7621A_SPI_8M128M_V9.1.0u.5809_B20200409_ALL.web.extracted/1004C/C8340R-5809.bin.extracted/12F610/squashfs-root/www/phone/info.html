@@ -1,0 +1,262 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title>TOTOLINK</title><meta content="width=device-width,initial-scale=1,user-scalable=no" name="viewport"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><link rel="stylesheet" href="/static/css/phone/main.css"><link rel="stylesheet" href="/static/css/phone/common.css"><style>body{font-size:9px;color:#fff}.position{float:left}.speed_down{width:40%;margin-left:20%}.speed_down span{color:#fff;font-size:16px}.speed_up{width:40%}.speed_up span{color:#00688b;font-size:16px}.info{top:10%;left:6%;float:left}.info span{color:#fff;font-size:16px}.col-info{white-space:nowrap;overflow-x:auto;padding:0}.ssid-size{font-size:10px}</style></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <phone-back url="/phone/home.html"></phone-back>
+  <div align="center">
+    <img src="/static/images/phone/router2.png">
+    <p>{{ model }}</p>
+  </div>
+  <br>
+  <div style="width:100%;">
+    <div class="position speed_down">
+      <img src="/static/images/phone/speed_down.png" align="absmiddle" />
+      <span>{{ downOccupy }}</span>
+    </div>
+    <div class="position speed_up">
+      <img src="/static/images/phone/speed_up.png" align="absmiddle" />
+      <span>{{ upOccupy }}</span>
+    </div>
+  </div>
+  
+  <div style="width:100%;">
+    <div>
+    <canvas id="myChart" style="height: 200px;width: 100%;"></canvas>
+    </div>
+  </div>
+  
+  <div style="width:100%;">
+    <!-- Internet -->
+    <div>
+      <div class="info-title" v-show="!wanShow">
+        <img src="/static/images/phone/info-internet.png" align="absmiddle" />
+        <span>{{ lang_t('index.internet') }} </span>
+      </div>
+      <div class="info-content" v-show="!wanShow">
+        <div class="info-left">
+          {{ lang_t('index.connection_status') }}:
+        </div>
+        <div class="info-right" v-show="Configured && wanStrategy == '2'">
+          {{ wanWay }} - {{ wanStatus }}
+        </div>
+        <div class="info-right" v-show="Configured && wanStrategy != '2'">
+          {{ wanStatus }}
+        </div>
+        <div class="info-right" v-show="Configured == false">
+          {{ wanStatus }}
+        </div>
+      </div>
+      <div class="info-content" v-if="globalConfig.modelType == '4g' && !wanShow">
+        <div class="info-left">
+          {{ lang_t('index.online_way') }}:
+          </div>
+          <div class="info-right">
+            {{ wanStrategyinfo }}
+          </div>
+      </div>
+      <div class="info-content" v-show="!wanShow">
+        <div class="info-left">
+          {{ lang_t('index.link_time') }}:
+          </div>
+          <div class="info-right">
+            {{ wanConnTime }}
+          </div>
+      </div>
+      <div class="info-content" v-show="!wanShow">
+        <div class="info-left">
+            {{ lang_t('index.ip') }}:
+          </div>
+          <div class="info-right">
+            {{ wanIp }}
+          </div>
+      </div>
+      <div class="info-content" v-show="!wanShow">
+        <div class="info-left">
+            {{ lang_t('index.gateway') }}:
+          </div>
+          <div class="info-right">
+            {{ wanGw }}
+          </div>
+      </div>
+      <div class="info-content" v-show="!wanShow">
+        <div class="info-left">
+          {{ lang_t('index.mac') }}:
+        </div>
+        <div class="info-right">
+          {{ wanMac }}
+        </div>
+      </div>
+    </div>
+    <!-- 2.4GHz Wireless -->
+    <div style="margin-top:2%">
+      <div class="info-title">
+        <img src="/static/images/phone/info-wifi.png" align="absmiddle" />
+        <span>{{ lang_t('index.wireless') }} 2.4GHz</span>
+      </div>
+      <div class="info-content">
+        <div class="info-left">
+            {{ lang_t('index.radio') }}:
+          </div>
+          <div class="info-right">
+            {{ wifiOff == '0'? lang_t('common.on') : lang_t('common.off') }}
+          </div>
+      </div>
+      <div class="info-content">
+        <div class="info-left">
+            {{ lang_t('index.ssid') }}:
+          </div>
+          <div class="info-right col-info" :class="ssid_size" v-html="ssid2"></div>
+      </div>
+      <div class="info-content">
+        <div class="info-left">
+            {{ lang_t('index.mac') }}:
+          </div>
+          <div class="info-right">
+            {{ bssid }}
+          </div>
+      </div>
+    </div>
+	<!-- 5GHz Wireless -->
+    <div style="margin-top:2%" v-if="wifiDualband != '0'">
+      <div class="info-title">
+        <img src="/static/images/phone/info-wifi.png" align="absmiddle" />
+        <span v-if="wifiDualband == '1'">{{ lang_t('index.wireless') }} 5GHz</span>
+        <span v-if="wifiDualband == '2'">{{ lang_t('index.wireless') }} 5GHz (1)</span>
+      </div>
+      <div class="info-content">
+        <div class="info-left">
+              {{ lang_t('index.radio') }}:
+          </div>
+          <div class="info-right">
+              {{ wifiOff5g == '0'? lang_t('common.on') : lang_t('common.off') }}
+          </div>
+      </div>
+      <div class="info-content">
+        <div class="info-left">
+            {{ lang_t('index.ssid') }}:
+          </div>
+          <div class="info-right col-info" v-html="ssid5g" :class="ssid5g_size"></div>
+      </div>
+      <div class="info-content">
+        <div class="info-left">
+            {{ lang_t('index.mac') }}:
+          </div>
+          <div class="info-right">
+            {{ bssid5g }}
+          </div>
+      </div>
+    </div>
+	<!-- 5GHz（2） Wireless -->
+    <div style="margin-top:2%" v-if="wifiDualband == '2'">
+      <div class="info-title">
+        <img src="/static/images/phone/info-wifi.png" align="absmiddle" />
+        <span>{{ lang_t('index.wireless') }} 5GHz (2)</span>
+      </div>
+      <div class="info-content">
+        <div class="info-left">
+              {{ lang_t('index.radio') }}:
+          </div>
+          <div class="info-right">
+              {{ wifiOff5g2 == '0'? lang_t('common.on') : lang_t('common.off') }}
+          </div>
+      </div>
+      <div class="info-content">
+        <div class="info-left">
+            {{ lang_t('index.ssid') }}:
+          </div>
+          <div class="info-right col-info" :class="ssid5g2_size" v-html="ssid5g2"></div>
+      </div>
+      <div class="info-content">
+        <div class="info-left">
+            {{ lang_t('index.mac') }}:
+          </div>
+          <div class="info-right">
+            {{ bssid5g2 }}
+          </div>
+      </div>
+    </div>
+    <!-- rpt --> 
+    <div style="margin-top:2%" v-if="isRptMode">
+      <div class="info-title">
+        <img src="/static/images/phone/info-wifi.png" align="absmiddle" />
+        <span>{{ lang_t('index.rpt_info') }}</span>
+      </div>
+      <div class="info-content">
+        <div class="info-left">
+            {{ lang_t('index.conn_status') }}:
+          </div>
+          <div class="info-right">
+            {{ rptConnStatus == 'success'? lang_t('index.rpt_conn') : lang_t('index.rpt_disconn')}}
+          </div>
+      </div>
+      <div class="info-content">
+        <div class="info-left">
+            {{ lang_t('index.rptmsg') }}SSID:
+          </div>
+          <div class="info-right">
+            {{ apcliSsid }}
+          </div>
+      </div>
+      <div class="info-content">
+        <div class="info-left">
+            {{ lang_t('index.rptmsg') }}MAC:
+          </div>
+          <div class="info-right">
+            {{ apcliBssid }}
+          </div>
+      </div>
+    </div>
+    <!-- System --> 
+  	<div style="margin-top:2%">
+      <div class="info-title">
+        <img src="/static/images/phone/info-set.png" align="absmiddle" />
+        <span>{{ lang_t('index.system') }}</span>
+      </div>
+      <div class="info-content">
+        <div class="info-left">
+            {{ lang_t('index.model') }}:
+          </div>
+          <div class="info-right">
+            {{ model }}
+          </div>
+      </div>
+      <div class="info-content">
+        <div class="info-left">   
+            {{ lang_t('index.version') }}:
+          </div>
+          <div class="info-right">
+            {{ fmVersion }}
+          </div>
+      </div>
+      <div class="info-content">
+        <div class="info-left">
+            {{ lang_t('index.up_time') }}:
+          </div>
+          <div class="info-right">
+            {{ upTime }}
+          </div>
+      </div>
+      <div class="info-content">
+        <div class="info-left">
+            {{ lang_t('index.build_time') }}:
+          </div>
+          <div class="info-right">
+            {{ buildTime }}
+          </div>
+  	  </div>
+      <div class="info-content" v-if="globalConfig.modelType == '4g'">
+        <div class="info-left">
+            {{ lang_t('index.4gstatus') }}:
+          </div>
+          <div class="info-right">
+            {{ registStatusMsg }}
+          </div>
+      </div>
+      <div class="info-content">
+        <div class="info-left">
+            {{ lang_t('menu.opmode') }}:
+          </div>
+          <div class="info-right">
+            {{ currentMode }}
+          </div>
+      </div>
+    </div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/plugin/Chart.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/phone_layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,echartsShow:!1,mychartTimeout:null,Configured:!1,wanShow:!1,downOccupy:"",upOccupy:"",cpuOccupy:0,ramOccupy:0,registStatus:"",wifiDualband:"0",state:!0,wanWay:"",wanStatus:"",wanIp:"",wanGw:"",wanMac:"",wifiOff:"",ssid:"",channel:"",bssid:"",wifiOff5g:"",ssid5g:"",channel5g:"",bssid5g:"",model:"",fmVersion:"",upTime:"",buildTime:"",wanConnTime:"",wanStrategy:"1",wanStrategyinfo:"",ssid2:"",ssid_size:"",ssid5g_size:"",ssid5g2_size:"",over_flow:"",ssid5g:"",ssid5g2:"",rptConnStatus:"",apcliBssid:"",apcliSsid:"",isRptMode:!1}},computed:{registStatusMsg:function(){return"Idle"==this.registStatus?this.lang_t("index.idle"):"connected"==this.registStatus?this.lang_t("index.connected"):"searching"==this.registStatus?this.lang_t("index.searching"):"noSim"==this.registStatus?this.lang_t("index.noSim"):"simPinLock"==this.registStatus?this.lang_t("index.simPinLock"):"simPukLock"==this.registStatus?this.lang_t("index.simPukLock"):"noModem"==this.registStatus?this.lang_t("index.noModem"):void 0},currentMode:function(){return this.lang_t("opmode."+this.globalConfig.opmode)}},created:function(){"rpt"!=this.globalConfig.opmode&&"wisp"!=this.globalConfig.opmode||(this.isRptMode=!0);var t=this;t.getSysState(),t.getNetInfo(),setInterval(function(){t.getNetInfo()},5e3)},mounted:function(){var t=this;"br"!=t.globalConfig.opmode&&"rpt"!=t.globalConfig.opmode||(t.wanShow=!0);var n=new Array(10);n.shift(),n.push(this.timeInit());for(var a=[],e=[],i=0;i<10;i++)a[i]="0",e[i]="0";var s={labels:n,datasets:[{label:"CPU",fill:!1,borderColor:"#34C5DE",data:a},{label:this.lang_t("index.ram"),fill:!1,borderColor:"#9ea7b4",data:e}]},o=document.getElementById("myChart").getContext("2d");this.myLineChart=new Chart(o,{type:"line",data:s,options:{scales:{xAxes:[{ticks:{fontColor:"#fff",beginAtZero:!0},gridLines:{drawTicks:!0,drawOnChartArea:!1,color:"#fff"}}],yAxes:[{ticks:{fontColor:"#fff",beginAtZero:!0},gridLines:{drawTicks:!0,drawOnChartArea:!1,color:"#fff"}}]},legend:{labels:{boxWidth:14,fontSize:14,fontColor:"#fff"}},tooltips:{backgroundColor:"#3E4F5C",titleFontSize:16,bodyFontSize:14},responsive:!1,layout:{padding:{left:15,right:20}}}})},methods:{timeInit:function(){var t=new Date,n=t.getHours(),a=t.getMinutes();t.getSeconds();return n<10&&(n="0"+n),a<10&&(a="0"+a),n+":"+a},backFun:function(){location.href="/phone/home.html"},getSysState:function(){var e=this;uiPost.getSysStatusCfg(function(t){e.wifiDualband=t.wifiDualband,e.bssid=t.bssid,e.wifiOff=t.wifiOff,e.preShow(t.ssid,"ssid2"),"0"==t.channel?e.channel=e.lang_t("index.auto"):e.channel=t.channel,"0"!=t.wifiDualband&&(e.bssid5g=t.bssid5g,e.wifiOff5g=t.wifiOff5g,e.preShow(t.ssid5g,"ssid5g"),"0"==t.channel5g?e.channel5g=e.lang_t("index.auto"):e.channel5g=t.channel5g),"2"==t.wifiDualband&&(e.bssid5g2=t.bssid5g2,e.wifiOff5g2=t.wifiOff5g2,e.preShow(t.ssid5g2,"ssid5g2"),"0"==t.channel5g2?e.channel5g2=e.lang_t("index.auto"):e.channel5g2=t.channel5g2),e.model=t.model,e.fmVersion=t.fmVersion;var n=new Date(Date.parse(t.buildTime.replace(/-/g,"/"))),a=n.getFullYear()+"-"+(n.getMonth()+1)+"-"+n.getDate()+" "+n.getHours()+":"+n.getMinutes()+":"+n.getSeconds();e.buildTime=a,e.registStatus=t.registStatus,e.isRptMode&&(e.apcliSsid=t.apcliSsid,e.apcliBssid=t.apcliBssid)})},preShow:function(t,n){t=t.replace(/ /gi,"&nbsp;"),this[n]=t},getNetInfo:function(){var e=this;uiPost.getNetInfoCfg(function(t){if(null==t.cpuRatio)return!1;e.cpuOccupy=Math.round(Number(t.cpuRatio)),e.ramOccupy=Math.round(Number(t.memRatio)),e.myLineChart.data.labels.shift(),e.myLineChart.data.labels.push(e.timeInit()),e.myLineChart.data.datasets[0].data.shift(),e.myLineChart.data.datasets[1].data.shift(),e.myLineChart.data.datasets[0].data.push(e.cpuOccupy),e.myLineChart.data.datasets[1].data.push(e.ramOccupy),e.myLineChart.update();var n=t.up,a=t.down;e.upOccupy=1024<n?(n/1024).toFixed(1)+" MB/s":n+" kB/s",e.downOccupy=1024<a?(a/1024).toFixed(1)+" MB/s":a+" kB/s",e.upTime=e.reTime(t.upTime),"wisp"!=e.globalConfig.opmode&&"gw"!=e.globalConfig.opmode||(e.wanStrategy=t.wanStrategy,"1"==t.wanStrategy?e.wanStrategyinfo="4G":"2"==t.wanStrategy?e.wanStrategyinfo=e.lang_t("index.wired"):e.wanStrategyinfo="2G/3G",e.wanIp=t.wanIp,e.wanGw=t.wanGw,e.wanMac=t.wanMac,e.wanConnTime=e.reTime(t.wanConnTime),"0"==t.enabled?(e.Configured=!1,e.wanStatus=e.lang_t("index.not_configured")):(e.Configured=!0,"1"==t.wanStrategy?"1"==t.wan4gflag?e.wanStatus=e.lang_t("index.connected"):e.wanStatus=e.lang_t("index.disconnected"):"2"==t.wanStrategy?"connected"==t.wanConnStatus?e.wanStatus=e.lang_t("index.connected"):e.wanStatus=e.lang_t("index.disconnected"):"1"==t.wan23gflag?e.wanStatus=e.lang_t("index.connected"):e.wanStatus=e.lang_t("index.disconnected"),"0"==t.wanMode?e.wanWay=e.lang_t("index.static_ip"):"1"==t.wanMode?e.wanWay="DHCP":"3"==t.wanMode?e.wanWay="PPPoE":"4"==t.wanMode?e.wanWay="PPTP":"6"==t.wanMode?e.wanWay="L2TP":"7"==t.wanMode&&(e.wanWay="USE-NET"))),"wisp"!=e.globalConfig.opmode&&"rpt"!=e.globalConfig.opmode||(e.rptConnStatus=t.rptConnStatus)})},reTime:function(t){var n=t.split(";"),a="";return a+=n[0]+" "+this.lang_t("index.day")+", ",a+=n[1]+" "+this.lang_t("index.hour")+", ",a+=n[2]+" "+this.lang_t("index.min")+", ",a+=n[3]+" "+this.lang_t("index.sec")}}}</script><script src="/static/js/main.js"></script></body></html>

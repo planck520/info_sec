@@ -1,0 +1,124 @@
+#! /bin/sh
+
+PATH=/sbin:/bin:/usr/sbin:/usr/bin/
+export PATH
+
+mount -t ramfs none /var/
+mount -t tmpfs none /data/
+
+
+mkdir -p /var/etc
+mkdir -p /var/media
+mkdir -p /var/webroot
+mkdir -p /var/etc/iproute
+mkdir -p /var/run
+mkdir -p /etc/udhcpc
+mkdir -p /var/debug
+
+cp -rf /etc_ro/eth_name_conf.txt /var/
+cp -rf /etc_ro/* /etc/
+cp -rf /webroot_ro/* /webroot/
+umount -f /tmp
+mount -t tmpfs none /tmp -o size=3M
+mount -a
+
+mount -t ramfs /dev
+mkdir /dev/pts
+mount -t devpts devpts /dev/pts
+mdev -s
+mkdir /var/run
+
+/sbin/udevd &
+#echo '/sbin/mdev' > /proc/sys/kernel/hotplug
+#echo 'sd[a-z][0-9] 0:0 0660 @/usr/sbin/usb_up.sh $MDEV $DEVPATH' >> /etc/mdev.conf
+#echo '-sd[a-z] 0:0 0660 $/usr/sbin/usb_down.sh $MDEV $DEVPATH'>> /etc/mdev.conf
+#echo 'sd[a-z] 0:0 0660 @/usr/sbin/usb_up.sh $MDEV $DEVPATH'>> /etc/mdev.conf
+#echo '.* 0:0 0660 */usr/sbin/IppPrint.sh $ACTION $INTERFACE'>> /etc/mdev.conf
+
+mkdir -p /var/ppp
+##SDK 有线无线，内核模块
+insmod /lib/modules/4.1.52/kernel/bcmdrivers/broadcom/char/bcmlibs/bcm947622/bcmlibs.ko
+insmod /lib/modules/4.1.52/kernel/bcmdrivers/broadcom/char/vlan/bcm947622/bcmvlan.ko
+insmod /lib/modules/4.1.52/kernel/bcmdrivers/broadcom/char/chipinfo/bcm947622/chipinfo.ko
+insmod /lib/modules/4.1.52/kernel/bcmdrivers/broadcom/char/ingqos/bcm947622/bcm_ingqos.ko
+insmod /lib/modules/4.1.52/kernel/bcmdrivers/broadcom/char/pktflow/bcm947622/pktflow.ko 
+
+insmod /lib/modules/4.1.52/kernel/bcmdrivers/broadcom/char/cmdlist/bcm947622/cmdlist.ko
+insmod /lib/modules/4.1.52/kernel/bcmdrivers/broadcom/char/archer/bcm947622/archer.ko
+insmod /lib/modules/4.1.52/kernel/bcmdrivers/opensource/net/enet/bcm947622/bcm_enet.ko
+insmod /lib/modules/4.1.52/kernel/bcmdrivers/opensource/char/mcast/bcm947622/bcmmcast.ko 
+
+#insmod /lib/modules/4.1.52/kernel/bcmdrivers/opensource/bus/pci/host/bcm947622/bcm_pcie_hcd.ko
+
+insmod /lib/modules/4.1.52/kernel/bcmdrivers/broadcom/char/pwrmngt/bcm947622/pwrmngtd.ko
+insmod /lib/modules/4.1.52/kernel/bcmdrivers/opensource/char/plat-bcm/bcm947622/bcm_thermal.ko
+insmod /lib/modules/4.1.52/kernel/bcmdrivers/broadcom/char/otp/bcm947622/otp.ko
+
+
+#加载无线模块
+insmod /lib/modules/wlcsm.ko
+insmod /lib/modules/bcm_pcie_hcd.ko
+insmod /lib/modules/hnd.ko
+insmod /lib/modules/cfg80211.ko
+insmod /lib/modules/emf.ko
+insmod /lib/modules/igs.ko
+NMTD=`cat /proc/mtd | grep CFG | cut -b 4`
+touch /data/.kernel_nvram.setting
+#驱动需要CFG分区的无线射频参数，在驱动起来前先将射频参数从cfg分区读到文件中，前8个字节为crc码，要跳过。拷贝64K，忽略开头8byte
+dd if=/dev/mtd$NMTD of=/etc/wlan_rfdata count=8192 ibs=8 skip=1
+# CFG分区为空时，拷贝默认射频参数，避免无线接口无法启动
+blank=`grep model /etc/wlan_rfdata && echo 0 || echo 1`
+if [ $blank -eq 1 ] ; then
+	echo "apmib is blank, copy default apmib now"
+	dd if=/etc/wlan/.kernel_nvram.setting of=/etc/wlan_rfdata
+fi
+nvram kernelset /etc/wlan_rfdata
+nvram kcommit
+insmod /lib/modules/wl.ko intf_name=wl%d instance_base=0
+#wl模块加载完成后，使用wlaffinity脚本对wl0-kthrd及wl1-kthrd内核线程优先级及archer等参数进行配置
+wlaffinity auto
+insmod /lib/modules/gpio.ko
+/etc/gpio_conf
+insmod /lib/modules/phy_check.ko
+
+# 加载KM内核模块
+insmod /lib/modules/kmbase.ko
+insmod /lib/modules/bm.ko
+insmod /lib/modules/mac_group.ko
+insmod /lib/modules/mac_filter.ko
+insmod /lib/modules/url_filter.ko
+insmod /lib/modules/privilege_ip.ko
+insmod /lib/modules/dnsredirect.ko
+insmod /lib/modules/ddos_ip_fence.ko
+insmod /lib/modules/autodiscover.ko
+insmod /lib/modules/nos.ko
+
+
+ifconfig bcmsw up
+
+
+echo "add;Wire:eth0" > /proc/km/wan_interface
+
+# 创建设备文件
+make_static_devnodes.sh
+
+#关闭Archer流量管理特性，该特性主要是为了解决当外部switch口或无线以大于1Gbps的突发速率往6755方案wan或lan打流时存在的大量丢包问题，由于开启sysport_tm会影响到Smartbit及IxChariot等性能，是用户或其他厂商较关心的性能，但突发流量大于1Gbps场景在家用领域产品基本不存在，故在此处关闭处理
+archer sysport_tm disable
+
+# set WAN FLAG 
+ethswctl -c wan -i eth0 -o enable
+
+#设置协商次数失败为2次后降低协商速率协商（由高到底协商） 测试百兆6S
+ethctl eth0 ethernet@wirespeed enable
+ethctl eth1 ethernet@wirespeed enable
+ethctl eth2 ethernet@wirespeed enable
+ethctl eth3 ethernet@wirespeed enable
+ethctl eth4 ethernet@wirespeed enable
+
+ethctl eth0 reg 0x1c 0x9000
+ethctl eth1 reg 0x1c 0x9000
+ethctl eth2 reg 0x1c 0x9000
+ethctl eth3 reg 0x1c 0x9000
+ethctl eth4 reg 0x1c 0x9000
+
+monitor &

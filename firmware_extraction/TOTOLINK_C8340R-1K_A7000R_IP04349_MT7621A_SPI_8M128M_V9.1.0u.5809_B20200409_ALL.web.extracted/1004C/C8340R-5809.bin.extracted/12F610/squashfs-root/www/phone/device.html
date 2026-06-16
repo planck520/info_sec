@@ -1,0 +1,88 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title>TOTOLINK</title><meta content="width=device-width,initial-scale=1,user-scalable=no" name="viewport"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><link rel="stylesheet" href="/static/css/phone/main.css"><link rel="stylesheet" href="/static/css/phone/common.css"></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <phone-back type="custom" @on-click="backFun" :title="backTitle"></phone-back>
+  <white-header imgSrc="/static/images/phone/devices.png" :title="lang_t('menu.devices')" :isBack="true" v-show="listType != 'modefy'">
+    <div class="left-img-1" v-if="!disable_edit">
+	  <img src="/static/images/phone/user_on_dis.png" v-if="listType == 'black'" @click="pageChange(1)"/>
+	  <img src="/static/images/phone/user_on.png" v-else-if="listType == 'white'" @click="pageChange(1)"/>
+    </div>
+    <div class="left-img-2" v-if="!disable_edit">
+	  <img src="/static/images/phone/user_off.png" v-if="listType == 'black'" @click="pageChange(0)"/>
+	  <img src="/static/images/phone/user_off_dis.png" v-else-if="listType == 'white'" @click="pageChange(0)"/>
+    </div>
+  </white-header>
+  <div id="devices_show" class="list" v-if="listType == 'black'">
+    <div class="row content" v-for="(data,v) in black_List" @click="modefyDevie(data,v,'black')">
+	  <div class="left-img">
+	    <img src="/static/images/phone/phone_dis.png" v-if="data.deviceType == 'mobile'">
+	    <img src="/static/images/phone/pc_dis.png" v-else>
+	    <p>{{ data.name }}</p>
+	  </div>
+	  <div class="msg">
+	    <p>MAC: {{ data.mac }}</p>
+	    <p>IP: {{ data.ip }}</p>
+		<p>&nbsp;</p>
+	  </div>
+	  <div class="middle-img">
+	    <p>
+		  <img src="/static/images/phone/wifi2g.png" v-if="data.linkType == '2g'">
+		  <img src="/static/images/phone/wifi5g.png" v-else-if="data.linkType == '5g'">
+		  <img src="/static/images/map/lan.png" v-else-if="data.linkType == 'PC'">
+		  <span v-else-if="data.linkType == ''">{{ lang_t('device.disconnected') }}</span>
+	    </p>
+	  </div>
+	  <div class="middle-img">
+	    <p>&nbsp;</p>
+	  </div>
+	  <div class="right-img">
+	    <img src="/static/images/phone/select_off.png">
+	  </div>
+    </div>
+  </div>
+  <div id="devices_show" class="list" v-else-if="listType == 'white'">
+    <div class="row content" v-for="(data,v) in white_List" @click="modefyDevie(data,v,'white')">
+	  <div class="left-img">
+	    <img src="/static/images/phone/phone.png" v-if="data.deviceType == 'mobile'">
+	    <img src="/static/images/phone/pc.png" v-else>
+	    <p>{{ data.name }}</p>
+	  </div>
+	  <div class="msg">
+	    <p>MAC: {{ data.mac }}</p>
+	    <p>IP: {{ data.ip }}</p>
+		<!--<p>Time: {{data.time}}</p>-->
+		<p>&nbsp;</p>
+	    <p v-if="hwnatState">
+		  <img src="/static/images/phone/down.png">
+		  <span>{{ data.down }}</span>&nbsp;&nbsp;
+		  <img src="/static/images/phone/up.png">
+	  	  <span>{{ data.up }}</span>
+	    </p>
+	  </div>
+	  <div class="middle-img">
+	    <p>
+		  <img src="/static/images/phone/wifi2g.png" v-if="data.linkType == '2g'">
+		  <img src="/static/images/phone/wifi5g.png" v-else-if="data.linkType == '5g'">
+		  <img src="/static/images/map/lan.png" v-else-if="data.linkType == 'PC'">
+		  <span v-else-if="data.linkType == ''">{{ lang_t('device.disconnected') }}</span>
+	    </p>
+	  </div>
+	  <div class="right-img">
+	    <img src="/static/images/phone/select_off.png">
+	  </div>
+    </div>
+  </div>
+  <div v-else-if="listType == 'modefy' " class="row-content">
+	<div class="row-group">
+		<div class="row-right" style="margin-right:11%">
+			<input class="right" v-model="deviceName" :disable="disable_edit" maxlength="32">
+		</div>
+		<div class="row-left">
+			<p>{{ lang_t('rule.device_name') }}:</p>
+		</div>
+	</div>
+	<div class="login-bottom" v-if="!disable_edit">
+		<button class="login-btn" @click="applyFun">{{ lang_t('rule.edit') }}</button>
+		<br><br>
+  		<button class="login-btn-red" :style="{background: btnColor}" @click="setDevieNet">{{ tempType == 'white' ? lang_t('device.off') : lang_t('device.on') }}</button>
+	 </div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/phone_layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,data:[],white_List:[],black_List:[],listType:"white",tempType:"white",deviceName:"",btnColor:"",tempIdx:0,hwnatState:!0,disable_edit:!1}},computed:{backTitle:function(){return"modefy"==this.listType?this.lang_t("device.visit_device"):""}},created:function(){var t=this;"rpt"!=t.globalConfig.opmode&&"br"!=t.globalConfig.opmode||(t.disable_edit=!0),t.getDeviceCfg(),setInterval(function(){t.getDeviceCfg()},3e3)},mounted:function(){var e=this;this.sizeAuto(),window.addEventListener("orientationchange",function(t){e.sizeAuto()},!1)},methods:{backFun:function(){"modefy"==this.listType?this.listType=this.tempType:location.href="/phone/home.html"},sizeAuto:function(){this.height=.5*($(".white-header_main").height()+$(".btn-header-back-main").height()),$("#devices_show").css("padding-top",$(".white-header_main").height()+this.height+"px")},getDeviceCfg:function(t){var e=this;uiPost.getAccessDeviceCfg(function(t){e.data=t,e.white_List=[],e.black_List=[],e.hwnatState="1"!=t.hwnatState,e.white_List=t.white,e.black_List=t.black})},pageChange:function(t){var e=this;this.listType=1==t?"white":"black",setTimeout(function(){$("#devices_show").css("padding-top",$(".white-header_main").height()+e.height+"px")},1)},modefyDevie:function(t,e,i){this.tempType=i,this.tempIdx=e,this.deviceName=t.name,this.btnColor="black"==i?"#B6DE98":"",this.listType="modefy"},applyFun:function(){var t={};1!=cs.string(this.deviceName)?(t.idx=String(this.tempIdx+1),t.name=this.deviceName,t.modelType=this.tempType,this.postData(t)):Cstool.Mark({content:this.lang_t("rule.device_name")+this.lang_t("rule.msg22"),l_text:this.lang_t("common.back")})},setDevieNet:function(t){var e={};e.modelType="white"==this.tempType?"black":"white",this.postData(e)},postData:function(t){var e=this;"white"==this.tempType?t.mac=this.white_List[this.tempIdx].mac:t.mac=this.black_List[this.tempIdx].mac,t.addEffect="0",uiPost.setAccessDeviceCfg(t,function(t){Cstool.Mark({type:"load",time:2,content:e.lang_t("common.effective"),success:function(){Cstool.Flag({content:e.lang_t("common.set_success"),btnText:e.lang_t("common.back"),ok:function(){location.href=location.href}})}})})}}}</script><script src="/static/js/main.js"></script></body></html>

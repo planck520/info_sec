@@ -1,0 +1,84 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"><style>.label-text{display:flex}.label-text .span{background-color:#ccc;padding:5px 10px;border-color:#a8a8a8;border-bottom-left-radius:5px;border-top-left-radius:5px}.label-text .input{border-bottom-left-radius:0;border-top-left-radius:0;width:85px}</style></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <!--子菜单-->
+  <adv-child-menu childType="vpn"></adv-child-menu>
+  <div class="advance-box">
+  	<x-help :text="lang_t('vpn.help_l2tp')"></x-help>
+	<br><br>
+	<div class="fun-box">
+	  <table class="table">  
+	  	<tbody>
+	  	<tr>
+	  	  <td class="fun-left">{{ lang_t('common.state') }}</td>
+	  	  <td>
+	  	  	<x-switch v-model="status"  @change="l2tp_enable"></x-switch>
+	  	  </td>
+		</tr>
+  		</tbody> 
+		<tbody v-show="status">  
+		<tr>
+		  <td class="fun-left">{{ lang_t('vpn.start_ip') }}</td>
+		  <td>
+		  	<div class="label-text">
+				<span class="span">{{sipPrefix}}</span>
+				<input class="input" type="text" v-model="sip" v-verify:parent="formRules" data-name="sip" maxlength="3">
+		  	</div>
+		  </td>
+		</tr>
+		<tr>
+		  <td class="fun-left">{{ lang_t('vpn.end_ip') }}</td>
+		  <td>
+		  	<div class="label-text">
+				<span class="span">{{eipPrefix}}</span>
+				<input class="input" type="text" v-model="eip" v-verify:parent="formRules" data-name="eip" maxlength="3">
+		  	</div>
+		  </td>
+		</tr>
+		<tr>
+		  <td class="fun-left">{{ lang_t('vpn.server') }}</td>
+		  <td>
+		  	<div class="label-text">
+				<span class="span">{{ipPrefix}}</span>
+				<input class="input" type="text" v-model="server" v-verify:parent="formRules" data-name="server" maxlength="3">
+		  	</div>
+		  </td>
+		</tr>
+		<tr>
+		  <td class="fun-left">{{ lang_t('vpn.pri_dns') }}</td>
+		  <td>
+			<input type="text" v-model="priDns" v-verify="formRules" data-name="priDns" maxlength="15">
+		  </td>
+		</tr>
+		<tr>
+		  <td class="fun-left">{{ lang_t('vpn.sec_dns') }}</td>
+		  <td>
+			<input type="text" v-model="secDns" v-verify="formRules" data-name="secDns" maxlength="15" disabled>
+		  </td>
+		</tr>
+		<tr>
+		  <td class="fun-left">MTU</td>
+		  <td>
+			<input type="text" v-model="mtu" v-verify="formRules" data-name="mtu" maxlength="4">
+			&nbsp;&nbsp;
+			<small>({{ lang_t('vpn.range') }}:1400~1500)</small>
+		  </td>
+		</tr>
+		<tr>
+		  <td class="fun-left">MRU</td>
+		  <td>
+			<input type="text" v-model="mru" v-verify="formRules" data-name="mru" maxlength="4">
+			&nbsp;&nbsp;
+			<small>({{ lang_t('vpn.range') }}1400~1500)</small>
+		  </td>
+		</tr>
+		<tr><td colspan="2"></td></tr>
+		<tr>
+		  <td class="fun-left"></td>
+		  <td>
+			<button type="button" class="btn" @click="handleSubmit">{{ lang_t('common.apply') }}</button>
+		  </td>
+		</tr>
+	  	</tbody>
+	  </table>
+  	</div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,status:!1,InitialStatusVal:!1,sip:"",eip:"",server:"",priDns:"",secDns:"",mtu:"",mru:"",ipPrefix:"",sipPrefix:"",eipPrefix:""}},computed:{formRules:function(){var s=this;return{sip:function(n,t){n=s.sipPrefix+n;var e=cs.ip(n);if(n||t(s.lang_t("vpn.start_ip")+s.lang_t("network.msg1")),0==e)t(s.lang_t("vpn.start_ip")+s.lang_t("network.msg1"));else if(1==e)t(s.lang_t("vpn.start_ip")+s.lang_t("network.msg2"));else if(2==e||3==e||4==e)t(s.lang_t("vpn.start_ip")+s.lang_t("network.msg6"));else{var i=cs.ip2int(s.sip);cs.ip2int(s.eip)<i?t(s.lang_t("rule.msg7")):t()}},eip:function(n,t){n=s.eipPrefix+n;var e=cs.ip(n);if(n||t(s.lang_t("vpn.end_ip")+s.lang_t("network.msg1")),0==e)t(s.lang_t("vpn.end_ip")+s.lang_t("network.msg1"));else if(1==e)t(s.lang_t("vpn.end_ip")+s.lang_t("network.msg2"));else if(2==e||3==e||4==e)t(s.lang_t("vpn.end_ip")+s.lang_t("network.msg6"));else{var i=cs.ip2int(s.sip);cs.ip2int(s.eip)<i?t(s.lang_t("rule.msg7")):t()}},server:function(n,t){n?(n=s.ipPrefix+n,99!=cs.ip(n)?t(s.lang_t("vpn.server")+s.lang_t("vpn.msg6")):t()):t(s.lang_t("vpn.server")+s.lang_t("vpn.msg1"))},priDns:function(n,t){n?99!=cs.ip(n)?t(s.lang_t("vpn.pri_dns")+s.lang_t("vpn.msg6")):t():t(s.lang_t("vpn.pri_dns")+s.lang_t("vpn.msg1"))},secDns:function(n,t){""==n?t():99!=cs.ip(n)?t(s.lang_t("vpn.sec_dns")+s.lang_t("vpn.msg6")):t()},mtu:function(n,t){var e=cs.num_range(n,1400,1500);0==e?t("MTU"+s.lang_t("vpn.msg1")):1==e?t("MTU"+s.lang_t("vpn.msg5")):2==e?t("MTU"+s.lang_t("vpn.msg7")):t()},mru:function(n,t){var e=cs.num_range(n,1400,1500);0==e?t("MRU"+s.lang_t("vpn.msg1")):1==e?t("MRU"+s.lang_t("vpn.msg5")):2==e?t("MRU"+s.lang_t("vpn.msg7")):t()}}}},created:function(){var s=this;uiPost.getL2tpServerCfg(function(n){s.status=1==n.enable,s.InitialStatusVal=1==n.enable;var t=n.server.lastIndexOf(".")+1,e=n.sip.lastIndexOf(".")+1,i=n.server.lastIndexOf(".")+1;s.sip=n.sip.slice(t,n.sip.length),s.eip=n.eip.slice(e,n.eip.length),s.server=n.server.slice(i,n.server.length),s.ipPrefix=n.server.slice(0,i),s.sipPrefix=n.sip.slice(0,t),s.eipPrefix=n.eip.slice(0,e),s.priDns=n.priDns,s.secDns=n.secDns,s.mtu=n.mtu,s.mru=n.mru})},methods:{l2tp_enable:function(n){var t=this;if(0==t.status&&t.status!=t.InitialStatusVal){var e={enable:"0"};uiPost.setL2tpServerCfg(e,function(n){var t=1;n&&(n.wtime&&"0"!=n.wtime&&(t=n.wtime),Cstool.applyLoad(t,function(){location.href=location.href}))})}},handleSubmit:function(){var t=this,e={};Cstool.Verify(this.formRules,function(n){n&&t.status&&(e.enable=t.status?"1":"0",e.sip=t.sipPrefix+t.sip,e.eip=t.eipPrefix+t.eip,e.server=t.ipPrefix+t.server,e.priDns=t.priDns,e.secDns=t.secDns,e.mtu=t.mtu,e.mru=t.mru,uiPost.setL2tpServerCfg(e,function(n){var t=1;n&&(n.wtime&&"0"!=n.wtime&&(t=n.wtime),Cstool.applyLoad(t,function(){location.href=location.href}))}))})}}}</script><script src="/static/js/main.js"></script></body></html>

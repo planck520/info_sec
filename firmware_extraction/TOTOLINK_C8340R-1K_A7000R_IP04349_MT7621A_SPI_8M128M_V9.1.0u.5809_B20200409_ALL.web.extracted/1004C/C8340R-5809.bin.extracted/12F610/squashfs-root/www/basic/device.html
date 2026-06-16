@@ -1,0 +1,114 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/basic_menu.css"></head><body><div id="app"></div><script type="text/x-template" id="main"><div class="basic-box">
+	<x-help :text="lang_t('rule.help_devices')"></x-help>
+	<br>
+	<div class="fun-box">
+		<div>
+		  <span class="basic-title">{{ lang_t('menu.equipment') }}</span>
+		</div>
+	</div>
+	<div class="fun-box">
+		<table class="table">
+		  <tbody>
+		  <tr v-if="!disable_edit">
+		    <td colspan="2">
+		      <x-radio v-model="mode" :name="modeName" pos="col" @change="modeState"></x-radio>
+		    </td>
+		  </tr>
+		  </tbody>
+		</table>
+	</div>
+	<div class="fun-box ipflow">
+		<table>
+			<tr>
+				<td align="right">
+					<x-icon v-if="mode == '0' && !disable_edit" type="dis" cursor="pointer" @click="setDevieNet('all','black')">{{ lang_t('device.off') }}</x-icon>
+					<x-icon cursor="pointer" @click="setDevieNet('all','white')"  v-if="mode == '1' && !disable_edit">{{ lang_t('device.on') }}</x-icon>
+				</td>
+			</tr>
+			<tr><td height="5"></td></tr>
+			<tr>
+				<td>
+					<table class="t_table3 table-bordered table-striped">
+						<thead> 
+							<tr>
+								<th>{{ lang_t('rule.device_name') }}</th>
+								<th>{{ lang_t('rule.mac') }}</th>
+								<th>{{ lang_t('rule.ip') }}</th>
+								<th v-if="mode == '0' && hwnatState">{{ lang_t('rule.up') }}</th>
+								<th v-if="mode == '0' && hwnatState">{{ lang_t('rule.down') }}</th>
+								<th>{{ lang_t('rule.link_type') }}</th>
+								<th v-if="!disable_edit">{{ lang_t('rule.operate') }}</th>
+								<th v-if="mode == '0' && !disable_edit">{{ lang_t('common.select') }}
+								<x-checkbox v-model="selectall_white" @change="selectAll_white" ></x-checkbox>
+								</th>
+								<th v-if="mode == '1' && !disable_edit">{{ lang_t('common.select') }}<x-checkbox v-model="selectall_black"  @change="selectAll_black"></x-checkbox></th>
+							</tr>
+						</thead>
+						<tr v-for="(rule,v) in whiteList" v-if="mode == '0'">
+							<td>
+								<input type="text" v-model="editWName[v]" v-if="edit_w[v]" @input="watchValue(v,'w')" maxlength="32" v-verify="formRules" :data-name="'name'+v"/>
+								<span v-else>{{ rule.name }}</span>
+							</td>
+							<td>
+								<span>{{ rule.mac }}</span>
+							</td>
+							<td>
+								<span >{{ rule.ip }}</span>
+							</td>
+							<td v-if="hwnatState">
+								<img src="/static/images/phone/up.png">
+								<span>{{ rule.up | unit }}</span>
+							</td>
+							<td v-if="hwnatState">
+								<img src="/static/images/phone/down.png">
+								<span>{{ rule.down | unit }}</span>
+							</td>
+							<td>
+								<img src="/static/images/map/wifi2g.png" v-if="rule.linkType == '2g'">
+								<img src="/static/images/map/wifi5g.png" v-else-if="rule.linkType == '5g'">
+								<img src="/static/images/map/lan.png" v-else-if="rule.linkType == 'PC'">
+								<span v-else-if="rule.linkType == ''">{{ lang_t('device.disconnected') }}</span>
+							</td>
+							<td v-if="!disable_edit">
+								<img :src="operate_w[v]"  :title="lang_t('rule.edit')" class="cursor" @click="editFun(v,'w')" >&nbsp;&nbsp;
+								<x-icon type="dis" cursor="pointer" @click="setDevieNet(rule.idx,'black')" :title="lang_t('device.off')"></x-icon>
+							</td>
+							<td v-if="!disable_edit">
+								<x-checkbox v-model="select_white[v]"></x-checkbox>
+							</td>
+						</tr>
+						<tr v-for="(rule,v) in blackList" v-if="mode == '1'">
+							<td>
+								<input type="text" v-model="editBName[v]" v-if="edit[v]" @input="watchValue(v,'b')" maxlength="32" v-verify="formRules" :data-name="'bname'+v">
+								<span v-else>{{ rule.name }}</span>
+							</td>
+							<td>
+								<span>{{ rule.mac }}</span>
+							</td>
+							<td>
+								<span >{{ rule.ip }}</span>
+							</td>
+							<td>
+								<img src="/static/images/map/wifi2g.png" v-if="rule.linkType == '2g'">
+								<img src="/static/images/map/wifi5g.png" v-else-if="rule.linkType == '5g'">
+								<img src="/static/images/map/lan.png" v-else-if="rule.linkType == 'PC'">
+								<span v-else-if="rule.linkType == ''">{{ lang_t('device.disconnected') }}</span>
+							</td>
+							<td v-if="!disable_edit">
+								<img :src="operate[v]" :title="lang_t('rule.edit')" class="cursor" @click="editFun(v,'b')" >&nbsp;&nbsp;
+								<x-icon cursor="pointer" :title="lang_t('device.on')" @click="setDevieNet(rule.idx,'white')"></x-icon>
+							</td>
+							<td v-if="!disable_edit">
+								<x-checkbox v-model="select_black[v]"></x-checkbox>
+							</td>
+						</tr>
+						<tr v-show="(mode=='0' && whiteList.length==0) || (mode=='1' && blackList.length==0)">
+							<td colspan="12">{{ lang_t('common.no_data') }}</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+			<!-- <tr><td><x-page :total="dataTotal" @on-page="pageChange" :data="data"></x-page></td></tr> -->
+		</table>
+	</div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,selectall_white:!1,selectall_black:!1,ruleList:[],dataTotal:0,mode:"0",data:[],select_white:[],select_black:[],whiteList:[],blackList:[],operate:[],operate_w:[],edit:[],edit_w:[],editBName:[],editWName:[],tempLen:{white:0,black:0},hwnatState:!0,disable_edit:!1}},watch:{select_white:function(){for(var t=0,e=0;e<this.whiteList.length;e++)this.select_white[e]&&t++;t==this.whiteList.length?this.selectall_white=!0:this.selectall_white=!1},select_black:function(){for(var t=0,e=0;e<this.blackList.length;e++)this.select_black[e]&&t++;t==this.blackList.length?this.selectall_black=!0:this.selectall_black=!1}},computed:{modeName:function(){return["device.enable_wan","device.disable_wan"]},formRules:function(){var i=this;return{name:function(t,e){1==cs.string(t)?e(i.lang_t("rule.msg22")):e()},bname:function(t,e){1==cs.string(t)?e(i.lang_t("rule.msg22")):e()}}}},created:function(){var t=this;"rpt"!=t.globalConfig.opmode&&"br"!=t.globalConfig.opmode||(t.disable_edit=!0),t.getDeviceCfg(),setInterval(function(){t.getDeviceCfg()},5e3)},methods:{getDeviceCfg:function(t){var e=this;uiPost.getAccessDeviceCfg(function(t){e.data=t,e.whiteList=[],e.blackList=[],e.hwnatState="1"!=t.hwnatState,e.whiteList=t.white,e.blackList=t.black,e.tempLen.white!=t.white.length&&(e.tempLen.white=t.white.length,e.tableInit(t.white,"white")),e.tempLen.black!=t.black.length&&(e.tempLen.black=t.black.length,e.tableInit(t.black,"black"))})},selectAll_black:function(t){var e=!1;t&&(e=!0);var i=this.blackList.length;this.select_black=[];for(var a=0;a<i;a++)this.select_black[a]=e},selectAll_white:function(t){var e=!1;t&&(e=!0);var i=this.whiteList.length;this.select_white=[];for(var a=0;a<i;a++)this.select_white[a]=e},modeState:function(t){var e=this;"0"==t?e.tableInit(e.whiteList,"white"):"1"==e.mode&&e.tableInit(e.blackList,"black")},editFun:function(t,e){"w"==e?"/static/images/edit.png"==this.operate_w[t]?this.edit_w[t]?(this.edit_w.splice(t,1),this.edit_w.splice(t,0,!1)):(this.edit_w.splice(t,1),this.edit_w.splice(t,0,!0)):this.modefyFun(t,"white"):"/static/images/edit.png"==this.operate[t]?this.edit[t]?(this.edit.splice(t,1),this.edit.splice(t,0,!1)):(this.edit.splice(t,1),this.edit.splice(t,0,!0)):this.modefyFun(t,"black")},modefyFun:function(t,e){var i={addEffect:"0"};i.modelType=e,i.idx=String(t+1),"white"==e?(i.name=this.editWName[t],i.mac=this.whiteList[t].mac.toUpperCase()):(i.name=this.editBName[t],i.mac=this.blackList[t].mac.toUpperCase());var a="0"==this.mode?this.tempLen.white:this.tempLen.black;Cstool.Verify(this.formRules,function(t){t&&uiPost.setAccessDeviceCfg(i,function(t){Cstool.applyLoad(1,function(){location.href=location.href})})},a,t)},watchValue:function(t,e){"w"==e?this.editWName[t]!=this.whiteList[t].name?"/static/images/edited.png"!=this.operate_w[t]&&(this.operate_w.splice(t,1),this.operate_w.splice(t,0,"/static/images/edited.png")):(this.operate_w.splice(t,1),this.operate_w.splice(t,0,"/static/images/edit.png")):this.editBName[t]!=this.blackList[t].name?"/static/images/edited.png"!=this.operate[t]&&(this.operate.splice(t,1),this.operate.splice(t,0,"/static/images/edited.png")):(this.operate.splice(t,1),this.operate.splice(t,0,"/static/images/edit.png"))},setDevieNet:function(t,e){var i={},a=this;if("all"!=t&&"white"==e){for(var s=0;s<a.blackList.length;s++)a.blackList[s].idx==t&&(i.mac=a.blackList[s].mac.toUpperCase());i.addEffect="0",i.modelType=e,uiPost.setAccessDeviceCfg(i,function(t){var e=1;t&&(t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href}))})}else if("all"!=t&&"black"==e){for(s=0;s<a.whiteList.length;s++)a.whiteList[s].idx==t&&(i.mac=a.whiteList[s].mac.toUpperCase());i.addEffect="0",i.modelType=e,uiPost.setAccessDeviceCfg(i,function(t){var e=1;t&&(t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href}))})}else if("all"==t&&"white"==e){var c=0,l=[],n=[];for(s=0;s<a.blackList.length;s++)this.select_black[s]&&(c++,l[s]={},l[s].mac=a.blackList[s].mac,n=n.concat(l[s])),i.mac_array=n,i.addEffect="1",i.modelType=e;if(0==c)return Cstool.Msg({content:this.lang_t("device.msg1",[this.lang_t("device.on")])}),!1;uiPost.setAccessDeviceCfg(i,function(t){var e=1;t&&(t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href}))})}else if("all"==t&&"black"==e){for(c=0,l=[],n=[],s=0;s<a.whiteList.length;s++)a.select_white[s]&&(c++,l[s]={},l[s].mac=a.whiteList[s].mac,n=n.concat(l[s])),i.mac_array=n,i.addEffect="1",i.modelType=e;if(0==c)return Cstool.Msg({content:this.lang_t("device.msg1",[this.lang_t("device.off")])}),!1;uiPost.setAccessDeviceCfg(i,function(t){var e=1;t&&(t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href}))})}},tableInit:function(t,e){if("white"==e)for(var i in t)this.edit_w[i]=!1,this.select_white[i]=!1,this.operate_w[i]="/static/images/edit.png",this.editWName[i]=t[i].name;else for(var i in t)this.edit[i]=!1,this.select_black[i]=!1,this.operate[i]="/static/images/edit.png",this.editBName[i]=t[i].name}},filters:{unit:function(t){return t=1024*Number(t),getFlow(t)}}}</script><script src="/static/js/main.js"></script></body></html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta content="width=device-width,initial-scale=1,user-scalable=no" name="viewport"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><link rel="stylesheet" href="/static/css/phone/main.css"><link rel="stylesheet" href="/static/css/phone/common.css"></head><style>::-webkit-scrollbar{display:none}.main-pad{padding:1% 8%}</style><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <phone-back :title="lang_t('phone.tools')" :url="homeHtml"></phone-back>
+  <div class="white-layout-body">
+	<div class="white-layout" style="color: #9d9d9d;">
+	  <div class="main-pad">
+		<div class="row content-css" @click="goUrlFun('changepwd')" v-show="!globalConfig.sameSiteCookie&&!globalConfig.projectOwnerTw">
+		  <div class="content-left-img">
+			<img src="/static/images/phone/changepwd.png">	
+		  </div>
+		  <div class="content-msg">
+			<span>{{ lang_t('menu.changeadmpwd') }}</span>
+		  </div>
+		  <div class="content-right-img">
+			<img src="/static/images/phone/sign_right.png">
+		  </div>
+		</div>
+		<div class="row content-css" @click="goUrlFun('language')">
+		  <div class="content-left-img">
+			<img src="/static/images/phone/language.png">	
+		  </div>
+		  <div class="content-msg">
+			<span>{{ lang_t('menu.language') }}</span>
+		  </div>
+		  <div class="content-right-img">
+			<img src="/static/images/phone/sign_right.png">
+		  </div>
+		</div>
+		<div class="row content-css" @click="goUrlFun('time')">
+		  <div class="content-left-img">
+			<img src="/static/images/phone/time.png">	
+		  </div>
+		  <div class="content-msg">
+			<span>{{ lang_t('menu.time') }}</span>
+		  </div>
+		  <div class="content-right-img">
+			<img src="/static/images/phone/sign_right.png">
+		  </div>
+		</div>
+		<div class="row content-css" @click="goUrlFun('signal')">
+		  <div class="content-left-img">
+			<img src="/static/images/phone/wifi_signal.png">
+		  </div>
+		  <div class="content-msg">
+			<span>{{ lang_t('menu.signal') }}</span>
+		  </div>
+		  <div class="content-right-img">
+			<img src="/static/images/phone/sign_right.png">
+		  </div>
+		</div>
+		<!--<div class="row content-css" @click="goUrlFun('storage')">
+		  <div class="content-left-img">
+			<img src="/static/images/phone/usb.png">	
+		  </div>
+		  <div class="content-msg">
+			<span>{{ lang_t('menu.storage') }}</span>
+		  </div>
+		  <div class="content-right-img">
+			<img src="/static/images/phone/sign_right.png">
+		  </div>
+		</div>-->
+		<div class="row content-css" @click="firmwareUpFun">
+		  <div class="content-left-img">
+			<img src="/static/images/phone/firmware.png">	
+		  </div>
+		  <div class="content-msg">
+			<span>{{ lang_t('menu.firmware') }}</span>
+		  </div>
+		  <div class="content-right-img">
+			<img src="/static/images/phone/sign_right.png">
+		  </div>
+		</div>
+		<div class="row content-css" @click="resetFun">
+		  <div class="content-left-img">
+			<img src="/static/images/phone/reset.png">	
+		  </div>
+		  <div class="content-msg">
+			<span>{{ lang_t('menu.reset') }}</span>
+		  </div>
+		  <div class="content-right-img">
+			<img src="/static/images/phone/sign_right.png">
+		  </div>
+		</div>
+		<div class="row content-css" @click="restartFun">
+		  <div class="content-left-img">
+			<img src="/static/images/phone/restart.png">	
+		  </div>
+		  <div class="content-msg">
+			<span>{{ lang_t('menu.restart') }}</span>
+		  </div>
+		  <div class="content-right-img">
+			<img src="/static/images/phone/sign_right.png">
+		  </div>
+		</div>
+		<div class="row content-css" @click="exitFun" v-show="!globalConfig.sameSiteCookie">
+		  <div class="content-left-img">
+			<img src="/static/images/phone/exit.png">	
+		  </div>
+		  <div class="content-msg">
+			<span>{{ lang_t('menu.logout') }}</span>
+		  </div>
+		  <div class="content-right-img">
+			<img src="/static/images/phone/sign_right.png">
+		  </div>
+		</div>
+		<div class="row content-css" @click="aboutFun" v-show="">
+		  <div class="content-left-img">
+			<img src="/static/images/phone/info.png">	
+		  </div>
+		  <div class="content-msg">
+			<span>{{ lang_t('menu.about') }}</span>
+		  </div>
+		  <div class="content-right-img">
+			<img src="/static/images/phone/sign_right.png">
+		  </div>
+		</div>
+	  </div>
+	</div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/phone_layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,homeHtml:"/phone/home.html?time="+(new Date).getTime()}},mounted:function(){this.autoFun()},methods:{goUrlFun:function(t){location.href="/phone/"+t+".html?time="+(new Date).getTime()},firmwareUpFun:function(){this.newCloudCheck()},restartFun:function(){var n=this;Cstool.Mark({content:n.lang_t("config.msg5"),ok:function(){uiPost.RebootSystem(function(t){Cstool.Flag({title:n.lang_t("menu.restart"),content:n.lang_t("config.msg9"),type:"wait"})})}})},resetFun:function(){var n=this;Cstool.Mark({content:n.lang_t("config.msg4"),ok:function(){uiPost.LoadDefSettings(function(t){Cstool.Flag({title:n.lang_t("menu.reset"),content:n.lang_t("config.msg10"),type:"wait"})})}})},aboutFun:function(){Cstool.Flag({title:"about"})},exitFun:function(){Cstool.Mark({content:this.lang_t("config.msg11"),ok:function(){location.href="/phone/login.html?time="+(new Date).getTime()}})},newCloudCheck:function(){var n=this;uiPost.CloudSrvVersionCheck(function(){Cstool.Mark({content:n.lang_t("firmware.newcloudUpdateing"),type:"load",time:30,loading:function(t){return"timeout"==t?(n.result=2,Cstool.Flag({title:n.lang_t("firmware.cloud_upgrade"),content:n.lang_t("firmware.check_if_newver"),btnText:n.lang_t("common.back")}),!1):uiPost.getCloudSrvCheckStatus(function(t){return"1"==t.cloudFwStatus?(n.result=1,Cstool.Flag({title:n.lang_t("firmware.cloud_upgrade"),content:n.lang_t("firmware.check_internet_result"),btnText:n.lang_t("common.back")}),"stop"):"2"==t.cloudFwStatus?(n.result=2,Cstool.Flag({title:n.lang_t("firmware.cloud_upgrade"),content:n.lang_t("firmware.check_if_newver"),btnText:n.lang_t("common.back")}),"stop"):"4"==t.cloudFwStatus?(n.newVersion=t.newVersion,n.result=4,Cstool.Flag({title:n.lang_t("firmware.cloud_upgrade"),content:n.lang_t("firmware.found_newfw")+": "+t.newVersion,btnText:n.lang_t("config.update"),ok:function(){uiPost.setUpgradeFW({flags:"0"},function(t){Cstool.Flag({title:n.lang_t("firmware.cloud_upgrade"),content:n.lang_t("config.msg8"),type:"wait"})})}}),"stop"):"5"==t.cloudFwStatus?(n.result=5,Cstool.Flag({title:n.lang_t("firmware.cloud_upgrade"),content:n.lang_t("firmware.cloudUpdateing"),btnText:n.lang_t("common.back")}),"stop"):void(n.result=3)})}})})},autoFun:function(){$(window).height()<380?($(".white-layout-body").css("height",.78*window.innerHeight+"px"),$(".white-layout").css("minHeight",.78*document.body.clientHeight+"px")):($(".white-layout-body").css("height",.86*window.innerHeight+"px"),$(".white-layout").css("minHeight",.8*document.body.clientHeight+"px"))}}}</script><script src="/static/js/main.js"></script></body></html>

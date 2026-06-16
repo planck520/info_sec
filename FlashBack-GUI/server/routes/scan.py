@@ -121,16 +121,90 @@ def _get_task(request: Request, task_id: str) -> TaskState:
     return task
 
 
+def _select_file_dialog(title: str = "选择固件二进制文件") -> Optional[str]:
+    """打开系统文件选择窗口并返回文件路径。"""
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+    except Exception as exc:
+        raise RuntimeError("当前 Python 环境不支持 tkinter 文件选择窗口") from exc
+
+    root = tk.Tk()
+    root.withdraw()
+    root.attributes("-topmost", True)
+    try:
+        path = filedialog.askopenfilename(title=title or "选择固件二进制文件", parent=root)
+        return path or None
+    finally:
+        root.destroy()
+
+
+def _select_directory_dialog(title: str = "选择目录") -> Optional[str]:
+    """打开系统文件夹选择窗口并返回目录路径。"""
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+    except Exception as exc:
+        raise RuntimeError("当前 Python 环境不支持 tkinter 文件夹选择窗口") from exc
+
+    root = tk.Tk()
+    root.withdraw()
+    root.attributes("-topmost", True)
+    try:
+        path = filedialog.askdirectory(title=title or "选择目录", mustexist=False, parent=root)
+        return path or None
+    finally:
+        root.destroy()
+
+
+@router.get("/scan/select-dir")
+async def select_directory(title: str = "选择目录"):
+    """打开 Windows 文件夹选择窗口。"""
+    import asyncio
+
+    try:
+        path = await asyncio.to_thread(_select_directory_dialog, title)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    return {"path": path}
+
+
+@router.get("/scan/select-file")
+async def select_file(title: str = "选择固件二进制文件"):
+    """打开 Windows 文件选择窗口。"""
+    import asyncio
+
+    try:
+        path = await asyncio.to_thread(_select_file_dialog, title)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    return {"path": path}
+
+
 @router.get("/scan/dir")
 async def scan_directory(request: Request, path: str):
-    """扫描固件目录。"""
+    """扫描固件目录或单个二进制文件。"""
     target = Path(path)
-    if not path or not target.exists() or not target.is_dir():
-        raise HTTPException(status_code=400, detail="固件目录不存在或不是目录")
+    if not path or not target.exists():
+        raise HTTPException(status_code=400, detail="路径不存在")
 
     runner = _get_runner(Path(request.app.state.resource_dir), _settings.get("ida_path", ""))
     try:
+        if target.is_file():
+            if not runner._looks_like_program_binary(target):
+                raise HTTPException(status_code=400, detail="所选文件不是可直接分析的程序二进制，请选择 ELF/PE/Mach-O 文件或解包后的目录")
+            return {"firmwares": [{
+                "name": target.stem,
+                "device": target.parent.name,
+                "path": str(target),
+                "bits": runner._detect_bits(target),
+                "size": target.stat().st_size,
+            }]}
+        if not target.is_dir():
+            raise HTTPException(status_code=400, detail="路径不是目录或文件")
         return {"firmwares": runner.scan_directory(target)}
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 

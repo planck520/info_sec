@@ -1,0 +1,81 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <!--子菜单-->
+  <adv-child-menu childType="security"></adv-child-menu>  
+  <div class="advance-box">
+    <x-help :text="lang_t('rule.help_macf')"></x-help>
+	<br><br>
+    <div class="fun-box">
+      <div>
+	  	<span class="fun-title">{{ lang_t('rule.macf') }}</span>
+	  	&nbsp;&nbsp;
+	  	<x-switch v-model="macfState" @change="stateChange"></x-switch>
+	  </div>
+      <table v-show="macfState">
+        <tr><td align="right">
+        	<x-icon type="add" cursor="pointer" @click="addRuleVal">{{ lang_t('common.add') }}</x-icon>
+			<x-icon type="del" cursor="pointer" @click="trashFun('all')">{{ lang_t('common.delete') }}</x-icon>
+        </td></tr>
+        <tr><td height="5"></td></tr>
+        <tr>
+          <td><table class="t_table3 table-bordered table-striped" style="width: 100%;">
+       	    <thead>
+			<tr>
+			  <th>{{ lang_t('rule.description') }}</th>
+			  <th>{{ lang_t('rule.mac') }}</th>
+			  <th v-if="globalConfig.firewallSchSupport">{{ lang_t('rule.start_time') }}</th>
+			  <th>{{ lang_t('rule.operate') }}</th>
+			  <th>{{ lang_t('common.select') }}<x-checkbox v-model="selectall" @change="selectAll"></x-checkbox></th>
+		  	</tr>
+		  	</thead>
+			<tr v-show="addShow">
+              <td><input type="text" class="desc" v-model="desc" v-verify="formRules" data-name="desc" :maxlength="descLen"></td>
+              <td>
+              	<input type="text" class="mac" v-model="mac" v-verify="formRules" data-name="mac" maxlength="17">
+              	<img src="/static/images/search.png" :title="lang_t('common.scan')" class="cursor" @click="scanFun">
+              </td>
+			  <td v-if="globalConfig.firewallSchSupport">
+			  	<x-time v-model="schTime"x-time>
+			  </td>
+              <td><button :disabled="disable_addBtn" @click="addRule"><img src="/static/images/added.png" :title="lang_t('common.add')" class="cursor"></button></td>
+              <td></td>
+            </tr>
+            <tbody>
+            <tr v-for="(rule,v) in ruleList">
+			  <td>
+			  	<input type="text" class="desc" v-model="editDesc[rule.idx]" v-verify="formRules" :data-name="'desc'+Number(rule.idx)"  :maxlength="descLen" v-if="edit[rule.idx]" @input="watchValue(rule.idx)">
+			  	<span v-else>{{ rule.desc }}</span>
+			  </td>
+			  <td>
+			  	<div v-if="edit[rule.idx]">
+				  	<input type="text" class="mac" v-model="editMac[rule.idx]" v-verify="formRules" :data-name="'mac'+Number(rule.idx)" maxlength="17" @input="watchValue(rule.idx)">
+				  	<img src="/static/images/search.png" class="cursor" :title="lang_t('common.scan')" @click="scanFun(rule.idx)">
+				  </div>
+			  	<span v-else>{{ rule.mac }}</span>
+			  </td>
+			  <td v-if="globalConfig.firewallSchSupport">
+			    <div v-if="edit[rule.idx]">
+			  		<x-time v-model="editSchTime[rule.idx]" @change="watchValue(rule.idx)"></x-time>
+			    </div>
+			    <span v-else>{{ $timeConver(rule.schTime) }}</span>
+			  </td>
+			  <td>
+				<img :src="operate[rule.idx]" :title="lang_t('rule.edit')" class="cursor" @click="editFun(rule.idx)">
+				&nbsp;&nbsp;
+				<img src="/static/images/trash.png" :title="lang_t('common.delete')" class="cursor" @click="trashFun(rule.idx)">
+			  </td>
+			  <td>
+				<x-checkbox v-model="select[rule.idx]"></x-checkbox>
+			  </td>
+			</tr>
+			<tr v-show="dataTotal==0">
+				<td colspan="12">{{ lang_t('common.no_data') }}</td>
+			</tr>
+		  	</tbody>
+          </table></td>
+        </tr>
+		<tr><td><x-page :total="dataTotal" @on-page="pageChange" :data="data"></x-page></td></tr>
+      </table>
+    </div>
+    <x-modal v-model="modelShow" :title="lang_t('common.ip_mac')" show="ip,mac" :listData="listData" @on-select="selectFun"></x-modal>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,macfState:!1,selectall:!1,operate:[],select:[],data:[],edit:[],ruleList:[],desc:"",mac:"",editSchTime:[],schTime:"0,0:0,23:59",editDesc:[],editMac:[],dataTotal:0,addShow:!1,tempIdx:0,modelShow:!1,disable_addBtn:!1,listData:[],descLen:globalConfig.descLen}},watch:{select:function(){var t=0;for(var e in this.select)this.select[e]&&t++;t==this.select.length?this.selectall=!0:this.selectall=!1}},computed:{formRules:function(){var a=this;return{mac:function(t,e){t||e(a.lang_t("rule.mac")+a.lang_t("rule.msg12"));var i=cs.mac(t);1==i?e(a.lang_t("rule.msg17")):2==i?e(a.lang_t("rule.msg18")):3==i?e(a.lang_t("rule.msg19")):99==i&&e()},desc:function(t,e){var i=cs.commentstr(t);1==i||2==i?e(a.lang_t("rule.msg4")):0!=i&&99!=i||e()}}}},created:function(){var e=this;uiPost.getMacFilterRules(function(t){e.macfState="1"==t.enable,t.rule&&e.tableInit(t.rule)})},methods:{pageChange:function(t,e){this.ruleList=e},stateChange:function(t){var e={};e.enable=t?"1":"0",e.addEffect="0",uiPost.setMacFilterRules(e,function(t){var e=1;t&&(t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href}))})},selectAll:function(t){var e=!1;t&&(e=!0);var i=this.select.length;this.select=[];for(var a=0;a<i;a++)this.select[a]=e},addRuleVal:function(){this.addShow=!0},scanFun:function(t){var e=this;this.tempIdx=t,uiPost.getOnlineMsg(function(t){e.listData=t,e.modelShow=!0})},selectFun:function(t){"number"!=typeof this.tempIdx?(this.mac=t.mac,this.desc=t.name):(this.editMac[this.tempIdx]=t.mac,this.editDesc[this.tempIdx]=t.name,this.watchValue(this.tempIdx))},addRule:function(){var s=this;if(s.disable_addBtn=!0,s.dataTotal){if(16<=s.dataTotal)return Cstool.Msg({content:this.lang_t("rule.msg30",[16])}),s.disable_addBtn=!1;for(i=0;i<s.dataTotal;i++)if(s.mac.toUpperCase()==s.data[i].mac.toUpperCase())return Cstool.Msg({content:this.lang_t("rule.msg00")}),s.disable_addBtn=!1}Cstool.Verify(this.formRules,function(t){if(t||(s.disable_addBtn=!1),t){var e={};if(globalConfig.firewallSchSupport){if(!s.$timeVerify(s.schTime,function(){for(i=0;i<s.dataTotal;i++)if(s.mac.toUpperCase()==s.data[i].mac.toUpperCase()&&s.schTime==s.data[i].schTime)return Cstool.Msg({content:s.lang_t("rule.parental_conflict")}),!1}))return void(s.disable_addBtn=!1);var a=s.getPostTime(s.schTime);e.date=a.date,e.time=a.time}e.mac=s.mac.toUpperCase(),e.desc=s.desc,e.addEffect="1",uiPost.setMacFilterRules(e,function(t){var e=1;t&&(t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href}))})}})},editFun:function(t){"/static/images/edit.png"==this.operate[t]?this.edit[t]?(this.edit.splice(t,1),this.edit.splice(t,0,!1)):(this.edit.splice(t,1),this.edit.splice(t,0,!0)):this.modefyFun(t)},modefyFun:function(a){var s={},n=this;if(n.dataTotal)for(i=0;i<n.dataTotal&&(i==a&&i++,i!=n.dataTotal);i++)if(n.editMac[a]==n.data[i].mac)return Cstool.Msg({content:this.lang_t("rule.rule_conflict",[this.lang_t("rule.mac")])}),!1;Cstool.Verify(this.formRules,function(t){if(t){if(globalConfig.firewallSchSupport){if(!n.$timeVerify(n.editSchTime[a],function(){for(i=0;i<n.dataTotal;i++)if(i!=a&&n.editMac[a].toUpperCase()==n.data[i].mac.toUpperCase()&&n.editSchTime[a]==n.data[i].schTime)return Cstool.Msg({content:n.lang_t("rule.parental_conflict")}),!1}))return void(n.disable_addBtn=!1);var e=n.getPostTime(n.editSchTime[a]);s.date=e.date,s.time=e.time}s.mac=n.editMac[a].toUpperCase(),s.desc=n.editDesc[a],s.idx=String(a+1),s.addEffect="2",uiPost.setMacFilterRules(s,function(t){var e=1;t&&(t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href}))})}},n.dataTotal,a)},trashFun:function(t){var e={};if("all"!=t)e[this.data[t].delRuleName]=String(t),Cstool.Msg({content:this.lang_t("rule.msg15"),type:"confirm",ok:function(){uiPost.delMacFilterRules(e,function(t){var e=1;t&&(t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href}))})}});else{var i=0;for(var a in this.select)this.select[a]&&(i++,e[[this.data[a].delRuleName]]=String(a),Cstool.Msg({content:i==this.select.length?this.lang_t("rule.msg26"):this.lang_t("rule.msg15"),type:"confirm",ok:function(){uiPost.delMacFilterRules(e,function(t){var e=1;t&&(t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href}))})}}));if(0==i)return Cstool.Msg({content:this.lang_t("rule.msg14")}),!1}},watchValue:function(t){this.editDesc[t]!=this.data[t].desc||this.editMac[t]!=this.data[t].mac||this.editSchTime[t]!=this.data[t].schTime&&globalConfig.firewallSchSupport?"/static/images/edited.png"!=this.operate[t]&&(this.operate.splice(t,1),this.operate.splice(t,0,"/static/images/edited.png")):(this.operate.splice(t,1),this.operate.splice(t,0,"/static/images/edit.png"))},numConn:function(t,e){return"0"==t?e:String(t)+String(e)},getPostTime:function(t){var e=(t=t.split(","))[0],i=(t[1],t[2],"");if("0"==e)i="1111111";else{-1<(e=e.split(";")).indexOf("7")?i+="1":i+="0";for(var a=1;a<=6;a++)-1<e.indexOf(String(a))?i+="1":i+="0"}return{date:i,time:cs.checkTime(t[1]).replace(":","")+cs.checkTime(t[2]).replace(":","")}},tableInit:function(t){var e=0;for(var i in t){if(this.edit[i]=!1,this.select[i]=!1,this.operate[i]="/static/images/edit.png",this.editDesc[i]=t[i].desc,this.editMac[i]=t[i].mac,globalConfig.firewallSchSupport){for(var a=t[i].date.split(""),s=t[i].time.split(""),n=[],l=1;l<a.length;l++)"1"==a[l]&&n.push(l);"1"==a[0]&&n.push(7);var o=7==n.length?"0":n.join(";");o+=","+this.numConn(s[0],s[1])+":"+this.numConn(s[2],s[3])+","+this.numConn(s[4],s[5])+":"+this.numConn(s[6],s[7]),this.editSchTime[i]=o,t[i].schTime=o}t[i].idx=e,e++}this.ruleList=t,this.data=t,this.dataTotal=this.ruleList.length}}}</script><script src="/static/js/main.js"></script></body></html>

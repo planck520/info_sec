@@ -1,0 +1,212 @@
+
+html,body {
+    background-image: url(/static/images/phone/circle.png);
+    background-repeat: no-repeat;
+    background-position: 50% 55%;
+    background-color: rgb(92,146,190);
+    position: relative;
+    height: 100%;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+.fun-icon {
+	width: 70px;
+	height: 50px;
+	display: inline-block;
+    text-align: center;
+    background-repeat: no-repeat;
+    background-position: 50% 0;
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+.fun-icon a {
+	display: block;
+	padding-top: 45px;
+	white-space: pre-wrap;
+    word-wrap: break-word;
+    word-break: break-all;
+    color: #fff;
+}
+
+.fun-icon.center {
+    right: 0;
+    left: 0;
+	margin: 0 auto;
+}
+
+.fun-icon.wifi {
+	background-image: url('/static/images/phone/wifi.png');
+    top: 50%;
+    right: 8%;
+    left: auto;
+}
+
+.fun-icon.router {
+	background-image: url('/static/images/phone/router2.png');
+	top: 50%;
+}
+
+.fun-icon.repeater {
+	background-image: url('/static/images/phone/opmode.png');
+    top: 67%;
+}
+
+.fun-icon.pc {
+	background-image: url('/static/images/phone/pc.png');
+	top: auto;
+    bottom: 6%;
+}
+.fun-icon.pc a{
+	margin-top: 7px;
+}
+
+.fun-icon.tool {
+	background-image: url('/static/images/phone/tools.png');
+    top: auto;
+    bottom: 3%;
+    left: auto;
+    right: 3%;
+}
+.fun-icon.tool a{
+	padding-top: 35px;
+}
+
+.fun-icon.devices {
+	background-image: url('/static/images/phone/devices.png');
+    top: 50%;
+    left: 8%;
+}
+
+.fun-icon.net {
+	background-image: url('/static/images/phone/internet2.png');
+    top: 30%;
+    height: 65px;
+}
+.fun-icon.net a{
+	padding-top: 67px;
+}
+
+.fun-icon.application {
+	background-image: url('/static/images/phone/menu_app2.png');
+    top: auto;
+    bottom: 3%;
+    left: 3%;
+}
+.fun-icon.application a{
+	padding-top: 35px;
+}
+
+.fun-icon.wizard {
+	background-image: url('/static/images/phone/wizard.png');
+    top: 1%;
+    right: 0%;
+    left: auto;
+}
+.fun-icon.wizard a{
+	padding-top: 35px;
+}
+
+.fun-icon.speed_up {
+	background-image: url('/static/images/phone/speed_up2.png');
+    top: 3%;
+    left: 45%;
+    width: auto;
+    height: auto;
+    padding-left: 26px;
+    background-position-x: 0;
+}
+.fun-icon.speed_up a{
+	padding: 0;
+}
+
+.fun-icon.speed_down {
+	background-image: url('/static/images/phone/speed_down2.png');
+    top: 3%;
+    left: 5%;
+    width: auto;
+    height: auto;
+    padding-left: 26px;
+    background-position-x: 0;
+}
+.fun-icon.speed_down a{
+	padding: 0;
+}
+
+.fun-icon.ram {
+	background-image: url('/static/images/phone/ram.png');
+    top: 12%;
+    left: auto;
+    right: 10%;
+    width: 110px;
+    height: 110px;
+    background-position-y: 61%;
+}
+
+.fun-icon.cpu {
+	background-image: url('/static/images/phone/cpu.png');
+    top: 12%;
+    left: 10%;
+    width: 110px;
+    height: 110px;
+    background-position-y: 69%;
+}
+
+img{padding:0;margin:0;color:#fff;}
+p{padding:0;margin:0;color:#fff;}
+
+/* 菜单 */
+.menu-box{z-index:1000;position:absolute;left:0;top:0;width:35%;height:100%;background:#91aec6;}
+.menu-box .menu{display:block;position:absolute;float:left;overflow-y: auto;width: 100%;}
+/*.menu-box-on{animation:bomaction 15s linear forwards 1;-webkit-animation:bomaction 1s 1;}*/
+.menu-box-off{position:absolute;bottom:3%;right:-45%;}
+.menu-box ul{position:relative;width:100%;list-style:none;margin: 0;padding: 0;}
+.menu-box li a{display:block;width:100%;cursor:pointer;color:#fff;text-align:center;text-decoration:none;padding-top:50px;}
+
+.menu-box .parental{background:url(/static/images/basic_menu/parental_on.png) no-repeat center;background-size:30px 30px;}
+.menu-box .qos{background:url(/static/images/basic_menu/qos_on.png) no-repeat center;background-size:30px 30px;}
+.menu-box .guest{background:url(/static/images/basic_menu/guest_on.png) no-repeat center;background-size:30px 30px;}
+.menu-box .appfilter{background:url(/static/images/basic_menu/appfilter_on.png) no-repeat center;background-size:30px 30px;}
+.menu-box .storage{background:url(/static/images/basic_menu/storage_on.png) no-repeat center;background-size:30px 30px;}
+.menu-box .vpn{background:url(/static/images/basic_menu/vpn_on.png) no-repeat center;background-size:30px 30px;}
+.menu-box .gamespeed{background:url(/static/images/basic_menu/gamespeed_on.png) no-repeat center;background-size:30px 30px;}
+.menu-box .urlfilter{background:url(/static/images/basic_menu/urlfilter_on.png) no-repeat center;background-size:30px 30px;}
+.menu-box .wifi_schedule{background:url(/static/images/basic_menu/wifi_schedule_on.png) no-repeat center;background-size:30px 30px;}
+/*
+@keyframes bomaction{
+	from {width:0%;}
+	to {width:30%;}
+}
+@-webkit-keyframes bomaction{
+	from {width:0%;}
+	to {width:30%;}
+}
+*/
+
+.system-badge-count{
+    position:absolute;
+    -webkit-transform:translateX(50%);
+    transform:translateX(50%);
+    top:-10px;
+    left: 38px;
+    height:20px;
+    border-radius:30px;
+    min-width:10px;
+    border:1px solid transparent;
+    color:#fff;
+    line-height:18px;
+    padding:0 6px;
+    font-size:12px;
+    white-space:nowrap;
+    -webkit-transform-origin:-10% center;
+    transform-origin:-10% center;
+}
+.system-badge-count, 
+.system-badge-dot{
+	background:rgb(233,153,0);
+	z-index:10;
+	box-shadow:0 0 0 1px #fff;
+	text-align:center;
+}

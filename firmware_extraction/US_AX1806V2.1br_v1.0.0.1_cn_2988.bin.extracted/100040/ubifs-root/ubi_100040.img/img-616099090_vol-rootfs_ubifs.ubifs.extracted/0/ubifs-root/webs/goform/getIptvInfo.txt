@@ -1,0 +1,6 @@
+{
+"iptvEn": "1",
+"vlanId": "85",
+"bindLan": "3",
+"vlanEn": "0"
+}

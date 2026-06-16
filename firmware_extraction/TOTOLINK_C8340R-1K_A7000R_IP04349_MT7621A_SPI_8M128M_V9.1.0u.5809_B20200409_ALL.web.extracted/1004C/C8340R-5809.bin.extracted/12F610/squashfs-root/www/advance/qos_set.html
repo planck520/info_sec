@@ -1,0 +1,61 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"><link rel="stylesheet" href="/static/css/loading.css"></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <!--子菜单-->
+  <adv-child-menu childType="qos"></adv-child-menu>   
+  <div class="advance-box">
+    <x-help :text="lang_t('qos.help1')"></x-help>
+    <br><br>
+	<div class="fun-box">
+	  <span class="fun-title">{{ lang_t('qos.qos_state') }}</span>
+	  &nbsp;&nbsp;
+	  <x-switch v-model="qosState" @change="stateChange"></x-switch>
+    </div>
+    <div v-show="qosState" class="fun-box ipflow">
+      	<table class="table">
+	      	<tbody>
+		      	<tr> 
+				  	<td class="fun-left">{{ lang_t('qos.eth_type') }}</td>
+				  	<td>
+		            	<select v-model="ethType" @change="ethChange">
+						  	<option value="500">500 {{ lang_t('qos.light') }}</option>
+						  	<option value="200">200 {{ lang_t('qos.light') }}</option>
+						  	<option value="100">100 {{ lang_t('qos.light') }}</option>
+						  	<option value="50">50 {{ lang_t('qos.light') }}</option>
+						  	<option value="20">20 {{ lang_t('qos.light') }}</option>
+						  	<option value="0">{{ lang_t('qos.custom') }}</option>
+						</select>
+						&nbsp;&nbsp;
+		            	<a class="link" @click="discoverFun" v-if="globalConfig.autoDetectSupport">{{ lang_t('wan.auto_detect') }}</a>
+		          	</td>
+				</tr>
+				<tr>
+				  	<td class="fun-left">{{ lang_t('qos.up') }}</td>
+				  	<td>
+		            	<input type="text" maxlength="5" v-model="totalUp" v-verify="rateRules" data-name="totalUp" :disabled="ethType != '0'">
+		            	&nbsp;&nbsp;
+		            	<small>({{ lang_t('wan.range') }}: 0.4~500Mb/s)</small>
+		          	</td>
+				</tr>
+				<tr> 
+				  	<td class="fun-left">{{ lang_t('qos.down') }}</td>
+				  	<td>
+		            	<input type="text" maxlength="5" v-model="totalDown" v-verify="rateRules" data-name="totalDown" :disabled="ethType != '0'">
+		            	&nbsp;&nbsp;
+		            	<small>({{ lang_t('wan.range') }}: 0.4~500Mb/s)</small>
+		          	</td>
+				</tr>
+				<tr>
+				  <td class="fun-left"></td>
+				  <td>
+					<button type="button" class="btn" @click="applyFun">{{ lang_t('common.apply') }}</button>
+				  </td>
+				</tr>
+			</tbody>
+		</table>
+    </div>
+    <x-modal v-model="autoShow" :title="lang_t('qos.auto_title')" :ok_text="lang_t('message.reply')" >
+	<div style="word-wrap: break-word; word-break: normal;word-break:break-all; ">
+        <p>{{ ethValue }}</p>
+    </div>
+  </x-modal>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,qosState:!1,totalUp:"200",totalDown:"200",ethType:"200",ethValue:"0",autoShow:!1}},computed:{rateRules:function(){var a=this;return{totalUp:function(t,e){var n=cs.num_range(t,.4,500);0==n?e(a.lang_t("qos.up")+a.lang_t("rule.msg12")):1==n?e(a.lang_t("qos.up")+a.lang_t("rule.msg24")):2==n?e(a.lang_t("qos.up")+a.lang_t("rule.msg56",[.4,500])):99==n&&e()},totalDown:function(t,e){var n=cs.num_range(t,.4,500);0==n?e(a.lang_t("qos.down")+a.lang_t("rule.msg12")):1==n?e(a.lang_t("qos.down")+a.lang_t("rule.msg24")):2==n?e(a.lang_t("qos.down")+a.lang_t("rule.msg56",[.4,500])):99==n&&e()}}}},created:function(){var e=this;uiPost.getIpQosLimit(function(t){e.qosState="1"==t.enable,e.ethType=cs.defaultEth({up:t.totalUp,down:t.totalDown}),e.totalUp=t.totalUp,e.totalDown=t.totalDown})},methods:{stateChange:function(t){var e={};e.enable=t?"1":"0",e.addEffect="0",this.setPostFun(e)},ethChange:function(){var t=cs.defaultEth(this.ethType);this.totalUp=t.up,this.totalDown=t.down},applyFun:function(){var e=this,n={};n.enable=this.qosState?"1":"0",n.addEffect="1",Cstool.Verify(this.rateRules,function(t){(t||"0"!=e.ethType)&&(n.totalUp=e.totalUp,n.totalDown=e.totalDown,e.setPostFun(n))})},setPostFun:function(t){uiPost.setQosCfg(t,function(t){var e=1;t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href})})},discoverFun:function(){var n=this;Cstool.Msg({type:"confirm",content:this.lang_t("qos.msg1"),ok:function(){uiPost.setSpeedtest(),_tempLoadFlag_=!0,Cstool.loadMsg(1,null,n.lang_t("qos.msg4"));var e=setInterval(function(){uiPost.getSpeedtest(function(t){switch(t.speedtestFlag){case"0":n.resultFun(n.lang_t("firmware.check_internet_result"),e);break;case"1":case"3":break;case"2":n.resultFun(n.lang_t("qos.msg5"),e);break;case"4":n.ethType=t.ethType,n.ethChange(),n.resultFun(n.lang_t("qos.msg2")+": "+t.ethType+" "+n.lang_t("qos.light"),e)}})},3e3)}})},resultFun:function(t,e){clearInterval(e),_tempLoadFlag_=!1,this.ethValue=t,this.autoShow=!0}}}</script><script src="/static/js/main.js"></script></body></html>

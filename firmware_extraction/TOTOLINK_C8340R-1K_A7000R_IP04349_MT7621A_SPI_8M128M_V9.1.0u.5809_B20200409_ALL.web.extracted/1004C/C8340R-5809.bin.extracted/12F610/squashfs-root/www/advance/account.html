@@ -1,0 +1,211 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"><link rel="stylesheet" href="/static/css/main.css"></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+	<!--子菜单-->
+	
+	<adv-child-menu childType="vpn"></adv-child-menu>
+	<div class="advance-box">
+		<x-help :text="lang_t('rule.help_account')"></x-help>
+		<br><br><br>
+		<div class="fun-box">
+			<table>
+				<tr><td align="right">
+					<x-icon type="add" cursor="pointer" @click="addRuleVal">{{ lang_t('common.add') }}</x-icon>
+					<x-icon type="del" cursor="pointer" @click="trashFun('all')">{{ lang_t('common.delete') }}</x-icon>
+				</td></tr>
+				<tr><td height="5"></td></tr>
+				<tr>
+					<td><table class="t_table3 table-bordered table-striped">
+						<thead>
+						<tr>
+							<th>{{ lang_t('rule.description') }}</th>
+							<th>{{ lang_t('rule.account_type') }}</th>
+							<th>{{ lang_t('rule.account') }}</th>
+							<th>{{ lang_t('rule.pass') }}</th>
+							<th v-if="globalConfig.openVpnServerSupport">{{ lang_t('rule.mask') }}</th>
+							<th>{{ lang_t('rule.operate') }}</th>
+							<th>{{ lang_t('common.select') }}<x-checkbox v-model="selectall" @change="selectAll"></x-checkbox></th>
+						</tr>
+						</thead>
+						<tbody>
+						<tr v-show="addShow">
+							<td><input type="text" class="desc" v-model="desc" v-verify="formRules" data-name="desc" maxlength="10"></td>
+							<td>
+								<select v-model="type" class="protocol-select" style="width: 100px;">
+									<option value="0" v-if="allShow">{{ lang_t('rule.all') }}</option>
+									<option value="1" v-if="false">PPPOE</option>
+									<option value="2" v-if="globalConfig.pptpServerSupport">PPTP</option>
+									<option value="3" v-if="globalConfig.l2tpServerSupport">L2TP</option>
+									<option value="4" v-if="globalConfig.openVpnServerSupport">OpenVPN</option>
+								</select>
+							</td>
+							<td><input type="text" class="desc" v-model="account" v-verify="formRules" data-name="account" maxlength="32"></td>
+							<td><input type="text" class="desc" v-model="password" v-verify="formRules" data-name="password" maxlength="32"></td>
+							<td>
+								<a style="color: #2ea8dc" @click="showTextFun('add')" v-show="type == '0' || type == '4'">
+									{{ lang_t('rule.details') }}
+								</a>
+							</td>
+							<td><button :disabled="disable_addBtn" @click="addRule"><img src="/static/images/added.png" :title="lang_t('common.add')" class="cursor"></button></td>
+							<!--<td></td>-->
+						</tr>
+						<tr v-for="(rule,v) in ruleList">
+							<td>
+								<input type="text" class="desc" v-model="editDesc[rule.idx-1]" v-verify="formRules" :data-name="'desc'+Number(rule.idx-1)" maxlength="10" v-if="edit[rule.idx-1]" @input="watchValue(rule.idx-1)">
+								<span v-else>{{ rule.desc }}</span>
+							</td>
+							<td>
+								<select v-model="editType[rule.idx-1]" class="protocol-select" style="width: 100px;" v-if="edit[rule.idx-1]" @change="watchValue(rule.idx-1)">
+									<option value="0" v-if="allShow">{{ lang_t('rule.all') }}</option>
+									<option value="1" v-if="false">PPPOE</option>
+									<option value="2" v-if="globalConfig.pptpServerSupport">PPTP</option>
+									<option value="3" v-if="globalConfig.l2tpServerSupport">L2TP</option>
+									<option value="4" v-if="globalConfig.openVpnServerSupport">OpenVPN</option>
+								</select>
+								<span v-else>{{ accountType(rule.type) }}</span>
+							</td>
+							<td>
+								<input type="text" class="desc" v-model="editAccount[rule.idx-1]" v-verify="formRules" :data-name="'account'+Number(rule.idx-1)" maxlength="32" v-if="edit[rule.idx-1]" @input="watchValue(rule.idx-1)">
+								<span v-else>{{ rule.user }}</span>
+							</td>
+							<td>
+								<input type="password" class="desc" v-model="editPassword[rule.idx-1]" v-pass v-verify="formRules" :data-name="'password'+Number(rule.idx-1)" maxlength="32" v-if="edit[rule.idx-1]" @input="watchValue(rule.idx-1)">
+								<span v-else>
+								  <span :id="rule.idx" @click="changeimg(rule.idx,rule.pass)">
+									*****&nbsp;
+									<img src="../static/images/eye.png" class="cursor">
+								  </span>
+								</span>
+							</td>
+							<td v-if="globalConfig.openVpnServerSupport">
+								<div v-if="(editType[rule.idx-1] == '0' || editType[rule.idx-1] == '4')">
+									<div v-if="edit[rule.idx-1]">
+										<a style="color: #2ea8dc" @click="showTextFun('edit',rule)">{{ lang_t('rule.details') }}</a>
+									</div>
+									<div v-else>
+										<a v-if="rule.subnet" style="color: #2ea8dc" @click="showlistInfoFun(rule)">{{ lang_t('rule.details') }}</a>
+										<p v-else>--</p>
+									</div>
+								</div>
+								<div v-else>--</div>
+							</td>
+							<td>
+								<img v-if="rule.type == '0' || rule.type == '4'" src="/static/images/key_on.png"  class="cursor":title="lang_t('rule.msg39')" @click="msgShowAction(rule.user)">
+								<img v-if="rule.type != '0' && rule.type != '4'" src="/static/images/key_off.png"  :title="lang_t('rule.msg40')">
+								&nbsp;&nbsp;
+								<img :src="operate[rule.idx-1]" :title="lang_t('common.edit')" class="cursor" @click="editFun(rule.idx-1)">
+								&nbsp;&nbsp;
+								<img src="/static/images/trash.png" :title="lang_t('common.delete')" class="cursor" @click="trashFun(rule.idx-1)">
+							</td>
+							<td>
+								<x-checkbox v-model="select[rule.idx-1]"></x-checkbox>
+							</td>
+						</tr>
+						<tr v-show="dataTotal==0">
+							<td colspan="12">{{ lang_t('common.no_data') }}</td>
+						</tr>
+						</tbody>
+					</table></td>
+				</tr>
+				<tr><td><x-page :total="dataTotal" @on-page="pageChange" :data="data"></x-page></td></tr>
+			</table>
+		</div>
+	</div>
+	<div v-show="msgShow">
+		<div class="msg-back"></div>
+		<div class="msg-box msg-box-body-account">
+			<div class="msg-box-title">{{ lang_t('rule.msg38') }}</div>
+			<div class="msg-box-content">
+				<span>{{ lang_t('rule.msg34') }}</span>
+				<br>
+				<span>{{ lang_t('rule.msg35') }}</span>
+			</div>
+			<div class="msg-box-content" style="text-align: center">
+				<button class="msg-box-btn msg-info" @click="exportClick('config')">{{ lang_t('rule.msg36') }}</button>
+				&nbsp;&nbsp;&nbsp;
+				<button class="msg-box-btn msg-info" @click="exportClick('gz')">{{ lang_t('rule.msg37') }}</button>
+			</div>
+			<div class="msg-box-bottom">
+				<button class="msg-box-btn msg-info" @click="cancelClick">{{ lang_t('common.cancel') }}</button>
+			</div>
+		</div>
+	</div>
+	<div style="display: none;">
+		<form ref="export" class="form-horizontal" method="post" :action="exportAction">
+		</form>
+	</div>
+	<!--添加和修改规则详细信息-->
+	<x-modal v-model="textShow" :title="lang_t('rule.details')" :ok_text="lang_t('common.confirm')" @on-ok="smsreply('list')" type="confirm">
+		<div >
+			<table class="table">
+				<tbody>
+				<tr>
+					<td class="fun-left">{{ lang_t('rule.static_ip') }}</td>
+					<td>
+						<span class="input-group-addon">{{ staticIP }}</span>
+						<input style="width: 30%" type="text" maxlength="3" v-model="staticIP_end">
+					</td>
+					<td>&nbsp;</td>
+				</tr>
+				<tr>
+					<td class="fun-left">{{ lang_t('rule.permission') }}</td>
+					<td>
+						<x-radio :name="[lang_t('common.ban'),lang_t('common.allow')]" v-model="authState" pos="col"></x-radio>
+					</td>
+				</tr>
+				<tr>
+					<td class="fun-left">{{ lang_t('rule.mask') }}</td>
+					<td>
+						<input type="text"  v-model="vpnlan[0]" />/
+						<select v-model="vpnmask[0]">
+							<option v-for="mask in maskOption" :value="mask.value">{{mask.option}}</option>
+						</select>
+						<x-icon :type="actionIcon[0]" cursor="pointer" @click="addmask(0)"></x-icon>
+						<div v-if="vpnmaskNum == 0">
+							<span>({{ lang_t('rule.eg') }}:192.168.0.0 / 255.255.255.0)</span>
+						</div>
+					</td>
+				</tr>
+				<tr v-for="idx in vpnmaskNum">
+					<td></td>
+					<td>
+						<input type="text" v-model="vpnlan[idx]"/>/
+						<select v-model="vpnmask[idx]">
+							<option v-for="mask in maskOption" :value="mask.value">{{mask.option}}</option>
+						</select>
+						<x-icon :type="actionIcon[idx]" cursor="pointer" @click="addmask(idx)"></x-icon>
+						<div class="col-lg-12 col-xs-12" style="padding-left: 0" v-if="idx == vpnmaskNum">
+							<span>({{ lang_t('rule.eg') }}:192.168.0.0 / 255.255.255.0)</span>
+						</div>
+					</td>
+				</tr>
+				</tbody>
+			</table>
+		</div>
+	</x-modal>
+	<!--查看列表规则的详细信息-->
+	<x-modal v-model="listInfoShow" :title="lang_t('rule.details')">
+		<div >
+			<table class="table">
+				<tbody>
+				<tr>
+					<td class="fun-left">{{ lang_t('rule.static_ip') }}</td>
+					<td>{{ detail_staticIp }}</td>
+					<td>&nbsp;</td>
+				</tr>
+				<tr v-if="detail_mask[0].ipaddr">
+					<td class="fun-left">{{ lang_t('rule.mask') }}</td>
+					<td>{{ detail_mask[0].ipaddr+' / '+detail_mask[0].mask }}</td>
+				</tr>
+				<tr v-for="(data,v) in detail_mask" v-if="v != 0">
+					<td></td>
+					<td>{{ data.ipaddr+' / '+data.mask }}</td>
+				</tr>
+				<tr>
+					<td class="fun-left">{{ lang_t('rule.permission') }}</td>
+					<td v-if="detail_permission == '1'">{{ lang_t('rule.yes') }}</td>
+					<td v-else>{{ lang_t('rule.no') }}</td>
+				</tr>
+				</tbody>
+			</table>
+		</div>
+	</x-modal>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,msgShow:!1,selectall:!1,operate:[],select:[],data:[],edit:[],ruleList:[],vpnNet:"",export_user:"",exportAction:"/cgi-bin/cstecgi.cgi?action=exportOvpn&username",desc:"",type:"0",account:"",password:"",editDesc:[],editType:[],editAccount:[],editPassword:[],dataTotal:0,addShow:!1,authState:"0",vpnlan:[""],vpnmask:[""],staticIP:"",staticIP_end:"",accessLimit:"0",actionIcon:["add"],vpnmaskNum:0,textShow:!1,listInfoShow:!1,isModify:!1,disable_addBtn:!1,modifyIdx:0,detail_staticIp:"",detail_permission:"",detail_mask:[{ip:"",mask:""}],del_png:"del",add_png:"add",allShow:!1}},watch:{select:function(){var t=0;for(var i in this.select)this.select[i]&&t++;t==this.select.length?this.selectall=!0:this.selectall=!1}},computed:{maskOption:function(){return cs.maskOption()},formRules:function(){var e=this;return{desc:function(t,i){var s=cs.commentstr(t);1==s||2==s?i(e.lang_t("rule.msg4")):0!=s&&99!=s||i()},account:function(t,i){t||i(e.lang_t("rule.account")+e.lang_t("rule.msg12"));var s=cs.string(t);1==s?i(e.lang_t("rule.account")+e.lang_t("rule.msg22")):99==s&&i()},password:function(t,i){t||i(e.lang_t("rule.pass")+e.lang_t("rule.msg12"));var s=cs.string(t);1==s?i(e.lang_t("rule.pass")+e.lang_t("rule.msg22")):99==s&&i()}}}},created:function(){var s=this,t=0,i="0";globalConfig.pptpServerSupport&&(t++,i="2"),globalConfig.l2tpServerSupport&&(t++,i="3"),globalConfig.openVpnServerSupport&&(t++,i="4"),1<t?this.allShow=!0:this.type=i,uiPost.getVpnAccountCfg(function(t){if(t.rule&&(s.ruleList=t.rule,s.dataTotal=s.ruleList.length,s.data=t.rule,s.tableInit(t.rule),s.vpnNet=t.vpnNet,t.vpnNet)){var i=t.vpnNet.split(".");s.staticIP=i[0]+"."+i[1]+"."+i[2]+"."}})},methods:{showTextFun:function(t,i){if("add"==t){this.isModify=!1;var s=this.vpnNet.split(".");this.staticIP=s[0]+"."+s[1]+"."+s[2]+".",this.staticIP_end="",this.authState="0",0<=this.vpnmaskNum&&(this.actionIcon=[],this.actionIcon[0]=this.add_png,this.vpnlan=[],this.vpnmask=[],this.vpnmaskNum=0)}if("edit"==t){if(this.isModify=!0,this.modifyIdx=String(Number(i.idx)-1),i.ipaddr){s=i.ipaddr.split(".");this.staticIP=s[0]+"."+s[1]+"."+s[2]+".",this.staticIP_end=s[3]}if(this.authState=i.accessLimit,this.vpnlan=[""],this.vpnmask=[""],i.subnet){this.vpnlan=[],this.vpnmask=[],this.vpnmaskNum=i.subnet.length-1;for(var e=0;e<=this.vpnmaskNum;e++)this.vpnlan.splice(e,0,i.subnet[e].ipaddr),this.vpnmask.splice(e,0,i.subnet[e].mask),0,e==this.vpnmaskNum?this.actionIcon[e]=this.add_png:this.actionIcon[e]=this.del_png}}this.textShow=!0},showlistInfoFun:function(t){this.listInfoShow=!0,this.detail_staticIp=t.ipaddr,this.detail_permission=t.accessLimit,this.detail_mask=t.subnet},addmask:function(t){this.actionIcon[t]==this.del_png?(this.actionIcon.splice(t,1),this.vpnlan.splice(t,1),this.vpnmask.splice(t,1),this.vpnmaskNum--):(this.vpnmaskNum=t+1,this.vpnlan.splice(t+1,0,""),this.vpnmask.splice(t+1,0,""));for(var i=0;i<=this.vpnmaskNum;i++)i==this.vpnmaskNum?this.actionIcon[i]=this.add_png:this.actionIcon[i]=this.del_png},smsreply:function(t){var i=this,s={},e=i.staticIP+i.staticIP_end,n=this.ruleList;if(i.staticIP_end){var a=cs.num_range(i.staticIP_end,1,254);if(1==a||2==a)return Cstool.Msg({content:i.lang_t("rule.msg47"),ok:function(){i.textShow=!0}}),!1;var o=String(Number(i.modifyIdx)+1);for(var l in n)if((i.isModify&&n[l].idx==o&&n[l].ipaddr!=e||n[l].idx!=o||!i.isModify)&&e==n[l].ipaddr)return Cstool.Msg({content:i.lang_t("rule.msg48"),ok:function(){i.textShow=!0}}),!1;var c,r=[],d=0,u=[];if(""!=this.vpnlan[0])for(var p=0;p<=this.vpnmaskNum;p++)for(var h=0;h<=this.vpnmaskNum;h++)if(h==p&&(h=p+1),this.vpnlan[p]==this.vpnlan[h])return Cstool.Msg({content:i.lang_t("rule.msg49"),ok:function(){i.textShow=!0}}),!1;for(var f=0;f<=this.vpnmaskNum;f++){if(this.vpnlan[f]||this.vpnmask[f]){if(99!=(c=cs.ip(this.vpnlan[f]))&&4!=c)return Cstool.Msg({content:i.lang_t("rule.msg50"),ok:function(){i.textShow=!0}}),!1;if(99!=(c=cs.mask(this.vpnmask[f])))return Cstool.Msg({content:i.lang_t("rule.msg51"),ok:function(){i.textShow=!0}}),!1}if(i.lanIp==this.vpnlan[f])return Cstool.Msg({content:i.lang_t("rule.msg52"),ok:function(){i.textShow=!0}}),!1;for(var g in n)if(n[g].subnet)for(var m in u=n[g].subnet)if((i.isModify&&n[g].idx==o&&this.vpnlan[f]!=u[m].ipaddr||n[g].idx!=o||!i.isModify)&&this.vpnlan[f]==u[m].ipaddr)return Cstool.Msg({content:i.lang_t("rule.msg52"),ok:function(){i.textShow=!0}}),!1;r[d]={},r[d].ipaddr=this.vpnlan[f],r[d].mask=this.vpnmask[f],d++}s.subnet=r,s.ipaddr=e}else s.subnet=[{ipaddr:"",mask:""}],s.ipaddr="";if("list"!=t)return s;if(this.isModify){o=this.modifyIdx;"/static/images/edited.png"!=this.operate[o]&&(this.operate.splice(o,1),this.operate.splice(o,0,"/static/images/edited.png"))}},pageChange:function(t,i){this.ruleList=i},accountType:function(t){return"1"==t?"PPPOP":"2"==t?"PPTP":"3"==t?"L2TP":"4"==t?"OpenVPN":"0"==t?this.lang_t("rule.all"):""},selectAll:function(t){var i=!1;t&&(i=!0);var s=this.select.length;this.select=[];for(var e=0;e<s;e++)this.select[e]=i},addRuleVal:function(){this.addShow=!0},addRule:function(){var s=this;if(s.disable_addBtn=!0,s.dataTotal){if(10<=s.dataTotal)return Cstool.Msg({content:this.lang_t("rule.msg30",[10])}),!1;for(i=0;i<s.dataTotal;i++)if(s.account==s.data[i].user)return Cstool.Msg({content:this.lang_t("rule.msg11"),title:""}),!1}var e={};Cstool.Verify(this.formRules,function(t){if(t){e.type=s.type,e.user=s.account,e.pass=s.password,e.desc=s.desc,e.addEffect="1";var i=s.smsreply("addrule");if(!i)return!1;e.ipaddr=i.ipaddr,e.subnet=i.subnet,e.accessLimit=s.authState,uiPost.setVpnAccountCfg(e,function(t){var i=1;t&&(t.wtime&&"0"!=t.wtime&&(i=t.wtime),Cstool.applyLoad(i,function(){location.href=location.href}))})}})},editFun:function(t){"/static/images/edit.png"==this.operate[t]?this.edit[t]?(this.edit.splice(t,1),this.edit.splice(t,0,!1)):(this.edit.splice(t,1),this.edit.splice(t,0,!0)):this.modefyFun(t)},modefyFun:function(s){var e={},n=this;for(n.modifyIdx=String(s),i=0;i<n.dataTotal&&(i==s&&i++,i!=n.dataTotal);i++)if(n.editAccount[s]==n.data[i].user)return Cstool.Msg({content:this.lang_t("rule.msg11"),title:""}),!1;Cstool.Verify(this.formRules,function(t){if(t){e.type=n.editType[s],e.desc=n.editDesc[s],e.user=n.editAccount[s],e.pass=n.editPassword[s],e.idx=String(s+1),e.addEffect="2";var i=n.smsreply("modifyrule");if(!i)return!1;e.ipaddr=i.ipaddr,e.subnet=i.subnet,e.accessLimit=n.authState,uiPost.setVpnAccountCfg(e,function(t){var i=1;t&&(t.wtime&&"0"!=t.wtime&&(i=t.wtime),Cstool.applyLoad(i,function(){location.href=location.href}))})}},n.dataTotal,s)},trashFun:function(t){var i={};this.ruleList;if("all"!=t)i["delRule"+t]=String(t),Cstool.Msg({content:this.lang_t("rule.msg15"),type:"confirm",ok:function(){uiPost.delVpnAccountCfg(i,function(t){var i=1;t&&t.wtime&&"0"!=t.wtime&&(i=t.wtime),Cstool.applyLoad(i,function(){location.href=location.href})})}});else{var s=0;for(var e in this.select)this.select[e]&&(s++,i["delRule"+e]=String(e),Cstool.Msg({content:s==this.select.length?this.lang_t("rule.msg26"):this.lang_t("rule.msg15"),type:"confirm",ok:function(){uiPost.delVpnAccountCfg(i,function(t){var i=1;t&&(t.wtime&&"0"!=t.wtime&&(i=t.wtime),Cstool.applyLoad(i,function(){location.href=location.href}))})}}));if(0==s)return Cstool.Msg({content:this.lang_t("rule.msg14")}),!1}},watchValue:function(t){this.editDesc[t]!=this.data[t].desc||this.editAccount[t]!=this.data[t].user||this.editPassword[t]!=this.data[t].pass||this.editType[t]!=this.data[t].type?"/static/images/edited.png"!=this.operate[t]&&(this.operate.splice(t,1),this.operate.splice(t,0,"/static/images/edited.png")):(this.operate.splice(t,1),this.operate.splice(t,0,"/static/images/edit.png"))},tableInit:function(t){for(var i in t)this.edit[i]=!1,this.select[i]=!1,this.operate[i]="/static/images/edit.png",this.editDesc[i]=t[i].desc,this.editType[i]=t[i].type,this.editAccount[i]=t[i].user,this.editPassword[i]=t[i].pass},changeimg:function(t,i){-1<$("#"+t).html().indexOf("ueye")?$("#"+t).html('*****&nbsp;&nbsp;<img src="../static/images/eye.png" class="cursor">'):$("#"+t).html(i+'&nbsp;&nbsp;<img src="../static/images/ueye.png" class="cursor">')},msgShowAction:function(t){this.export_user=t,this.msgShow=!0},cancelClick:function(){this.msgShow=!1},exportClick:function(t){this.$refs.export.action="/cgi-bin/cstecgi.cgi?action=exportOvpn&type=user&username="+this.export_user+"&filetype="+t,this.$refs.export.submit(),this.msgShow=!1}}}</script><script src="/static/js/main.js"></script></body></html>

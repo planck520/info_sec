@@ -32,7 +32,8 @@ class FlashBackRunner:
         "nocache": "cli_discache.py",
         "nopropagator": "cli_dispropagtor.py",
     }
-    IDA_CANDIDATES = ("ida64.exe", "idat64.exe", "ida.exe", "idat.exe", "ida64", "idat64", "ida", "idat")
+    # Prefer text-mode IDA for unattended GUI scans; IDA 9 uses idat.exe/ida.exe.
+    IDA_CANDIDATES = ("idat64.exe", "ida64.exe", "idat.exe", "ida.exe", "idat64", "ida64", "idat", "ida")
 
     def __init__(self, ida_path: Path, resource_dir: Path, config_path: Path):
         self.ida_path = Path(ida_path) if ida_path else Path()
@@ -43,20 +44,48 @@ class FlashBackRunner:
         self._lock = threading.RLock()
 
     def scan_directory(self, path: Path) -> list:
-        """递归扫描目录，跳过 IDA 数据库文件。返回固件信息列表。"""
+        """递归扫描目录，返回可交给 FlashBack/IDA 分析的程序二进制列表。"""
         skip_ext = {".i64", ".idb", ".id0", ".id1", ".id2", ".nam", ".til", ".cfg"}
         results = []
         for p in Path(path).rglob("*"):
-            if p.is_file() and p.suffix.lower() not in skip_ext:
-                results.append({
-                    "name": p.stem,
-                    "device": p.parent.name,
-                    "path": str(p),
-                    "bits": "32" if "_32" in p.name else "64",
-                    "size": p.stat().st_size,
-                })
+            if not p.is_file() or p.suffix.lower() in skip_ext:
+                continue
+            if not self._looks_like_program_binary(p):
+                continue
+            results.append({
+                "name": p.stem,
+                "device": p.parent.name,
+                "path": str(p),
+                "bits": self._detect_bits(p),
+                "size": p.stat().st_size,
+            })
         results.sort(key=lambda item: (item["device"].lower(), item["name"].lower()))
         return results
+
+    def _looks_like_program_binary(self, path: Path) -> bool:
+        """判断文件是否像 ELF/PE/Mach-O 程序，而不是整包固件镜像或压缩包。"""
+        try:
+            with path.open("rb") as fh:
+                header = fh.read(8)
+        except OSError:
+            return False
+        if header.startswith(b"\x7fELF") or header.startswith(b"MZ"):
+            return True
+        return header[:4] in {
+            b"\xfe\xed\xfa\xce", b"\xce\xfa\xed\xfe",
+            b"\xfe\xed\xfa\xcf", b"\xcf\xfa\xed\xfe",
+            b"\xca\xfe\xba\xbe", b"\xbe\xba\xfe\xca",
+        }
+
+    def _detect_bits(self, path: Path) -> str:
+        try:
+            with path.open("rb") as fh:
+                header = fh.read(5)
+        except OSError:
+            return "32" if "_32" in path.name else "64"
+        if header.startswith(b"\x7fELF") and len(header) >= 5:
+            return "64" if header[4] == 2 else "32"
+        return "32" if "_32" in path.name else "64"
 
     def run_batch(
         self,
@@ -115,11 +144,12 @@ class FlashBackRunner:
             ida_log = device_out / "logs" / f"{firmware_name}.ida.log"
             ida_log.parent.mkdir(parents=True, exist_ok=True)
             wrapper = self._create_wrapper_script(wrapper_dir, script_path, json_out)
+            database_path = wrapper_dir / f"{firmware_name}_{time.time_ns()}.i64"
 
             self._emit_log(on_log, "INFO", f"开始分析 {device}/{firmware.name}", firmware)
             self._emit_progress(on_progress, completed, len(firmware_paths), firmware.name, success, fail, "running")
 
-            cmd = self._build_ida_cmd(ida_exe, wrapper, ida_log, firmware)
+            cmd = self._build_ida_cmd(ida_exe, wrapper, ida_log, firmware, database_path)
             creationflags = 0
             preexec_fn = None
             if sys.platform == "win32":
@@ -160,19 +190,27 @@ class FlashBackRunner:
                             break
                         line = line.strip()
                         if line:
-                            self._emit_log(on_log, "INFO", line[:1000], firmware)
+                            self._append_run_log(ida_log, line)
 
                 return_code = proc.wait()
                 tail_stop.set()
                 tail_thread.join(timeout=1.5)
 
-                ok = return_code == 0 and json_out.exists()
+                ok = json_out.exists()
                 if ok:
-                    self._emit_log(on_log, "INFO", f"分析完成：{json_out}", firmware)
+                    if return_code == 0:
+                        self._emit_log(on_log, "INFO", f"分析完成：{json_out}", firmware)
+                    else:
+                        self._emit_log(
+                            on_log,
+                            "WARN",
+                            f"IDA 返回码 {return_code}，但结果文件已生成，按分析完成处理：{json_out}",
+                            firmware,
+                        )
                 elif cancel_event.is_set():
                     self._emit_log(on_log, "WARN", f"分析已停止：{firmware.name}", firmware)
                 else:
-                    self._emit_log(on_log, "ERROR", f"分析失败：{firmware.name}，IDA 返回码 {return_code}", firmware)
+                    self._emit_log(on_log, "ERROR", f"分析失败：{firmware.name}，IDA 返回码 {return_code}，未生成结果文件", firmware)
                 return str(firmware), ok
             except Exception as exc:
                 self._emit_log(on_log, "ERROR", f"分析异常：{firmware.name} - {exc}", firmware)
@@ -273,7 +311,14 @@ class FlashBackRunner:
             "import importlib",
             "import runpy",
             "import sys",
+            "import traceback",
             "import types",
+            "try:",
+            "    import ida_auto",
+            "    import idc",
+            "except Exception:",
+            "    ida_auto = None",
+            "    idc = None",
             f"sys.path.insert(0, {backward_parent!r})",
             "try:",
             "    backward = importlib.import_module('backward')",
@@ -283,16 +328,36 @@ class FlashBackRunner:
             "    sys.modules.setdefault('ColaBin.backward', backward)",
             "except Exception:",
             "    pass",
+            f"module_name = 'backward.{script_path.stem}'",
             f"sys.argv = [{str(script_path)!r}, '--config', {str(self.config_path)!r}, '--output', {str(output_path)!r}, '--log-level', 'INFO']",
-            f"runpy.run_path({str(script_path)!r}, run_name='__main__')",
+            "exit_code = 0",
+            "try:",
+            "    if ida_auto is not None:",
+            "        ida_auto.auto_wait()",
+            "    module = importlib.import_module(module_name)",
+            "    exit_code = module.main(sys.argv[1:])",
+            "    if exit_code is None:",
+            "        exit_code = 0",
+            "except SystemExit as exc:",
+            "    exit_code = exc.code if isinstance(exc.code, int) else (0 if exc.code is None else 1)",
+            "    if exit_code != 0 and idc is None:",
+            "        raise",
+            "except Exception:",
+            "    traceback.print_exc()",
+            "    exit_code = 1",
+            "    if idc is None:",
+            "        raise",
+            "finally:",
+            "    if idc is not None:",
+            "        idc.qexit(exit_code)",
             "",
         ])
         wrapper.write_text(content, encoding="utf-8")
         return wrapper
 
-    def _build_ida_cmd(self, ida_exe: Path, wrapper: Path, log_path: Path, target: Path) -> List[str]:
+    def _build_ida_cmd(self, ida_exe: Path, wrapper: Path, log_path: Path, target: Path, database_path: Path) -> List[str]:
         """构建 IDA 命令行。"""
-        return [str(ida_exe), "-A", f"-L{log_path}", f"-S{wrapper}", str(target)]
+        return [str(ida_exe), "-A", "-c", f"-o{database_path}", f"-L{log_path}", f"-S{wrapper}", str(target)]
 
     def _tail_log_file(
         self,
@@ -301,7 +366,7 @@ class FlashBackRunner:
         stop_event: threading.Event,
         firmware: Path,
     ) -> None:
-        """尽量实时转发 IDA -L 日志文件。"""
+        """把 IDA 详细输出写入文件，只把关键行转发到界面。"""
         pos = 0
         while not stop_event.is_set():
             pos = self._read_new_log_lines(log_path, pos, on_log, firmware)
@@ -322,11 +387,41 @@ class FlashBackRunner:
                 fh.seek(pos)
                 for line in fh:
                     line = line.strip()
-                    if line:
-                        self._emit_log(on_log, "INFO", line[:1000], firmware)
+                    if not line:
+                        continue
+                    level = "ERROR" if self._is_error_log(line) else "WARN" if self._is_warn_log(line) else "INFO"
+                    if level != "INFO" or self._is_key_log(line):
+                        self._emit_log(on_log, level, line[:1000], firmware)
                 return fh.tell()
         except Exception:
             return pos
+
+    def _append_run_log(self, log_path: Path, line: str) -> None:
+        try:
+            with log_path.open("a", encoding="utf-8", errors="replace") as fh:
+                fh.write(line + "\n")
+        except Exception:
+            pass
+
+    def _is_error_log(self, line: str) -> bool:
+        text = line.lower()
+        return "error" in text or "traceback" in text or "exception" in text or "failed" in text or "失败" in line
+
+    def _is_warn_log(self, line: str) -> bool:
+        text = line.lower()
+        return "warning" in text or "warn" in text or "unavailable" in text or "未生成" in line
+
+    def _is_key_log(self, line: str) -> bool:
+        key_markers = (
+            "Start analyzing firmware",
+            "Binary file:",
+            "Log file:",
+            "Analysis Complete",
+            "Final number of output paths",
+            "Log saved to:",
+            "[*] Detected",
+        )
+        return any(marker in line for marker in key_markers)
 
     def _emit_log(self, callback: Optional[LogCallback], level: str, message: str, firmware: Optional[Path] = None) -> None:
         if not callback:

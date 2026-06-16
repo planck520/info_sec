@@ -1,0 +1,30 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <div style="padding-top:15%;">
+    <table style="border-bottom:2px #eee solid;border-collapse:separate;border-spacing:0px 15px;">
+      <tr>
+        <td colspan="3" align="center">
+          <h2>QOS参数设置</h2>
+        </td>
+      </tr>
+      <tr>
+        <td>Burst</td>
+        <td><div style="width:50px;"></div></td>
+        <td>
+          <input type="text" v-model="burst">
+        </td>
+      </tr>
+      <tr>
+        <td>Cburst</td>
+        <td><div style="width:50px;"></div></td>
+        <td>
+          <input type="text" v-model="cburst">
+        </td>
+      </tr>
+      <tr>
+        <td colspan="3" align="center">
+          <button @click="stateChange" style="width:100px;padding:5px;background:#2ea8dc;color:#fff;">应用</button>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,burst:"",cburst:""}},created:function(){var n=this;uiPost.getEngineerModeCfg(function(t){n.burst=t.qosBurst,n.cburst=t.qosCburst})},methods:{stateChange:function(t){var n={};n.qosBurst=this.burst,n.qosCburst=this.cburst,uiPost.setEngineerModeCfg(n,function(t){Cstool.applyLoad(1,function(){location.href=location.href})})}}}</script><script src="/static/js/main.js"></script></body></html>
