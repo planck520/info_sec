@@ -433,10 +433,6 @@ def find_var_assignments(
     propagators: Optional[dict] = None,
 ) -> List[dict]:
     """回溯某局部变量的赋值/作为参数传递的使用点。"""
-    import logging
-    _LOGGER = logging.getLogger(__name__)
-
-    _LOGGER.info(f"[DEBUG find_var_assignments] >>> ENTER lvar_idx={lvar_idx}")
     results: List[dict] = []
 
     class _AssignVisitor(idaapi.ctree_visitor_t):  # type: ignore[misc]
@@ -484,10 +480,8 @@ def find_var_assignments(
                             })
             return 0
 
-    _LOGGER.info(f"[DEBUG find_var_assignments] Starting AST traversal for lvar_idx={lvar_idx}")
     _AssignVisitor(lvar_idx).apply_to(cfunc.body, None)
     results.sort(key=lambda x: x["ea"], reverse=True)
-    _LOGGER.info(f"[DEBUG find_var_assignments] <<< EXIT lvar_idx={lvar_idx}, found {len(results)} assignments")
     return results
 
 
@@ -556,26 +550,18 @@ def trace_var_sources(
     propagators: Optional[dict] = None,
 ):
     """回溯局部变量的来源。返回 (sources, func_name, ea, taint_source)。"""
-    import logging
-    _LOGGER = logging.getLogger(__name__)
-
-    _LOGGER.info(f"[DEBUG trace_var_sources] >>> ENTER var_idx={var_idx}, depth={depth}")
-
     if var_sources is None:
         var_sources = set()
     if path_stack is None:
         path_stack = set()
 
     if var_idx in path_stack:
-        _LOGGER.info(f"[DEBUG trace_var_sources] <<< EXIT (circular) var_idx={var_idx}")
         return var_sources, None, None, None
 
     path_stack.add(var_idx)
-    _LOGGER.info(f"[DEBUG trace_var_sources] Calling find_var_assignments for var_idx={var_idx}")
     assigns = find_var_assignments(
         cfunc, var_idx, cwe_sources, limit_ea=call_ea, propagators=propagators
     )
-    _LOGGER.info(f"[DEBUG trace_var_sources] find_var_assignments returned {len(assigns)} items")
     if not assigns:
         if arg_ord_map and var_idx in arg_ord_map:
             var_sources.add(arg_ord_map[var_idx])
@@ -606,10 +592,7 @@ def trace_var_sources(
                             return var_sources, func_name, ea, "ret"
 
             # 否则递归 RHS 子树中的变量
-            sub_vars = extract_vars_from_expr(rhs) if rhs is not None else []
-            _LOGGER.info(f"[DEBUG trace_var_sources] RHS has {len(sub_vars)} sub-variables to trace")
-            for sub_idx in sub_vars:
-                _LOGGER.info(f"[DEBUG trace_var_sources] Recursing into sub_idx={sub_idx} (depth={depth+1})")
+            for sub_idx in extract_vars_from_expr(rhs) if rhs is not None else []:
                 sources, func_name, fea, taint_source = trace_var_sources(
                     cfunc,
                     sub_idx,
@@ -618,13 +601,11 @@ def trace_var_sources(
                     arg_size=arg_size,
                     depth=depth + 1,
                     var_sources=var_sources,
-                    path_stack=path_stack,  # 共享 path_stack，不复制
+                    path_stack=set(path_stack),
                     arg_ord_map=arg_ord_map,
                     propagators=propagators,
                 )
-                _LOGGER.info(f"[DEBUG trace_var_sources] Returned from sub_idx={sub_idx}, func_name={func_name}")
                 if func_name:
-                    _LOGGER.info(f"[DEBUG trace_var_sources] <<< EXIT (found source) var_idx={var_idx}")
                     return sources, func_name, fea, taint_source
 
         elif item["type"] == "arg":
@@ -634,13 +615,10 @@ def trace_var_sources(
             return var_sources, func_name, ea, taint_source
 
         elif item["type"] == "propagator":
-            # 赋值型 propagator：把其"输入 expr"中的变量继续回溯
+            # 赋值型 propagator：把其“输入 expr”中的变量继续回溯
             ea = item["ea"]
             expr = item["expr"]
-            prop_vars = extract_vars_from_expr(expr)
-            _LOGGER.info(f"[DEBUG trace_var_sources] Propagator has {len(prop_vars)} variables to trace")
-            for sub_idx in prop_vars:
-                _LOGGER.info(f"[DEBUG trace_var_sources] Recursing into propagator sub_idx={sub_idx} (depth={depth+1})")
+            for sub_idx in extract_vars_from_expr(expr):
                 sources, src_func, src_ea, taint_source = trace_var_sources(
                     cfunc,
                     sub_idx,
@@ -649,16 +627,13 @@ def trace_var_sources(
                     arg_size=arg_size,
                     depth=depth + 1,
                     var_sources=var_sources,
-                    path_stack=path_stack,  # 共享 path_stack，不复制
+                    path_stack=set(path_stack),
                     arg_ord_map=arg_ord_map,
                     propagators=propagators,
                 )
-                _LOGGER.info(f"[DEBUG trace_var_sources] Returned from propagator sub_idx={sub_idx}, src_func={src_func}")
                 if src_func:
-                    _LOGGER.info(f"[DEBUG trace_var_sources] <<< EXIT (found source via propagator) var_idx={var_idx}")
                     return sources, src_func, src_ea, taint_source
 
-    _LOGGER.info(f"[DEBUG trace_var_sources] <<< EXIT (no source found) var_idx={var_idx}")
     return var_sources, None, None, None
 
 
@@ -996,14 +971,11 @@ def analyze_arg_xrefs(
                     continue
 
         for abs_idx in indices_to_check:
-            _LOGGER.info(f"[DEBUG loop] Processing abs_idx={abs_idx} in indices_to_check={indices_to_check}")
             arg_expr = call_expr.a[abs_idx]
             _lvars, _gvars, lvar_exprs = collect_vars_from_expr(cfunc, arg_expr)
-            _LOGGER.info(f"[DEBUG loop] Found {len(lvar_exprs)} lvar_exprs to trace")
 
             local_next: Set[int] = set()
             for lvar_idx in lvar_exprs:
-                _LOGGER.info(f"[DEBUG trace_var_sources] Calling trace_var_sources for lvar_idx={lvar_idx}")
                 sources, func_name2, ea, taint_source = trace_var_sources(
                     cfunc=cfunc,
                     var_idx=lvar_idx,
@@ -1080,8 +1052,7 @@ def trace_data_flow(
     vuln_type: Optional[str] = None,
     len_idx: Optional[int] = None,
     propagators: Optional[dict] = None,
-    max_depth: int = 10,
-    max_paths: int = 10000,
+    max_depth: int = 15,
     root_label: Optional[str] = None,
 ):
     """从 (start_func, arg_index) 开始向上传播，返回若干条路径（每条路径是**节点元组列表**）。
@@ -1095,23 +1066,6 @@ def trace_data_flow(
         path = []
     if visited is None:
         visited = set()
-
-    # ============ 为每个sink函数创建独立的计数器 ============
-    # 当这是一个新的sink函数分析起点时(func_ea == "sink" 且 path为空),创建独立计数器
-    is_sink_root = (func_ea == "sink" and len(path) == 0)
-    if is_sink_root and trace_path_counter is None:
-        trace_path_counter = [0]
-        _LOGGER.info(f"[LIMIT] 为sink函数 {start_func} 创建独立路径计数器 (max_paths={max_paths})")
-    elif is_sink_root and trace_path_counter is not None:
-        # 如果外部传入了计数器（共享模式），输出提示信息
-        _LOGGER.info(f"[LIMIT] sink函数 {start_func} 使用共享路径计数器 (当前已计数: {trace_path_counter[0]})")
-    # ==========================================
-
-    # ============ 优先级1: 检查路径数量上限 ============
-    if trace_path_counter is not None and trace_path_counter[0] >= max_paths:
-        _LOGGER.warning(f"[LIMIT] 已达到路径上限 {max_paths}，停止生成更多路径 (start_func={start_func})")
-        return []
-    # ==========================================
 
     # ============ DEBUG: trace_data_flow 入口 ============
     depth = len(path)
@@ -1223,17 +1177,14 @@ def trace_data_flow(
                     trace_path_counter[0] += 1
 
             # 未命中源：沿"边"继续传播
-            _LOGGER.info(f"[DEBUG trace_data_flow] Processing {len(edges)} edges from call at 0x{this_call_ea:x}")
-            for edge_idx, edge in enumerate(edges):
+            for edge in edges:
                 next_idx = edge["next_idx"]
                 abs_idx = edge["abs_idx"]
                 caller_tag = edge.get("cond_tag", info_cond)
-                _LOGGER.info(f"[DEBUG trace_data_flow] Edge {edge_idx}: next_idx={next_idx}, abs_idx={abs_idx}")
 
 
                 # propagator 跳转边：路径里先插入 caller，再让下一层自动添加 host
                 if "jump_to_func" in edge:
-                    _LOGGER.info(f"[DEBUG trace_data_flow] Recursing via JUMP to {edge['jump_to_func']}")
                     caller_node = (caller_name, abs_idx, this_call_ea, addr, caller_tag)
                     prefix = path + [caller_node]
                     sub_paths = trace_data_flow(
@@ -1243,7 +1194,7 @@ def trace_data_flow(
                         call_ea=edge.get("jump_call_ea"),
                         func_ea=edge.get("jump_func_ea", "propagator"),
                         path=prefix,  # 前缀已包含 caller
-                        visited=visited,
+                        visited=visited.copy(),
                         cache_get=cache_get,
                         cache_set=cache_set,
                         trace_path_counter=trace_path_counter,
@@ -1253,25 +1204,13 @@ def trace_data_flow(
                         len_idx=len_idx,
                         propagators=propagators,
                         max_depth=max_depth,
-                        max_paths=max_paths,
                     )
                     # 在下一层的第一个节点补上 host（含标签）
-                    # 由于下一层的 root 会被当成"sink"加入，我们希望 host 节点可视化出现，
+                    # 由于下一层的 root 会被当成“sink”加入，我们希望 host 节点可视化出现，
                     # 故这里不额外插入，维持与上面 src 分支一致的策略。
-                    _LOGGER.info(f"[DEBUG trace_data_flow] Returned {len(sub_paths)} sub_paths from JUMP to {edge['jump_to_func']}")
-                    # ============ 优先级3: 在 extend 前检查路径数 ============
-                    if trace_path_counter is not None and trace_path_counter[0] + len(sub_paths) > max_paths:
-                        remaining = max_paths - trace_path_counter[0]
-                        if remaining > 0:
-                            _LOGGER.warning(f"[LIMIT] 路径数接近上限，仅添加剩余 {remaining} 条路径")
-                            results.extend(sub_paths[:remaining])
-                        _LOGGER.warning(f"[LIMIT] 已达到路径上限 {max_paths}，停止继续添加")
-                        return results
-                    # ==========================================
                     results.extend(sub_paths)
                 else:
                     # 常规：递归到 caller
-                    _LOGGER.info(f"[DEBUG trace_data_flow] Recursing NORMALLY to caller {caller_name}")
                     caller_node = (caller_name, abs_idx, this_call_ea, addr, caller_tag)
                     sub_paths = trace_data_flow(
                         start_func=caller_name,
@@ -1280,7 +1219,7 @@ def trace_data_flow(
                         call_ea=this_call_ea,
                         func_ea=addr,
                         path=path,  # 不提前插 caller，下一层会自动添加（并携带标签）
-                        visited=visited,
+                        visited=visited.copy(),
                         cache_get=cache_get,
                         cache_set=cache_set,
                         trace_path_counter=trace_path_counter,
@@ -1290,19 +1229,8 @@ def trace_data_flow(
                         len_idx=len_idx,
                         propagators=propagators,
                         max_depth=max_depth,
-                        max_paths=max_paths,
-                        root_label=caller_tag,     # ★ 把"需要检查/确定"强制给下一层根
+                        root_label=caller_tag,     # ★ 把“需要检查/确定”强制给下一层根
                     )
-                    _LOGGER.info(f"[DEBUG trace_data_flow] Returned {len(sub_paths)} sub_paths from NORMAL recursion to {caller_name}")
-                    # ============ 优先级3: 在 extend 前检查路径数 ============
-                    if trace_path_counter is not None and trace_path_counter[0] + len(sub_paths) > max_paths:
-                        remaining = max_paths - trace_path_counter[0]
-                        if remaining > 0:
-                            _LOGGER.warning(f"[LIMIT] 路径数接近上限，仅添加剩余 {remaining} 条路径")
-                            results.extend(sub_paths[:remaining])
-                        _LOGGER.warning(f"[LIMIT] 已达到路径上限 {max_paths}，停止继续添加")
-                        return results
-                    # ==========================================
                     results.extend(sub_paths)
 
             # 没有边也没命中源：落叶

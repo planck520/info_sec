@@ -1,0 +1,257 @@
+{
+    "sinks": [
+      {
+        "cwe": "CWE-78",
+        "func": "qnap_exec",
+        "params": [
+            0
+        ]
+    },
+    {
+        "cwe": "CWE-78",
+        "func": "qnap_exec_pipe",
+        "params": [
+            0
+        ]
+    },
+    {
+        "cwe": "CWE-78",
+        "func": "qnap_popen",
+        "params": [
+            0
+        ]
+    },
+    { "cwe": "CWE-120", "func": "strncpy", "params": [1], "len": [2] },
+    { "cwe": "CWE-120", "func": "strncat", "params": [1], "len": [2] },
+    { "cwe": "CWE-120", "func": "sprintf", "params": [1] },
+    { "cwe": "CWE-120", "func": "snprintf", "params": [1], "len": [2] },
+    {
+        "cwe": "CWE-134",
+        "func": "fprintf",
+        "params": [
+            1
+        ]
+    },
+    {
+        "cwe": "CWE-134",
+        "func": "printf",
+        "params": [
+            0
+        ]
+    },
+    {
+        "cwe": "CWE-134",
+        "func": "snprintf",
+        "params": [
+            1
+        ]
+    },
+    {
+        "cwe": "CWE-134",
+        "func": "vsnprintf",
+        "params": [
+            1
+        ]
+    },
+    {
+        "cwe": "CWE-78",
+        "func": "_qnap_secure_exec",
+        "params": [
+            0
+        ]
+    },
+    {
+        "cwe": "CWE-78",
+        "func": "qnap_exec_v2",
+        "params": [
+            0
+        ]
+    },
+    {
+        "cwe": "CWE-78",
+        "func": "qnap_popen_pipe",
+        "params": [
+            0
+        ]
+    },
+    {
+        "cwe": "CWE-78",
+        "func": "execl",
+        "params": [
+            0
+        ]
+    },
+    {
+        "cwe": "CWE-78",
+        "func": "execv",
+        "params": [
+            0
+        ]
+    },
+    {
+        "cwe": "CWE-134",
+        "func": "print_if",
+        "params": [
+            0
+        ]
+    },
+    {
+        "cwe": "CWE-120",
+        "func": "memcpy",
+        "params": [
+            1
+        ]
+    },
+    {
+        "cwe": "CWE-120",
+        "func": "strcpy",
+        "params": [
+            1
+        ]
+    },
+    {
+        "cwe": "CWE-120",
+        "func": "strcat",
+        "params": [
+            1
+        ]
+    },
+    {
+        "cwe": "CWE-78",
+        "func": "system",
+        "params": [
+            0
+        ]
+    },
+    {
+        "cwe": "CWE-134",
+        "func": "sprintf",
+        "params": [
+            1
+        ]
+    },
+    {
+        "cwe": "CWE-78",
+        "func": "util_system_cmd",
+        "params": [
+            0
+        ]
+    },
+    {
+        "cwe": "CWE-134",
+        "func": "json_output_print",
+        "params": [
+            0
+        ]
+    },
+    {
+        "cwe": "CWE-78",
+        "func": "_qnap_secure_popen",
+        "params": [
+            0
+        ]
+    },
+    {
+        "cwe": "CWE-78",
+        "func": "Get_Command_Result_Exec",
+        "params": [
+            0
+        ]
+    },
+    {
+        "cwe": "CWE-78",
+        "func": "Get_Command_Result",
+        "params": [
+            0
+        ]
+    },
+    {
+        "cwe": "CWE-78",
+        "func": "Get_Command_Result_Pipe",
+        "params": [
+            0
+        ]
+    }
+    ],
+    "sources": {
+      "ret": [
+            "CGI_Get_Input",
+            "fgetc",
+            "getgrnam",
+            "getpwnam",
+            "CGI_Get_Parameter",
+            "CGI_Find_Parameter",
+            "getenv",
+            "xmlGetProp",
+            "xmlNodeGetContent",
+            "json_object_get",
+            "json_array_get",
+            "_IO_getc",
+            "CGI_Get_Accept_Language",
+            "Get_Cookie_Value_By_Tag",
+            "xmlDocGetRootElement",
+            "xmlNodeListGetString",
+            "CGI_Get_Http_Info",
+            "fgetpwent",
+            "json_object_get_string",
+            "gethostbyname",
+            "readlink",
+            "json_object_get_int",
+            "json_object_object_get",
+            "xmlrpc_read_string",
+            "getCountryCodeIndex",
+            "__strdup"
+        ],
+        "0": [
+            "fgets",
+            "fread",
+            "__isoc99_fscanf",
+            "fscanf",
+            "__isoc99_sscanf",
+            "ReadData",
+            "ReadStdin",
+            "qs_io_read",
+            "sscanf",
+            "recv"
+        ],
+        "1": [
+            "read",
+            "read_dhcp_conf"
+        ]
+    },
+    "format_funcs": {
+      "printf": { "fmt": 0, "va_start": 1 },
+      "fprintf": { "fmt": 1, "va_start": 2 },
+      "sprintf": { "fmt": 1, "va_start": 2 },
+      "snprintf": { "fmt": 2, "va_start": 3 },
+      "dprintf": { "fmt": 1, "va_start": 2 },
+      "asprintf": { "fmt": 1, "va_start": 2 },
+      "syslog": { "fmt": 1, "va_start": 2 },
+      "setproctitle": { "fmt": 0, "va_start": 1 },
+      "wsprintfA": { "fmt": 1, "va_start": 2 },
+      "wsprintfW": { "fmt": 1, "va_start": 2 },
+      "swprintf": { "fmt": 2, "va_start": 3 },
+  
+      "doSystemCmd": { "fmt": 0, "va_start": 1 },
+      "doSystem": { "fmt": 0, "va_start": 1 },
+      "doShell": { "fmt": 0, "va_start": 1 },
+      "ExecShell": { "fmt": 0, "va_start": 1 },
+      "run_cmd": { "fmt": 0, "va_start": 1 },
+      "safe_system": { "fmt": 0, "va_start": 1 },
+      "exec_shell_popen": { "fmt": 0, "va_start": 1 },
+      "exec_shell_popen_str": { "fmt": 0, "va_start": 1 },
+      "wl_exec_cmd": { "fmt": 0, "va_start": 1 },
+      "twsystem": { "fmt": 0, "va_start": 1 },
+      "CsteSystem": { "fmt": 0, "va_start": 1 },
+      "ExeCmd": { "fmt": 0, "va_start": 1 },
+      "kd_doCommand": { "fmt": 0, "va_start": 1 },
+      "__isoc99_sscanf": { "fmt": 1, "va_start": 2 },
+      "_isoc99_sscanf": { "fmt": 1, "va_start": 2 },
+      "sscanf": { "fmt": 1, "va_start": 2 }
+    },
+    "propagators": {
+      "snprintf": { "input": 2, "output": 0 },
+      "vsnprintf": { "input": 2, "output": 0 }
+    }
+  }
+  

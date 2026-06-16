@@ -49,7 +49,7 @@ def handle_propagator_assignments(
 
     _LOGGER.debug("Processing propagator %s at ea 0x%x, input_idx=%d", func_name, ea, input_idx)
 
-    # Handle snprintf/vsnprintf
+    # 处理 snprintf/vsnprintf
     if func_name in ("snprintf", "vsnprintf") and input_idx < rhs.a.size():
         fmt_expr = rhs.a[input_idx]
         fmt_str = try_get_cstr_from_cexpr(fmt_expr)
@@ -67,7 +67,7 @@ def handle_propagator_assignments(
                     })
         return results
 
-    # Handle GetValue for both propagator and sink cases
+    # 处理 GetValue（支持 propagator 和 sink 场景）
     elif func_name == "GetValue" and input_idx < rhs.a.size():
         input_expr = rhs.a[input_idx]
         string_ea = input_expr.obj_ea if input_expr.op == idaapi.cot_obj else idaapi.BADADDR
@@ -85,15 +85,15 @@ def handle_propagator_assignments(
             _LOGGER.debug("SetValue function not found")
             return results
 
-        # Use string xrefs to find all SetValue calls
+        # 使用字符串的 xrefs 查找所有 SetValue 调用
         for xref in idautils.XrefsTo(string_ea, 0):
             caller_func = ida_funcs.get_func(xref.frm)
             if not caller_func:
                 continue
-            caller_ea = xref.frm  # Exact address of the string reference
+            caller_ea = xref.frm  # 字符串引用的精确地址
             # if input_str == "lan.ip":
             #     print(hex(caller_ea),hex(caller_func.start_ea),hex(cfunc.entry_ea),hex(ea))
-            # Exclude SetValue calls that appear after the GetValue call site in the current function
+            # 在当前函数中排除 GetValue 调用点之后的 SetValue
             # if caller_func.start_ea == cfunc.entry_ea and caller_ea >= ea:
             #     _LOGGER.debug("Skipping SetValue at ea 0x%x in current function (after GetValue ea 0x%x)", caller_ea, ea)
             #     continue
@@ -112,7 +112,7 @@ def handle_propagator_assignments(
                     #     print(hex(caller_ea),hex(caller_func.start_ea),hex(cfunc.entry_ea),hex(call_ea),hex(ea))
                     #     output_str = try_get_cstr_from_cexpr(call_expr.a[0])
                     #     print("  SetValue output:",output_str)
-                    # if call_ea != caller_ea:  # Make sure this matches the xref call site
+                    # if call_ea != caller_ea:  # 确保匹配 xref 的调用点
                     #     continue
                     if call_expr.a and call_expr.a[0].op == idaapi.cot_obj and call_expr.a[0].obj_ea == string_ea:
                         # if input_str =
@@ -121,17 +121,17 @@ def handle_propagator_assignments(
                             results.append({
                                 "type": "propagator",
                                 "ea": call_ea,
-                                "expr": call_expr.a[1],  # Propagate from SetValue argument 1
+                                "expr": call_expr.a[1],  # 从 SetValue 参数 1 传播
                                 "func_name": "SetValue",
                                 "input_idx": 1
                             })
-                        # Do not break; keep collecting all matching SetValue calls
+                        # 不 break，继续收集所有匹配的 SetValue 调用
             except Exception as e:
                 _LOGGER.debug("Failed to decompile function at 0x%x for SetValue xref: %s", caller_func.start_ea, str(e))
                 continue
         return results
 
-    # Handle cJSON_GetObjectItem/cJSON_Parse
+    # 处理 cJSON_GetObjectItem/cJSON_Parse
     elif func_name in ("cJSON_GetObjectItem", "cJSON_Parse") and input_idx < rhs.a.size():
         results.append({
             "type": "propagator",

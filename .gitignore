@@ -48,3 +48,10 @@ frosted-glass-ui-crm-dashboard-ui-design/
 *.zip
 *.pdf
 *.docx
+
+# Firmware analysis data (do NOT commit)
+/backward/
+firmware_extraction/
+
+# Report writing materials (do NOT commit)
+文档编写材料/

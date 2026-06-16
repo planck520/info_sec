@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """CLI entry for backward taint tracing (Hex-Rays based).
 
-Fix: when IDA executes this file directly with `-S <...>/backward/cli.py`,
-`__package__` is empty and relative imports fail
-("attempted relative import with no known parent package").
-This module performs a small bootstrap step at import time: it adds the
-project root to `sys.path` and then uses absolute imports.
+修复：在 IDA 以 `-S <...>/backward/cli.py` 直接执行时，`__package__` 为空，
+相对导入会失败（"attempted relative import with no known parent package"）。
+这里在顶层做一次 *自举*：将工程根目录加入 `sys.path`，然后使用**绝对导入**。
 
-Example:
-    ida64.exe -A -S"D:/your-project/backward/cli.py ..."
+用法（示例）：
+    ida64.exe -A -S"D:/your-project/backward/cli.py \
+               --sinks D:/cfg/sinks.json \
+               --sources D:/cfg/sources.json \
+               --output D:/out/result.json"
 """
 from __future__ import annotations
 
@@ -16,7 +17,6 @@ import argparse
 import json
 import logging
 import os
-import re
 import sys
 import time
 from typing import Dict, List, Optional, Set, Tuple, Union
@@ -32,10 +32,10 @@ try:
     import ida_hexrays  # type: ignore
     import idc  # type: ignore
     import ida_lines  # type: ignore
-except Exception:  # Imports fail outside IDA; keep these names for type hints only
+except Exception:  # 在非 IDA 环境下导入会失败，这里仅为类型提示
     idaapi = ida_hexrays = idc = ida_lines = None  # type: ignore
 
-# Use absolute imports so script mode does not break relative imports
+# 改为**绝对导入**，避免相对导入在脚本模式下失败
 from backward.analysis import trace_data_flow
 from backward.cache import TinyCache
 from backward.io_utils import load_config_from_json, load_sinks_from_json
@@ -50,38 +50,38 @@ class Analyzer:
         cwe_sources: Source declaration mapping.
         cache: Result cache across recursion.
 
-    Note: each sink function gets its own path counter (limit: 10000 paths).
+    Note: 每个sink函数会创建独立的路径计数器（上限10000条）
     """
 
     # def __init__(self, cwe_sources: Dict[Union[int, str], Set[str]], format_funcs: dict, propagators: dict, max_cache_size: int, max_paths: int = 10000, max_depth: int = 10) -> None:
     def __init__(self, cwe_sources: Dict[Union[int, str], Set[str]], format_funcs: dict, propagators: dict, max_cache_size: int, max_depth: int = 10) -> None:
         self.cwe_sources = cwe_sources
         self.format_funcs = format_funcs or {}
-        self.propagators = propagators or {}  # Added: support propagators
+        self.propagators = propagators or {}  # 新增：支持 propagators
         self.cache = TinyCache(max_size=max_cache_size)
-        # Stop using a global counter; count paths independently for each sink function
+        # 不再使用全局计数器，每个sink函数独立计数
         # self.trace_count = [0]
-        # self.max_paths = max_paths  # Added: maximum path limit
-        self.max_depth = max_depth  # Added: maximum depth limit
+        # self.max_paths = max_paths  # 新增：最大路径数限制
+        self.max_depth = max_depth  # 新增：最大深度限制
 
     def process_single_sink(self, cwe_name: str, sink_func: str, param_idx: int, len_idx: Optional[int] = None) -> List[dict]:
-        # Pass None so trace_data_flow creates an independent path counter per sink function
+        # 传递 None 让 trace_data_flow 为每个sink函数创建独立的路径计数器
         results = trace_data_flow(
             start_func=sink_func,
             arg_index=param_idx,
             cwe_sources=self.cwe_sources,
             cache_get=self.cache.get,
             cache_set=self.cache.set,
-            trace_path_counter=None,  # Use None so each sink counts independently
+            trace_path_counter=None,  # 改为 None，每个sink独立计数
             format_funcs=self.format_funcs,
             vuln_type=cwe_name,
-            len_idx=len_idx,  # Added: pass len_idx
-            propagators=self.propagators,  # Added: pass propagators
-            max_depth=self.max_depth,  # Added: pass the maximum depth
-            # max_paths=self.max_paths,  # Added: pass the maximum path limit
+            len_idx=len_idx,  # 新增：传递 len_idx
+            propagators=self.propagators,  # 新增：传递 propagators
+            max_depth=self.max_depth,  # 新增：传递最大深度
+            # max_paths=self.max_paths,  # 新增：传递最大路径数
         )
 
-        filtered = [p for p in results if p and p[-1][3] == "source"]  # Updated filtering logic to keep only valid paths
+        filtered = [p for p in results if p and p[-1][3] == "source"]  # 更新过滤逻辑，确保路径有效
         if not filtered:
             return []
 
@@ -89,22 +89,22 @@ class Analyzer:
         for path in filtered:
             source_func = None
             for hop in path:
-                func_name, _, _, func_ea, *_rest = hop   # Compatible with 4/5-element tuples
+                func_name, _, _, func_ea, *_rest = hop   # ★ 兼容 4/5 元素
                 if func_ea == "source":
                     source_func = func_name
             paths_info.append({
                 "vuln_type": cwe_name,
                 "sink_func": sink_func,
                 "source_func": source_func,
-                "param_idx": param_idx,  # Added: record the parameter index
-                "len_idx": len_idx,  # Added: record the len index when present
+                "param_idx": param_idx,  # 新增：记录参数索引
+                "len_idx": len_idx,  # 新增：记录 len 参数索引（如果存在）
                 "path": [
                     {
                         "func": func_name,
                         "arg_index": arg_idx,
                         "call_ea": hex(ea) if isinstance(ea, int) else str(ea),
                         "func_ea": func_ea if isinstance(func_ea, str) else hex(func_ea),
-                        "label": (rest[0] if rest else None)  # Added: needs-check/certain/sink/source
+                        "label": (rest[0] if rest else None)  # ★ 新增：需要检查/确定/sink/source
                     }
                     for (func_name, arg_idx, ea, func_ea, *rest) in path
                 ],
@@ -116,13 +116,13 @@ class Analyzer:
         for sink in sinks_data:
             cwe_name = sink.get("cwe", "")
             sink_func = sink.get("func", "")
-            if not cwe_name or not sink_func:  # Validate required fields
+            if not cwe_name or not sink_func:  # 验证必填字段
                 _LOGGER.warning("Invalid sink entry: missing cwe or func: %s", sink)
                 continue
             param_indices = sink.get("params", [])
-            len_idx = sink.get("len")  # Read the len field
+            len_idx = sink.get("len")  # 获取 len 字段
             if isinstance(len_idx, list):
-                len_idx = len_idx[0] if len_idx else None  # Use the first len entry when present
+                len_idx = len_idx[0] if len_idx else None  # 取第一个 len（若存在）
             elif not isinstance(len_idx, (int, type(None))):
                 _LOGGER.warning("Invalid len field in sink %s: %s", sink_func, len_idx)
                 len_idx = None
@@ -132,14 +132,14 @@ class Analyzer:
         json_results: List[dict] = []
         for cwe_name, sink_funcs in sink_param_map.items():
             for sink_func, param_idx, len_idx in sink_funcs:
-                # _LOGGER.debug(
-                #     "Processing sink %s(param_idx=%d, len_idx=%s) for CWE %s",
-                #     sink_func, param_idx, len_idx, cwe_name
-                # )
+                _LOGGER.debug(
+                    "Processing sink %s(param_idx=%d, len_idx=%s) for CWE %s",
+                    sink_func, param_idx, len_idx, cwe_name
+                )
                 res = self.process_single_sink(cwe_name, sink_func, param_idx, len_idx)
                 if res:
                     json_results.extend(res)
-                    # _LOGGER.debug("Found %d paths for sink %s in CWE %s", len(res), sink_func, cwe_name)
+                    _LOGGER.debug("Found %d paths for sink %s in CWE %s", len(res), sink_func, cwe_name)
         return json_results
 
     
@@ -147,7 +147,7 @@ def _dedup_paths(paths: List[dict]) -> List[dict]:
     seen = set()
     out = []
     for item in paths:
-        # Use the path's key four-tuple sequence as the deduplication key
+        # 以 path 的关键四元组序列作为去重键
         key = tuple((hop["func"], hop["arg_index"], hop["call_ea"], hop["func_ea"]) for hop in item["path"])
         if key in seen:
             continue
@@ -157,16 +157,16 @@ def _dedup_paths(paths: List[dict]) -> List[dict]:
 
 
 def _dedup_paths_by_sink_callsite(paths: List[dict]) -> List[dict]:
-    """Deduplicate paths by sink_func and the last hop's call_ea.
+    """基于 sink_func 和最后一个 hop 的 call_ea 进行去重。
 
-    When multiple paths share the same sink_func and the same call_ea in the
-    last hop, keep only the first path.
+    对于 sink_func 相同且 path 倒数第一个元素的 call_ea 相同的路径，
+    只保留第一条路径。
 
     Args:
-        paths: Path list to deduplicate.
+        paths: 待去重的路径列表
 
     Returns:
-        The deduplicated path list.
+        去重后的路径列表
     """
     seen = set()
     out = []
@@ -176,12 +176,12 @@ def _dedup_paths_by_sink_callsite(paths: List[dict]) -> List[dict]:
             out.append(item)
             continue
 
-        # Get the call_ea of the last hop and the sink_func
+        # 获取 path 倒数第一个元素的 call_ea 和 sink_func
         last_hop = path[-1]
         last_call_ea = last_hop.get("call_ea", "")
         sink_func = item.get("sink_func", "")
 
-        # Use (sink_func, last_call_ea) as the deduplication key
+        # 使用 (sink_func, last_call_ea) 作为去重键
         key = (sink_func, last_call_ea)
         if key in seen:
             continue
@@ -191,15 +191,15 @@ def _dedup_paths_by_sink_callsite(paths: List[dict]) -> List[dict]:
 
 
 def _check_reaches_main(func_ea: int, visited: Optional[Set[int]] = None, max_depth: int = 50) -> bool:
-    """Walk caller chains upward from a function and test whether they can reach main.
+    """从指定函数向上追溯调用链，检查是否能到达main函数。
 
     Args:
-        func_ea: Start function address.
-        visited: Set of visited functions used to avoid cycles.
-        max_depth: Maximum recursion depth.
+        func_ea: 起始函数的地址
+        visited: 已访问过的函数集合（避免循环）
+        max_depth: 最大递归深度
 
     Returns:
-        True if main can be reached, otherwise False.
+        True 如果能到达main函数，False 否则
     """
     if visited is None:
         visited = set()
@@ -212,7 +212,7 @@ def _check_reaches_main(func_ea: int, visited: Optional[Set[int]] = None, max_de
 
     visited.add(func_ea)
 
-    # Get the function name
+    # 获取函数名
     try:
         import ida_funcs
         import idautils
@@ -220,24 +220,24 @@ def _check_reaches_main(func_ea: int, visited: Optional[Set[int]] = None, max_de
 
         func_name = ida_funcs.get_func_name(func_ea)
 
-        # Check whether this is the main function
+        # 检查是否是main函数
         if func_name and func_name in ("main", "_main", "start", "_start"):
             return True
 
-        # Gather all callers of the current function
+        # 获取所有调用当前函数的地方
         callers = set()
         for xref in idautils.XrefsTo(func_ea, 0):
-            # Accept several kinds of references:
-            # - fl_CN/fl_CF: direct calls
-            # - fl_JN/fl_JF: jumps
-            # - dr_O/dr_R/dr_W: data refs (for indirect calls, GOT entries, function pointers, etc.)
+            # 接受多种类型的引用：
+            # - fl_CN/fl_CF: 直接调用
+            # - fl_JN/fl_JF: 跳转
+            # - dr_O/dr_R/dr_W: 数据引用（用于间接调用、GOT表、函数指针等）
             if xref.type in (idaapi.fl_CN, idaapi.fl_CF, idaapi.fl_JN, idaapi.fl_JF,
                             idaapi.dr_O, idaapi.dr_R, idaapi.dr_W):
                 caller_func = ida_funcs.get_func(xref.frm)
                 if caller_func:
                     callers.add(caller_func.start_ea)
 
-        # Recursively inspect all callers
+        # 递归检查所有调用者
         for caller_ea in callers:
             if _check_reaches_main(caller_ea, visited, max_depth - 1):
                 return True
@@ -248,17 +248,16 @@ def _check_reaches_main(func_ea: int, visited: Optional[Set[int]] = None, max_de
 
 
 def _filter_tenda_paths_without_main(paths: List[dict]) -> List[dict]:
-    """Tenda-specific filter that removes paths that do not pass through main.
+    """Tenda固件专用：过滤掉不经过main函数的路径。
 
-    For each path, find the second-to-last function (the caller of the source)
-    and trace upward from it. If the upward chain cannot reach main, discard
-    the path.
+    对于每条路径，找到倒数第二个函数（调用source的函数），
+    从该函数向上追溯xref，如果无法到达main函数，则过滤掉。
 
     Args:
-        paths: Path list.
+        paths: 路径列表
 
     Returns:
-        Filtered path list.
+        过滤后的路径列表
     """
     out = []
     filtered_count = 0
@@ -266,21 +265,21 @@ def _filter_tenda_paths_without_main(paths: List[dict]) -> List[dict]:
     for item in paths:
         path = item.get("path", [])
         if len(path) < 2:
-            # Keep very short paths
+            # 路径太短，保留
             out.append(item)
             continue
 
-        # Find the second-to-last function (the function that calls the source)
+        # 找到倒数第二个函数（调用source的函数）
         head_func = path[-2]
         func_ea_str = head_func.get("func_ea", "")
 
-        # Parse the function address
+        # 解析函数地址
         try:
             if isinstance(func_ea_str, str):
                 if func_ea_str.lower().startswith("0x"):
                     func_ea = int(func_ea_str, 16)
                 elif func_ea_str == "source" or func_ea_str == "sink":
-                    # Special marker; keep the path
+                    # 特殊标记，保留
                     out.append(item)
                     continue
                 else:
@@ -288,11 +287,11 @@ def _filter_tenda_paths_without_main(paths: List[dict]) -> List[dict]:
             else:
                 func_ea = int(func_ea_str)
         except (ValueError, TypeError):
-            # Address could not be parsed; keep the path
+            # 无法解析地址，保留
             out.append(item)
             continue
 
-        # Check whether the chain reaches main
+        # 检查是否能到达main
         if _check_reaches_main(func_ea):
             out.append(item)
         else:
@@ -301,13 +300,13 @@ def _filter_tenda_paths_without_main(paths: List[dict]) -> List[dict]:
             _LOGGER.info(f"[Tenda] Filtered path: head function {func_name} at {func_ea_str} does not reach main")
 
     if filtered_count > 0:
-        print(f"[*] Tenda firmware filter: removed {filtered_count} paths that do not pass through main")
+        print(f"[*] Tenda固件过滤：移除 {filtered_count} 条未经过main函数的路径")
 
     return out
 
 def _ensure_ida_available() -> None:
     if idaapi is None or ida_hexrays is None or idc is None:
-        print("[!] This script must run in the IDA Pro Python environment (failed to import idaapi)")
+        print("[!] 本脚本需在 IDA Pro 的 Python 环境中运行 (import idaapi 失败)")
         sys.exit(2)
 
 
@@ -321,7 +320,7 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"], help="Logger level")
     return p
 
-# Export per-path decompiled code, including call lines for each hop
+# === 追加：导出路径对应的反编译代码（含逐 hop 的调用行） ===
 def _parse_hex_or_none(v):
     if isinstance(v, int):
         return v
@@ -355,9 +354,8 @@ def _print_cexpr_one_line(cfunc, item) -> str:
 
 def get_decompiled_line_from_address(ea: int) -> str:
     """
-    Given a call-site EA, return the corresponding single-line decompiled code.
-    Prefer an exact cexpr.ea match, then fall back to eamap, and finally return
-    a placeholder if nothing matches.
+    给定调用点 EA，返回该调用在反编译里的单行代码文本。
+    优先基于 cexpr.ea 精确匹配；失败时用 eamap 中的节点回退；再失败返回占位说明。
     """
     if not ida_hexrays.init_hexrays_plugin():
         return "<hex-rays not available>"
@@ -371,7 +369,7 @@ def get_decompiled_line_from_address(ea: int) -> str:
     except Exception as e:
         return f"<decompile failed for 0x{ea:X}: {e}>"
 
-    # 1) Search the ctree for a cot_call expression whose e.ea equals ea
+    # 1) 先在 ctree 里找 cot_call 且 e.ea == ea 的表达式
     class _CallFinder(idaapi.ctree_visitor_t):
         def __init__(self, tgt_ea):
             super().__init__(idaapi.CV_FAST)
@@ -403,10 +401,10 @@ def get_decompiled_line_from_address(ea: int) -> str:
         if line:
             return line
 
-    # 2) eamap fallback: use the decompiled nodes associated with this EA and prefer call expressions
+    # 2) eamap 回退：拿该 EA 关联的反编译节点，优先取调用表达式
     try:
         if hasattr(cfunc, "eamap") and ea in cfunc.eamap:
-            # Prefer cot_call nodes first
+            # 优先挑出 cot_call 的节点
             call_nodes = [n for n in cfunc.eamap[ea] if getattr(n, "op", None) == idaapi.cot_call]
             nodes = call_nodes or list(cfunc.eamap[ea])
             for n in nodes:
@@ -416,7 +414,7 @@ def get_decompiled_line_from_address(ea: int) -> str:
     except Exception:
         pass
 
-    # 3) Final fallback: walk all expressions and take any node with the same EA
+    # 3) 再退化：遍历表达式，拿到 EA 相同的任意节点
     class _AnyByEA(idaapi.ctree_visitor_t):
         def __init__(self, tgt_ea):
             super().__init__(idaapi.CV_FAST)
@@ -439,18 +437,17 @@ def get_decompiled_line_from_address(ea: int) -> str:
 
 def _host_func_ea_for_hop(path: list, i: int) -> int | None:
     """
-    Infer which function contains the call for hop i, which is used when
-    retrieving the call line.
-    - If func_ea is an integer, the call happens in that function.
-    - If func_ea is "source", the call usually happens in the previous function.
-    - If func_ea is "sink" or cannot be inferred, return None.
+    推断第 i 个 hop 的调用发生在哪个函数里（用于取调用行）：
+    - 若本 hop 的 func_ea 是整数 → 调用发生在该函数中。
+    - 若本 hop func_ea 为 'source'（源头），通常调用发生在上一个 hop 的函数中。
+    - 若为 'sink' 或无法判断 → None。
     """
     fea_raw = path[i].get("func_ea")
     fea = _parse_hex_or_none(fea_raw)
     if isinstance(fea, int):
         return fea
     if (isinstance(fea_raw, str) and fea_raw == "source") and i > 0:
-        # The source call usually happens in the previous function
+        # 源头的调用发生在上一个函数里
         prev_fea = _parse_hex_or_none(path[i-1].get("func_ea"))
         if isinstance(prev_fea, int):
             return prev_fea
@@ -458,9 +455,9 @@ def _host_func_ea_for_hop(path: list, i: int) -> int | None:
 
 def _write_paths_c_files(results: list, out_dir: str) -> None:
     """
-    Write one <index>.c file per path.
-    - The header lists all hops and, when possible, the exact call line for each hop.
-    - The body contains the decompiled code of every function on the path, deduplicated in encounter order.
+    给每条路径写一个 <index>.c：
+    - 文件头部输出 Hops 列表，并在每个 hop 下面输出“具体调用行”（如果能定位）。
+    - 文件主体按出现顺序去重，输出该路径涉及的所有函数的反编译代码。
     """
     import os
     os.makedirs(out_dir, exist_ok=True)
@@ -472,7 +469,7 @@ def _write_paths_c_files(results: list, out_dir: str) -> None:
             continue
         path_idx += 1
 
-        # Header: hops plus call lines
+        # === 头部：Hops + 调用行 ===
         banner = [
             "/* =====================================================",
             f" *  Path {path_idx}",
@@ -491,16 +488,16 @@ def _write_paths_c_files(results: list, out_dir: str) -> None:
 
             banner.append(f" *    - {func} (arg={argi}, call_ea={call_ea_raw}, func_ea={fea_raw}, label={label})")
 
-            # Try to print the exact call line for this hop
+            # 尝试打印该 hop 的“具体调用行”
             cea = _parse_hex_or_none(call_ea_raw)
             if isinstance(cea, int):
                 call_line = get_decompiled_line_from_address(cea)
-                # Append a line that shows the call text
+                # 追加一行显示调用文本
                 banner.append(f" *        call: {call_line}")
 
         banner.append(" * ===================================================== */\n")
 
-        # Body: decompiled code for all functions touched by this path
+        # === 主体：该路径涉及的所有函数反编译 ===
         ordered_eas = []
         seen = set()
         for hop in path:
@@ -518,256 +515,7 @@ def _write_paths_c_files(results: list, out_dir: str) -> None:
             with open(out_c, "w", encoding="utf-8", newline="\n") as f:
                 f.write("\n\n".join(chunks))
         except Exception as e:
-            print(f"[!] Failed to write {out_c}: {e}")
-
-def _check_setenv_in_main() -> bool:
-    """Check whether the main function calls setenv.
-
-    Returns:
-        True if main calls setenv, otherwise False.
-    """
-    try:
-        import ida_funcs
-        import idautils
-
-        # Locate the main function
-        main_ea = None
-        for func_ea in idautils.Functions():
-            func_name = ida_funcs.get_func_name(func_ea)
-            if func_name and func_name in ("main", "_main", "start", "_start"):
-                main_ea = func_ea
-                _LOGGER.info(f"Found main function: {func_name} at 0x{func_ea:X}")
-                break
-
-        if main_ea is None:
-            _LOGGER.warning("main function not found in binary")
-            return False
-
-        # Get the function object for main
-        main_func = ida_funcs.get_func(main_ea)
-        if main_func is None:
-            _LOGGER.warning(f"Failed to get function object for main at 0x{main_ea:X}")
-            return False
-
-        # Walk addresses inside main and check whether any call targets setenv
-        ea = main_func.start_ea
-        while ea < main_func.end_ea:
-            for xref in idautils.XrefsFrom(ea, 0):
-                if xref.type in (idaapi.fl_CN, idaapi.fl_CF):  # Code call
-                    target_name = ida_funcs.get_func_name(xref.to)
-                    if target_name and target_name in ("setenv", "_setenv"):
-                        _LOGGER.info(f"Found setenv call in main at 0x{xref.frm:X} -> {target_name}")
-                        return True
-            ea = idc.next_head(ea, main_func.end_ea)
-
-        _LOGGER.info("setenv not called in main function")
-        return False
-    except Exception as e:
-        _LOGGER.warning(f"Failed to check setenv in main: {e}")
-        return False
-
-def _filter_getenv_remote_addr(paths: List[dict]) -> List[dict]:
-    """Filter out paths related to getenv("REMOTE_ADDR").
-
-    The REMOTE_ADDR environment variable stores the client IP address. Although
-    it is technically user-influenced, it is usually not treated as a security-
-    relevant taint source here.
-
-    Args:
-        paths: Path list.
-
-    Returns:
-        Filtered path list.
-    """
-    getenv_variants = {"getenv", "getenv_secure", "safe_getenv", "_getenv"}
-    getenv_remote_pattern = re.compile(
-        r'\b(?:getenv|getenv_secure|safe_getenv|_getenv)\s*\(\s*"REMOTE_(?:ADDR|USER)"\s*\)'
-    )
-    filtered_out = []
-    output_paths = []
-
-    for item in paths:
-        source_func = item.get("source_func", "")
-
-        # Only inspect getenv-based sources
-        if source_func not in getenv_variants:
-            output_paths.append(item)
-            continue
-
-        # Get the code line for the source call
-        path = item.get("path", [])
-        if not path:
-            output_paths.append(item)
-            continue
-
-        # The final hop is the source
-        source_hop = path[-1]
-        call_ea_raw = source_hop.get("call_ea")
-        call_ea = _parse_hex_or_none(call_ea_raw)
-
-        # If the call address cannot be recovered, keep the path conservatively
-        if not isinstance(call_ea, int):
-            output_paths.append(item)
-            continue
-
-        # Get the decompiled code line for the call
-        try:
-            code_line = get_decompiled_line_from_address(call_ea) or ""
-
-            # Only filter patterns such as v2 = getenv("REMOTE_ADDR"); or getenv("REMOTE_USER");
-            if getenv_remote_pattern.search(code_line):
-                filtered_out.append({
-                    "source_func": source_func,
-                    "vuln_type": item.get("vuln_type"),
-                    "sink_func": item.get("sink_func"),
-                    "code_line": code_line
-                })
-                continue  # Filter out this path
-        except Exception as e:
-            _LOGGER.debug(f"Failed to get decompiled line for 0x{call_ea:X}: {e}")
-            # On error, keep the path conservatively
-            output_paths.append(item)
-            continue
-
-        # Keep paths that were not filtered
-        output_paths.append(item)
-
-    if filtered_out:
-        print(f"[*] Filtered out {len(filtered_out)} paths related to getenv(\"REMOTE_ADDR\")")
-        _LOGGER.info(f"Filtered {len(filtered_out)} paths with getenv(\"REMOTE_ADDR\")")
-        for item in filtered_out:
-            _LOGGER.debug(f"  - {item['vuln_type']}: {item['sink_func']} <- {item['source_func']}: {item['code_line']}")
-
-    return output_paths
-
-
-def _filter_sources_by_setenv(cwe_sources: Dict[Union[int, str], Set[str]]) -> Dict[Union[int, str], Set[str]]:
-    """Filter the source list based on whether main calls setenv.
-
-    If main does not call setenv, remove getenv-related sources because the
-    environment is not user-controlled in that case and should not be treated
-    as a taint source.
-
-    Args:
-        cwe_sources: Original source dictionary.
-
-    Returns:
-        Filtered source dictionary.
-    """
-    if not _check_setenv_in_main():
-        # If main never calls setenv, filter out getenv-based sources
-        filtered_sources = {}
-        getenv_sources = {"getenv", "getenv_secure", "safe_getenv", "_getenv"}
-        total_removed = 0
-
-        for cwe, sources in cwe_sources.items():
-            filtered = sources - getenv_sources
-            removed_count = len(sources) - len(filtered)
-            total_removed += removed_count
-
-            if filtered:  # Keep only non-empty source sets
-                filtered_sources[cwe] = filtered
-
-        if total_removed > 0:
-            print(f"[*] setenv is not called in main; filtered out {total_removed} getenv-related taint sources from sources")
-            _LOGGER.info(f"Filtered {total_removed} getenv-related sources: setenv not called in main")
-
-        return filtered_sources
-    else:
-        print("[*] Detected a setenv call in main; keeping getenv-related taint sources")
-        return cwe_sources
-
-
-def _setup_logging(log_level: str, output_path: str, firmware_name: str) -> str:
-    """Configure logging so that messages go to both the console and a file.
-
-    Args:
-        log_level: Logging level.
-        output_path: Output JSON path.
-        firmware_name: Firmware name, for example D-LINK_COVR-1201.
-
-    Returns:
-        Path to the log file.
-    """
-    from datetime import datetime
-
-    # Create the logs directory
-    output_dir = os.path.dirname(output_path)
-    log_dir = os.path.join(output_dir, "logs")
-    os.makedirs(log_dir, exist_ok=True)
-
-    # Build the log file name with the firmware name and a timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_file = os.path.join(log_dir, f"analysis_{firmware_name}_{timestamp}.log")
-
-    # Configure the log format
-    log_format = '%(asctime)s - %(levelname)s - %(message)s'
-    date_format = '%Y-%m-%d %H:%M:%S'
-
-    # Clear existing handlers
-    logger = logging.getLogger()
-    logger.setLevel(getattr(logging, log_level))
-    logger.handlers = []
-
-    # File handler
-    file_handler = logging.FileHandler(log_file, encoding='utf-8')
-    file_handler.setLevel(getattr(logging, log_level))
-    file_handler.setFormatter(logging.Formatter(log_format, date_format))
-
-    # Console handler
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(getattr(logging, log_level))
-    console_handler.setFormatter(logging.Formatter(log_format, date_format))
-
-    logger.addHandler(file_handler)
-    logger.addHandler(console_handler)
-
-    return log_file
-
-
-def _extract_firmware_name(binary_path: str) -> str:
-    """Extract a firmware name from the binary path.
-
-    Args:
-        binary_path: Full binary path.
-
-    Returns:
-        Firmware name, for example D-LINK_COVR-1201.
-    """
-    if not binary_path:
-        return "unknown"
-
-    # Get the file name without the extension
-    filename = os.path.splitext(os.path.basename(binary_path))[0]
-
-    # Try to extract vendor and model information from the path
-    # The path may contain a structure such as "D-LINK/COVR-1201"
-    path_parts = binary_path.replace("\\", "/").split("/")
-
-    # Look for a likely vendor name (common router vendors)
-    vendors = ["ASUS", "D-LINK", "LINKSYS", "Netgear", "Tenda", "TOTOLINK", "TP-LINK", "Trendnet"]
-    vendor = None
-    model = None
-
-    for i, part in enumerate(path_parts):
-        for v in vendors:
-            if v.upper() in part.upper():
-                vendor = v
-                # Try to use the next path segment as the model name
-                if i + 1 < len(path_parts):
-                    model = path_parts[i + 1]
-                break
-        if vendor:
-            break
-
-    # If both vendor and model were found, return the combined name
-    if vendor and model:
-        # Clean the model name (remove the extension, etc.)
-        model = os.path.splitext(model)[0]
-        return f"{vendor}_{model}".replace(" ", "_").replace("-", "_")
-
-    # Otherwise fall back to the file name
-    return filename.replace(" ", "_").replace("-", "_")
+            print(f"[!] 写入 {out_c} 失败: {e}")
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -777,30 +525,15 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser = build_argparser()
     args = parser.parse_args(argv)
 
-    # Get the firmware name
-    binary_path = idc.get_input_file_path() if idc else ""
-    firmware_name = _extract_firmware_name(binary_path)
-
-    # Set up logging with the firmware name included
-    log_file = _setup_logging(args.log_level, args.output, firmware_name)
-    _LOGGER.info(f"=" * 60)
-    _LOGGER.info(f"Start analyzing firmware: {firmware_name}")
-    _LOGGER.info(f"Binary file: {binary_path}")
-    _LOGGER.info(f"Log file: {log_file}")
-    _LOGGER.info(f"=" * 60)
+    logging.basicConfig(level=getattr(logging, args.log_level))
 
     if not ida_hexrays.init_hexrays_plugin():
-        print("[!] Hex-Rays Decompiler is unavailable!")
+        print("[!] Hex-Rays Decompiler 不可用！")
         return 3
 
     start_time = time.time()
-    # Use the combined config loader
+    # 使用综合加载函数
     sinks, cwe_sources, format_funcs, propagators = load_config_from_json(args.config)
-
-    # Filter the source list based on whether main calls setenv
-    # Without setenv in main, getenv-derived environment variables are not user-controlled and should be removed
-    cwe_sources = _filter_sources_by_setenv(cwe_sources)
-
     analyzer = Analyzer(
         cwe_sources=cwe_sources,
         format_funcs=format_funcs,
@@ -811,50 +544,44 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
 
     results = analyzer.run_all(sinks)
-    # First deduplication pass: full-path deduplication
+    # 第一轮去重：完整路径去重
     results = _dedup_paths(results)
-    # Second deduplication pass: deduplicate by sink_func and the last call_ea
+    # 第二轮去重：基于 sink_func 和最后一个 call_ea 去重
     results = _dedup_paths_by_sink_callsite(results)
 
-    # Tenda-specific filtering: check whether the path reaches main
+    # Tenda固件特殊过滤：检查路径是否经过main函数
     binary_path = idc.get_input_file_path() if idc else ""
     if "Tenda" in binary_path or "tenda" in binary_path:
-        print("[*] Detected Tenda firmware; enabling main-function filtering...")
+        print("[*] 检测到Tenda固件，启用main函数过滤...")
         results = _filter_tenda_paths_without_main(results)
 
-    # Filter getenv("REMOTE_ADDR") paths
-    print("[*] Filtering paths related to getenv(\"REMOTE_ADDR\")...")
-    results = _filter_getenv_remote_addr(results)
-
-    # CWE-120 safe patterns are filtered automatically during backtracing
-    print("[*] CWE-120 safe patterns (strlen+malloc/len) were filtered automatically during analysis")
+    # CWE-120 安全模式已在回溯过程中自动过滤
+    print("[*] CWE-120 安全模式（strlen+malloc/len）已在分析时自动过滤")
 
     with open(args.output, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
 
-    # Emit one <index>.c file per path next to the JSON output
-    _write_paths_c_files(results, out_dir=os.path.dirname(args.output))
+    # === 追加：为每条路径输出一份 <index>.c 到与 JSON 同目录 ===
+    # _write_paths_c_files(results, out_dir=os.path.dirname(args.output))
     
     stats = analyzer.cache.stats()
     elapsed = time.time() - start_time
 
-    _LOGGER.info("")
-    _LOGGER.info("=" * 60)
-    _LOGGER.info("=== Analysis Complete ===")
-    _LOGGER.info("=" * 60)
-    _LOGGER.info(f"Firmware name: {firmware_name}")
-    _LOGGER.info(f"Total elapsed time: {elapsed:.2f} seconds")
-    _LOGGER.info(f"Path counting mode: independent counting per sink function (limit: 10000 paths/sink)")
-    _LOGGER.info(f"Final number of output paths: {len(results)}")
-    _LOGGER.info(f"(CWE-120 safe patterns were filtered automatically during analysis)")
-    _LOGGER.info("")
-    _LOGGER.info("=== Cache Stats ===")
-    _LOGGER.info(f"Hits      : {stats['hits']}")
-    _LOGGER.info(f"Misses    : {stats['misses']}")
-    _LOGGER.info(f"Hit Rate  : {stats['hit_rate']:.2f}%")
-    _LOGGER.info(f"Cache Size: {stats['current_size']} / {stats['max_size']}")
-    _LOGGER.info("=" * 60)
-    _LOGGER.info(f"Log saved to: {log_file}")
+    print()
+    print("=" * 60)
+    print("=== 分析完成 ===")
+    print("=" * 60)
+    print(f"总耗时：{elapsed:.2f} 秒")
+    print(f"路径计数模式：每个sink函数独立计数（上限10000条/sink）")
+    print(f"最终输出路径数量：{len(results)} 条")
+    print(f"(CWE-120 安全模式已在分析时自动过滤)")
+    print()
+    print("=== Cache Stats ===")
+    print(f"Hits      : {stats['hits']}")
+    print(f"Misses    : {stats['misses']}")
+    print(f"Hit Rate  : {stats['hit_rate']:.2f}%")
+    print(f"Cache Size: {stats['current_size']} / {stats['max_size']}")
+    print("=" * 60)
 
     return 0
 

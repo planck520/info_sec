@@ -172,7 +172,6 @@
     ],
     "sources": {
       "ret": [
-        "cgi_param_json",
         "pread",
         "ssl_read",
         "SSL_read",

@@ -1,0 +1,82 @@
+{
+    "sinks": [
+      { "cwe": "CWE-78",  "func": "system", "params": [0] },
+      { "cwe": "CWE-78",  "func": "CreateProcessA", "params": [0, 1] },
+    
+      { "cwe": "CWE-134", "func": "sprintf", "params": [1] },
+      { "cwe": "CWE-134", "func": "wsprintfW", "params": [1] },
+      { "cwe": "CWE-134", "func": "__stdio_common_vfprintf",  "params": [1] },
+      { "cwe": "CWE-134", "func": "__stdio_common_vsprintf",  "params": [1] },
+      { "cwe": "CWE-134", "func": "__stdio_common_vswprintf", "params": [1] },
+    
+      { "cwe": "CWE-22",  "func": "CreateFileA", "params": [0] },
+      { "cwe": "CWE-22",  "func": "CreateFileW", "params": [0] },
+      { "cwe": "CWE-22",  "func": "DeleteFileA", "params": [0] },
+      { "cwe": "CWE-22",  "func": "DeleteFileW", "params": [0] },
+      { "cwe": "CWE-22",  "func": "MoveFileW",   "params": [0, 1] },
+      { "cwe": "CWE-22",  "func": "CopyFileA",   "params": [0, 1] },
+      { "cwe": "CWE-22",  "func": "CopyFileW",   "params": [0, 1] },
+      { "cwe": "CWE-22",  "func": "CreateDirectoryW",     "params": [0] },
+      { "cwe": "CWE-22",  "func": "SHCreateDirectoryExA", "params": [1] },
+      { "cwe": "CWE-22",  "func": "fopen",   "params": [0] },
+      { "cwe": "CWE-22",  "func": "_wfopen", "params": [0] },
+      { "cwe": "CWE-22",  "func": "_open",   "params": [0] },
+      { "cwe": "CWE-22",  "func": "_wopen",  "params": [0] },
+      { "cwe": "CWE-22",  "func": "_unlink", "params": [0] },
+      { "cwe": "CWE-22",  "func": "_wrename","params": [0, 1] },
+      { "cwe": "CWE-22",  "func": "LoadFile",        "params": [0] },
+      { "cwe": "CWE-22",  "func": "SimpleLoadFile",  "params": [0] },
+    
+      { "cwe": "CWE-120", "func": "strncpy",  "params": [1], "len": [2] },
+      { "cwe": "CWE-120", "func": "strncat",  "params": [1], "len": [2] },
+      { "cwe": "CWE-120", "func": "memmove",  "params": [1], "len": [2] },
+      { "cwe": "CWE-120", "func": "memset",   "params": [0] },
+      { "cwe": "CWE-120", "func": "sprintf",  "params": [1] },
+      { "cwe": "CWE-120", "func": "wsprintfW","params": [1] }
+    ],
+    "sources": {
+        "0": [
+        "AP_ProcessWebAdminRequest"
+        ]        
+    },
+    "format_funcs": {
+      "printf": { "fmt": 0, "va_start": 1 },
+      "fprintf": { "fmt": 1, "va_start": 2 },
+      "sprintf": { "fmt": 1, "va_start": 2 },
+      "snprintf": { "fmt": 2, "va_start": 3 },
+      "dprintf": { "fmt": 1, "va_start": 2 },
+      "asprintf": { "fmt": 1, "va_start": 2 },
+      "syslog": { "fmt": 1, "va_start": 2 },
+      "setproctitle": { "fmt": 0, "va_start": 1 },
+      "wsprintfA": { "fmt": 1, "va_start": 2 },
+      "wsprintfW": { "fmt": 1, "va_start": 2 },
+      "swprintf": { "fmt": 2, "va_start": 3 },
+  
+      "doSystemCmd": { "fmt": 0, "va_start": 1 },
+      "doSystem": { "fmt": 0, "va_start": 1 },
+      "doShell": { "fmt": 0, "va_start": 1 },
+      "ExecShell": { "fmt": 0, "va_start": 1 },
+      "run_cmd": { "fmt": 0, "va_start": 1 },
+      "safe_system": { "fmt": 0, "va_start": 1 },
+      "exec_shell_popen": { "fmt": 0, "va_start": 1 },
+      "exec_shell_popen_str": { "fmt": 0, "va_start": 1 },
+      "wl_exec_cmd": { "fmt": 0, "va_start": 1 },
+      "twsystem": { "fmt": 0, "va_start": 1 },
+      "CsteSystem": { "fmt": 0, "va_start": 1 },
+      "ExeCmd": { "fmt": 0, "va_start": 1 },
+      "kd_doCommand": { "fmt": 0, "va_start": 1 }
+    },
+    "propagators": {
+      "snprintf": { "input": 2, "output": 0 },
+      "vsnprintf": { "input": 2, "output": 0 },
+      "nvram_safe_get": { "input": 0, "output": "ret" },
+      "nvram_get": { "input": 0, "output": "ret" },
+      "nvram_default_get": { "input": 0, "output": "ret" },
+      "nvram_pf_get": { "input": 0, "output": "ret" },
+      "GetValue": { "input": 0, "output": 1 },
+      "cJSON_GetObjectItem": { "input": 0, "output": "ret" },
+      "cJSON_Parse": { "input": 0, "output": "ret" },
+      "cJSON_GetArrayItem": { "input": 0, "output": "ret" }
+    }
+  }
+  

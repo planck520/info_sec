@@ -1,0 +1,29 @@
+{
+    "sinks": [
+    { "cwe": "CWE-125", "func": "__xfrm6_daddr_saddr_hash", "params": [1] },
+    { "cwe": "CWE-125", "func": "fuse_copy_finish", "params": [0] },
+    { "cwe": "CWE-125", "func": "unwind_next_frame", "params": [0] }
+    ],
+    "sources": {
+      "ret": [
+      "xfrm_policy_lookup"
+    ],
+      "0": [
+        "fuse_copy_one",
+        "_unwind_start"
+    ]
+    },
+    "format_funcs": {
+      "seq_printf": { "fmt": 1, "va_start": 2 },
+      "scnprintf": { "fmt": 2, "va_start": 3 },
+      "snprintf": { "fmt": 2, "va_start": 3 },
+      "vsnprintf": { "fmt": 2, "va_start": 3 },
+      "sprintf": { "fmt": 1, "va_start": 2 },
+      "syslog": { "fmt": 1, "va_start": 2 }
+    },
+    "propagators": {
+      "snprintf": { "input": 2, "output": 0 },
+      "vsnprintf": { "input": 2, "output": 0 }
+    }
+  }
+  

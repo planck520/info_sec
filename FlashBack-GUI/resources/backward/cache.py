@@ -1,22 +1,19 @@
 # -*- coding: utf-8 -*-
-"""Tiny LRU cache used by backward traversal (with stats).
-
-This optimized version replaces LFU with LRU and reduces eviction overhead from O(n) to O(1).
-"""
+"""Tiny LFU-ish cache used by backward traversal (with stats)."""
 from __future__ import annotations
 
-from collections import OrderedDict
-from typing import Any, Optional
+from typing import Any, Dict, Optional, Tuple
 
 
 class TinyCache:
-    """A tiny LRU (Least Recently Used) eviction cache.
+    """A tiny frequency-based eviction cache.
 
-    OrderedDict provides O(1) get/set/evict operations and is cheaper than LFU.
+    Designed to avoid importing external deps while keeping behavior explicit.
     """
 
     def __init__(self, max_size: int = 100000) -> None:
-        self._store: OrderedDict = OrderedDict()
+        self._store: Dict[Tuple[str, int], Any] = {}
+        self._freq: Dict[Tuple[str, int], int] = {}
         self.max_size = max_size
         self.hits = 0
         self.misses = 0
@@ -24,23 +21,19 @@ class TinyCache:
     def get(self, key) -> Optional[Any]:
         if key in self._store:
             self.hits += 1
-            # LRU: move to the end to mark recent use
-            self._store.move_to_end(key)
+            self._freq[key] = self._freq.get(key, 0) + 1
             return self._store[key]
         self.misses += 1
         return None
 
     def set(self, key, value) -> None:
-        if key in self._store:
-            # Existing key: update the value and move it to the end
-            self._store.move_to_end(key)
-            self._store[key] = value
-        else:
-            # New key
-            if len(self._store) >= self.max_size:
-                # Evict the least recently used item (the first entry) in O(1)
-                self._store.popitem(last=False)
-            self._store[key] = value
+        if key not in self._store and len(self._store) >= self.max_size:
+            # Evict least frequently used key
+            victim = min(self._freq.items(), key=lambda kv: kv[1])[0]
+            self._store.pop(victim, None)
+            self._freq.pop(victim, None)
+        self._store[key] = value
+        self._freq[key] = self._freq.get(key, 0) + 1
 
     def stats(self) -> dict:
         total = self.hits + self.misses

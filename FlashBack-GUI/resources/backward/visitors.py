@@ -41,7 +41,7 @@ class CallVisitor(idaapi.ctree_visitor_t):  # type: ignore[misc]
             callee = expr.x
             if callee.op == idaapi.cot_obj:
                 func_name = idaapi.get_func_name(callee.obj_ea)
-                # ============ DEBUG: call discovered ============
+                # ============ DEBUG: 发现调用 ============
                 _LOGGER.debug(f"[DEBUG CallVisitor] Found call to {func_name} (looking for {self.target_func_name})")
                 # ==========================================
                 if func_name == self.target_func_name:
@@ -104,7 +104,7 @@ class LocalVarXrefs:
 
     def get_decompiled_line(self, ea: int) -> str:
         if ea not in self.cfunc.eamap:
-            return "<unknown statement>"
+            return "<未知语句>"
         lines: List[str] = []
         for stmt in self.cfunc.eamap[ea]:
             qp = ida_hexrays.qstring_printer_t(self.cfunc, False)
@@ -114,7 +114,7 @@ class LocalVarXrefs:
 
     def run(self) -> None:
         xrefs = self.get_xrefs()
-        print(f"\nReferences to local variable ID #{self.lvar_idx} in function {ida_funcs.get_func_name(self.cfunc.entry_ea)}:")
+        print(f"\n局部变量 ID #{self.lvar_idx} 在函数 {ida_funcs.get_func_name(self.cfunc.entry_ea)} 中的引用：")
         for ea in xrefs:
             line = self.get_decompiled_line(ea)
             print(f"  [0x{ea:X}] {line}")
