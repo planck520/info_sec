@@ -55,3 +55,6 @@ firmware_extraction/
 
 # Report writing materials (do NOT commit)
 文档编写材料/
+
+# FlashBack analysis output (do NOT commit)
+flashback-output/
