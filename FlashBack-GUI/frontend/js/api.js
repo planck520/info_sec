@@ -59,8 +59,10 @@ const api = (() => {
           const msg = JSON.parse(event.data);
           switch (msg.type) {
             case 'log':      if (onLog) onLog(msg); break;
+            case 'snapshot': if (onProgress) onProgress(msg); break;
             case 'progress': if (onProgress) onProgress(msg); break;
             case 'done':     if (onDone) onDone(msg); break;
+            case 'stopped':  if (onDone) onDone(msg); break;
             case 'error':    if (onError) onError(msg); break;
           }
         } catch (e) {

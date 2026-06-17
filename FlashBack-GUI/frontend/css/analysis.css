@@ -9,14 +9,226 @@
   min-height: 0;
 }
 
-/* 终端内部行间距微调 */
+/* 扫描引擎按钮组：支持换行，避免 SELECT FILE 加入后挤压 */
+.analysis-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 360px;
+}
+
+.analysis-action-row .btn {
+  min-width: 108px;
+  justify-content: center;
+}
+
+.analysis-action-row #btn-start-scan {
+  min-width: 126px;
+}
+
+/* 终端日志限制高度并始终显示垂直滚动条 */
+#page-analysis .terminal {
+  max-height: calc(100vh - 220px);
+}
+
+#terminal-body {
+  overflow-y: scroll;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.24) transparent;
+}
+
+#terminal-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+}
+
 #terminal-body .terminal-line {
   padding: 1px 0;
+}
+
+#terminal-body .terminal-line .err {
+  color: var(--danger);
+}
+
+.terminal-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.terminal-action {
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.62);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+
+.terminal-action:hover {
+  background: rgba(59, 130, 246, 0.16);
+  border-color: rgba(59, 130, 246, 0.38);
+  color: #ffffff;
+}
+
+.terminal-action.active {
+  background: rgba(59, 130, 246, 0.24);
+  border-color: rgba(59, 130, 246, 0.55);
+  color: #dbeafe;
+}
+
+.analysis-config-panel {
+  flex-shrink: 0;
+}
+
+.analysis-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.analysis-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.analysis-field > span,
+.analysis-list-head {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.analysis-input-row {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.analysis-input-row .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.analysis-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px;
+  gap: 10px;
+}
+
+.analysis-list-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.firmware-list {
+  max-height: 220px;
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.14);
+  padding: 8px;
+}
+
+.firmware-empty {
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 18px 10px;
+  text-align: center;
+}
+
+.firmware-device + .firmware-device {
+  margin-top: 10px;
+}
+
+.firmware-device-name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 8px;
+}
+
+.firmware-device-name span {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.firmware-item {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 7px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.firmware-item:hover {
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.firmware-item input {
+  accent-color: var(--accent);
+}
+
+.firmware-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.88);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.firmware-meta {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+#btn-stop-scan:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Chromium / WebView2 原生下拉菜单会脱离玻璃背景渲染，显式设置 option 配色 */
+#analysis-mode option {
+  background: #171717;
+  color: #f8fafc;
+}
+
+#analysis-mode option:checked,
+#analysis-mode option:hover {
+  background: #2563eb;
+  color: #ffffff;
 }
 
 /* 响应式：窗口宽度 < 900px 时上下排列 */
 @media (max-width: 900px) {
   #page-analysis > div:last-child {
     flex-direction: column !important;
+  }
+
+  .analysis-grid {
+    grid-template-columns: 1fr;
   }
 }

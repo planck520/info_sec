@@ -1,0 +1,127 @@
+[
+  {
+    "vuln_type": "CWE-918",
+    "sink_func": "getaddrinfo",
+    "source_func": "getopt",
+    "param_idx": 0,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "getaddrinfo",
+        "arg_index": 0,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_474BC4",
+        "arg_index": 0,
+        "call_ea": "0x474d44",
+        "func_ea": "0x474bc4",
+        "label": "needs_check"
+      },
+      {
+        "func": "sub_474E24",
+        "arg_index": 0,
+        "call_ea": "0x474e24",
+        "func_ea": "0x474e24",
+        "label": "certain"
+      },
+      {
+        "func": "sub_4750D8",
+        "arg_index": 0,
+        "call_ea": "0x475104",
+        "func_ea": "0x4750d8",
+        "label": "needs_check"
+      },
+      {
+        "func": "sub_4751B4",
+        "arg_index": 0,
+        "call_ea": "0x4751b4",
+        "func_ea": "0x4751b4",
+        "label": "certain"
+      },
+      {
+        "func": "sub_414954",
+        "arg_index": 0,
+        "call_ea": "0x414bc8",
+        "func_ea": "0x414954",
+        "label": "needs_check"
+      },
+      {
+        "func": "getopt",
+        "arg_index": 1,
+        "call_ea": "0x414afc",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-120",
+    "sink_func": "memcpy",
+    "source_func": "recvfrom",
+    "param_idx": 1,
+    "len_idx": 2,
+    "path": [
+      {
+        "func": "memcpy",
+        "arg_index": 1,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_40F23C",
+        "arg_index": 1,
+        "call_ea": "0x40f8fc",
+        "func_ea": "0x40f23c",
+        "label": "needs_check"
+      },
+      {
+        "func": "recvfrom",
+        "arg_index": 1,
+        "call_ea": "0x40f7c8",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-120",
+    "sink_func": "memcpy",
+    "source_func": "sscanf",
+    "param_idx": 1,
+    "len_idx": 2,
+    "path": [
+      {
+        "func": "memcpy",
+        "arg_index": 1,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_405D38",
+        "arg_index": 1,
+        "call_ea": "0x405da8",
+        "func_ea": "0x405d38",
+        "label": "certain"
+      },
+      {
+        "func": "sub_440874",
+        "arg_index": 0,
+        "call_ea": "0x440d38",
+        "func_ea": "0x440874",
+        "label": "needs_check"
+      },
+      {
+        "func": "sscanf",
+        "arg_index": 0,
+        "call_ea": "0x440ca0",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  }
+]

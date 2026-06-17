@@ -92,7 +92,14 @@ def _build_ida_cmd(
     log_path: Path,
     target: Path,
 ) -> List[str]:
-    exe = ida_dir / ("ida64.exe" if is_64bit else "ida.exe")
+    # IDA 9 uses unified binary names (ida.exe/idat.exe) instead of ida64.exe.
+    # Prefer text-mode IDA for batch runs when available, then fall back to GUI binaries.
+    candidates = (
+        ["idat64.exe", "ida64.exe", "idat.exe", "ida.exe"]
+        if is_64bit
+        else ["idat.exe", "ida.exe", "idat64.exe", "ida64.exe"]
+    )
+    exe = next((ida_dir / name for name in candidates if (ida_dir / name).exists()), ida_dir / candidates[0])
     exe_path = str(exe.resolve())
     cmd = [
         exe_path,

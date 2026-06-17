@@ -3,6 +3,9 @@
 骨架阶段提供硬编码默认值，后续替换为 ConfigManager。
 """
 
+import shutil
+from pathlib import Path
+
 from fastapi import APIRouter
 
 router = APIRouter(tags=["settings"])
@@ -42,5 +45,34 @@ async def update_settings(body: dict):
 
 @router.post("/settings/detect-ida")
 async def detect_ida():
-    """自动检测 IDA 安装路径（骨架返回未找到）。"""
-    return {"found": False, "message": "IDA 检测功能待实现（成员 C）"}
+    """自动检测 IDA 安装路径。"""
+    candidates = [
+        _settings.get("ida_path", ""),
+        r"C:\Program Files\IDA Professional 9.0",
+        r"C:\Program Files\IDA Pro 9.0",
+        r"C:\Program Files\IDA Professional 8.4",
+        r"C:\Program Files\IDA Pro 8.4",
+    ]
+    exe_names = ("idat64.exe", "ida64.exe", "idat.exe", "ida.exe")
+
+    for raw in candidates:
+        if not raw:
+            continue
+        path = Path(raw)
+        if path.is_file():
+            _settings["ida_path"] = str(path)
+            return {"found": True, "path": str(path), "message": "IDA 已检测到"}
+        if path.is_dir():
+            for name in exe_names:
+                exe = path / name
+                if exe.exists():
+                    _settings["ida_path"] = str(path)
+                    return {"found": True, "path": str(path), "message": "IDA 已检测到"}
+
+    for name in exe_names:
+        found = shutil.which(name)
+        if found:
+            _settings["ida_path"] = str(Path(found).parent)
+            return {"found": True, "path": _settings["ida_path"], "message": "IDA 已检测到"}
+
+    return {"found": False, "message": "未找到 IDA，请手动填写 IDA 安装目录或 ida.exe/idat.exe 路径"}

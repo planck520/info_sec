@@ -29,10 +29,10 @@ from backward.propagator_handler import handle_propagator_assignments
 
 
 # ----------------------------------------------------------------------
-# 小工具
+# Small helpers
 # ----------------------------------------------------------------------
 def _expr_parent_insn_ea(cfunc, e) -> int:
-    """找到表达式最近的父 cinsn 的 EA；失败返回 BADADDR。"""
+    """Return the EA of the nearest parent cinsn for an expression, or BADADDR on failure."""
     try:
         item = cfunc.body.find_parent_of(e)
         while item:
@@ -45,24 +45,24 @@ def _expr_parent_insn_ea(cfunc, e) -> int:
 
 
 def _check_strlen_safe_pattern(cfunc, var_idx: int, call_ea: int, sink_func: str, len_idx: Optional[int]) -> bool:
-    """检查 CWE-120 sink 是否符合 strlen 安全模式。
+    """Check whether a CWE-120 sink matches the strlen-based safe pattern.
 
-    模式 1: strlen + malloc
+    Pattern 1: strlen + malloc
         v2 = strlen(v1);
         v3 = malloc(v2 + 1);
         strcpy(v3, v1);
 
-    模式 2: strlen + len 参数
+    Pattern 2: strlen + len argument
         v3 = strlen(hostname);
         strncpy(cfg->hostname, hostname, v3);
 
     Returns:
-        True 如果符合安全模式（应该过滤），False 否则
+        True if the pattern is safe and should be filtered; otherwise False.
     """
     import logging
     _LOGGER = logging.getLogger(__name__)
 
-    # 只检查 CWE-120 相关函数
+    # Only check CWE-120-related functions
     CWE120_SINKS = {
         "strcpy", "strcat", "strncpy", "strncat", "memcpy", "memmove",
         "wcscpy", "wcscat", "wmemcpy", "wmemmove", "stpcpy", "sprintf",
@@ -73,7 +73,7 @@ def _check_strlen_safe_pattern(cfunc, var_idx: int, call_ea: int, sink_func: str
     if sink_func not in CWE120_SINKS:
         return False
 
-    # 获取变量名和函数名
+    # Get the variable name and function name
     func_name = ida_funcs.get_func_name(cfunc.entry_ea) or "unknown"
     try:
         lvar = cfunc.lvars[var_idx]
@@ -81,7 +81,7 @@ def _check_strlen_safe_pattern(cfunc, var_idx: int, call_ea: int, sink_func: str
     except Exception:
         return False
 
-    # 向上查找 strlen 调用
+    # Look backward for strlen calls
     class StrlenFinder(idaapi.ctree_visitor_t):
         def __init__(self, target_var_idx: int, limit_ea: int):
             super().__init__(idaapi.CV_FAST)
@@ -92,11 +92,11 @@ def _check_strlen_safe_pattern(cfunc, var_idx: int, call_ea: int, sink_func: str
 
         def visit_expr(self, e):
             ea = getattr(e, "ea", idaapi.BADADDR) or _expr_parent_insn_ea(cfunc, e)
-            # 只检查从函数头到 sink 调用点（包含）之间的语句
+            # Only inspect statements from the function entry up to the sink call site (inclusive)
             if ea == idaapi.BADADDR or ea > self.limit_ea:
                 return 0
 
-            # 查找: result_var = strlen(target_var)
+            # Look for: result_var = strlen(target_var)
             if e.op == idaapi.cot_asg:
                 lhs = getattr(e, "x", None)
                 rhs = getattr(e, "y", None)
@@ -108,11 +108,11 @@ def _check_strlen_safe_pattern(cfunc, var_idx: int, call_ea: int, sink_func: str
                         if func_name == "strlen" and rhs.a.size() > 0:
                             arg = rhs.a[0]
                             if arg.op == idaapi.cot_var and arg.v.idx == self.target_idx:
-                                # 找到 strlen(target_var)
+                                # Found strlen(target_var)
                                 if lhs and lhs.op == idaapi.cot_var:
                                     self.strlen_found = True
                                     self.strlen_result_var = lhs.v.idx
-                                    return 1  # 停止搜索
+                                    return 1  # Stop searching
             return 0
 
     finder = StrlenFinder(var_idx, call_ea)
@@ -126,9 +126,9 @@ def _check_strlen_safe_pattern(cfunc, var_idx: int, call_ea: int, sink_func: str
 
     strlen_var_idx = finder.strlen_result_var
 
-    # 模式 2: 检查 strlen 结果是否用作 len 参数
+    # Pattern 2: check whether the strlen result is used as the len argument
     if len_idx is not None:
-        # 查找调用点，检查 len_idx 参数是否是 strlen_var
+        # Find the call site and check whether len_idx uses strlen_var
         class LenChecker(idaapi.ctree_visitor_t):
             def __init__(self, strlen_idx: int, tgt_ea: int, tgt_len_idx: int):
                 super().__init__(idaapi.CV_FAST)
@@ -157,7 +157,7 @@ def _check_strlen_safe_pattern(cfunc, var_idx: int, call_ea: int, sink_func: str
             _LOGGER.info(f"[CWE-120] ✓ Safe pattern (strlen+len): {sink_func} in {func_name} at 0x{call_ea:x}")
             return True
 
-    # 模式 1: 检查 strlen 结果是否用于 malloc
+    # Pattern 1: check whether the strlen result flows into malloc
     class MallocChecker(idaapi.ctree_visitor_t):
         def __init__(self, strlen_idx: int, limit_ea: int):
             super().__init__(idaapi.CV_FAST)
@@ -166,17 +166,17 @@ def _check_strlen_safe_pattern(cfunc, var_idx: int, call_ea: int, sink_func: str
             self.malloc_vars = set()
 
         def visit_expr(self, e):
-            # 检查 malloc/calloc/realloc 调用
+            # Check malloc/calloc/realloc calls
             if e.op == idaapi.cot_call:
                 callee = e.x
                 if callee.op == idaapi.cot_obj:
                     func_name = idaapi.get_func_name(callee.obj_ea) or ""
                     if func_name in ("malloc", "calloc", "realloc"):
-                        # 检查 malloc 的第一个参数（size 参数）是否包含 strlen 变量
+                        # Check whether malloc's first argument (size) contains the strlen variable
                         if e.a.size() > 0:
                             size_arg = e.a[0]
                             if self._contains_var(size_arg, self.strlen_idx):
-                                # 这是一个有效的 malloc，查找谁接收了它的返回值
+                                # This is a valid malloc; find the variable that receives its return value
                                 parent_item = cfunc.body.find_parent_of(e)
                                 while parent_item:
                                     if hasattr(parent_item, 'cexpr') and parent_item.cexpr.op == idaapi.cot_asg:
@@ -188,7 +188,7 @@ def _check_strlen_safe_pattern(cfunc, var_idx: int, call_ea: int, sink_func: str
             return 0
 
         def _contains_var(self, expr, var_idx: int) -> bool:
-            """递归检查表达式中是否包含指定变量"""
+            """Recursively check whether the expression contains the target variable."""
             class VarChecker(idaapi.ctree_visitor_t):
                 def __init__(self, target_idx: int):
                     super().__init__(idaapi.CV_FAST)
@@ -214,7 +214,7 @@ def _check_strlen_safe_pattern(cfunc, var_idx: int, call_ea: int, sink_func: str
     except Exception:
         return False
 
-    # 检查 sink 的目标参数（通常是第 0 个）是否来自 malloc
+    # Check whether the sink destination argument (usually argument 0) comes from malloc
     if malloc_checker.malloc_vars:
         class SinkDstChecker(idaapi.ctree_visitor_t):
             def __init__(self, malloc_set: set, tgt_ea: int):
@@ -247,7 +247,7 @@ def _check_strlen_safe_pattern(cfunc, var_idx: int, call_ea: int, sink_func: str
 
 
 def _decompile_func_by_ea(func_ea: int):
-    """安全反编译：根据函数起始 EA 反编译，失败返回 None。"""
+    """Safely decompile a function by its entry EA, returning None on failure."""
     try:
         return ida_hexrays.decompile(func_ea)
     except Exception:
@@ -255,7 +255,7 @@ def _decompile_func_by_ea(func_ea: int):
 
 
 def _find_call_expr_by_ea(cfunc, target_name: str, target_ea: int):
-    """在 cfunc 中按 EA 精确找到指定函数名的调用表达式。返回 (cexpr_t, ea) 或 None。"""
+    """Find the call expression for a target function in cfunc by exact EA. Return (cexpr_t, ea) or None."""
     visitor = CallVisitor(cfunc, target_name)
     visitor.apply_to(cfunc.body, None)
     for ce, ea in visitor.calls:
@@ -265,7 +265,7 @@ def _find_call_expr_by_ea(cfunc, target_name: str, target_ea: int):
 
 
 def _cexpr_to_text(cfunc, e) -> str:
-    """将任意 cexpr 打印为单行文本（用于上下文描述）。"""
+    """Render any cexpr as a single-line string for context reporting."""
     try:
         qp = ida_hexrays.qstring_printer_t(cfunc, False)
         e._print(0, qp)
@@ -277,9 +277,9 @@ def _cexpr_to_text(cfunc, e) -> str:
         return ""
 
 
-# === 条件检测（结构化扫描版）：调用是否位于 if/else/loop/switch 的条件或分支中 ===
+# === Structured condition scan: whether the call appears in an if/else/loop/switch condition or branch ===
 def _node_contains_call(node, target_ea: int, target_text: str, cfunc) -> bool:
-    """判断某子树 node 是否包含目标调用（优先按 EA，失败则按单行文本匹配）"""
+    """Check whether a subtree contains the target call, preferably by EA and otherwise by single-line text."""
     class _Finder(idaapi.ctree_visitor_t):
         def __init__(self, tgt_ea, tgt_txt):
             super().__init__(idaapi.CV_FAST)
@@ -292,7 +292,7 @@ def _node_contains_call(node, target_ea: int, target_text: str, cfunc) -> bool:
                 if ea == self.tgt_ea and ea != idaapi.BADADDR:
                     self.found = True
                     return 1  # stop
-                # 有些版本/场景 EA 可能为 BADADDR，退化用文本比较（同一语句会命中）
+                # Some versions/scenarios may expose BADADDR here, so fall back to text matching
                 if self.tgt_txt:
                     try:
                         qp = ida_hexrays.qstring_printer_t(cfunc, False)
@@ -314,9 +314,9 @@ def _node_contains_call(node, target_ea: int, target_text: str, cfunc) -> bool:
     return f.found
 
 def _is_callsite_in_condition(cfunc, call_expr) -> bool:
-    """全函数扫描结构化语句：若目标调用出现在 if/else/loop/switch 的条件或分支体中则返回 True。"""
+    """Scan the whole function structure and return True if the target call appears in an if/else/loop/switch condition or branch body."""
     tgt_ea = getattr(call_expr, "ea", idaapi.BADADDR)
-    # 取目标调用的单行文本作兜底匹配
+    # Use the target call's single-line text as the fallback match key
     try:
         qp = ida_hexrays.qstring_printer_t(cfunc, False)
         call_expr._print(0, qp)
@@ -408,7 +408,7 @@ def _is_callsite_in_condition(cfunc, call_expr) -> bool:
                 except Exception:
                     pass
 
-            return 0  # 继续扫描
+            return 0  # Keep scanning
 
     scanner = _CondScanner(tgt_ea, tgt_txt)
     try:
@@ -418,12 +418,12 @@ def _is_callsite_in_condition(cfunc, call_expr) -> bool:
     return scanner.hit
 
 def _cond_tag(cfunc, call_expr) -> str:
-    """返回 '需要检查' / '确定'。"""
-    return "需要检查" if _is_callsite_in_condition(cfunc, call_expr) else "确定"
+    """Return "needs_check" or "certain"."""
+    return "needs_check" if _is_callsite_in_condition(cfunc, call_expr) else "certain"
 
 
 # ----------------------------------------------------------------------
-# 基础遍历与收集
+# Basic traversal and collection
 # ----------------------------------------------------------------------
 def find_var_assignments(
     cfunc,
@@ -432,11 +432,11 @@ def find_var_assignments(
     limit_ea: Optional[int] = None,
     propagators: Optional[dict] = None,
 ) -> List[dict]:
-    """回溯某局部变量的赋值/作为参数传递的使用点。"""
+    """Trace assignments to a local variable and places where it is passed as an argument."""
     import logging
     _LOGGER = logging.getLogger(__name__)
 
-    _LOGGER.info(f"[DEBUG find_var_assignments] >>> ENTER lvar_idx={lvar_idx}")
+    # _LOGGER.info(f"[DEBUG find_var_assignments] >>> ENTER lvar_idx={lvar_idx}")
     results: List[dict] = []
 
     class _AssignVisitor(idaapi.ctree_visitor_t):  # type: ignore[misc]
@@ -445,7 +445,7 @@ def find_var_assignments(
             self.target_idx = target_idx
 
         def visit_expr(self, e) -> int:  # type: ignore[override]
-            # 1) 赋值/复合赋值/初始化
+            # 1) Assignment / compound assignment / initialization
             if e.op in ASSIGN_OPS:
                 lhs = getattr(e, "x", None)
                 rhs = getattr(e, "y", None)
@@ -454,7 +454,7 @@ def find_var_assignments(
                     if ea == idaapi.BADADDR or (limit_ea is not None and not (ea < limit_ea)):
                         return 0
 
-                    # 赋值右值若为 propagator 调用（如 snprintf/GetValue/cJSON_*）
+                    # If the assignment RHS is a propagator call (for example snprintf/GetValue/cJSON_*)
                     if propagators and rhs is not None and rhs.op == idaapi.cot_call:
                         try:
                             prop_results = handle_propagator_assignments(cfunc, rhs, ea, propagators)
@@ -466,7 +466,7 @@ def find_var_assignments(
 
                     results.append({"type": "assign", "ea": ea, "expr": rhs})
 
-            # 2) 调用处：变量作参数传递到我们关注的位置
+            # 2) Call site: the variable is passed into a position we care about
             elif e.op == idaapi.cot_call:
                 callee = e.x
                 func_name = ""
@@ -484,15 +484,15 @@ def find_var_assignments(
                             })
             return 0
 
-    _LOGGER.info(f"[DEBUG find_var_assignments] Starting AST traversal for lvar_idx={lvar_idx}")
+    # _LOGGER.info(f"[DEBUG find_var_assignments] Starting AST traversal for lvar_idx={lvar_idx}")
     _AssignVisitor(lvar_idx).apply_to(cfunc.body, None)
     results.sort(key=lambda x: x["ea"], reverse=True)
-    _LOGGER.info(f"[DEBUG find_var_assignments] <<< EXIT lvar_idx={lvar_idx}, found {len(results)} assignments")
+    # _LOGGER.info(f"[DEBUG find_var_assignments] <<< EXIT lvar_idx={lvar_idx}, found {len(results)} assignments")
     return results
 
 
 def extract_vars_from_expr(expr) -> List[int]:
-    """返回表达式树中出现的局部变量 idx 列表。"""
+    """Return the list of local-variable indices that appear in the expression tree."""
     vars_found: List[int] = []
 
     class _VarVisitor(idaapi.ctree_visitor_t):  # type: ignore[misc]
@@ -509,7 +509,7 @@ def extract_vars_from_expr(expr) -> List[int]:
 
 
 def _iter_lvars(cfunc):
-    """兼容不同绑定：安全遍历 cfunc.lvars。"""
+    """Safely iterate over cfunc.lvars across different bindings."""
     try:
         n = len(cfunc.lvars)
         for i in range(n):
@@ -524,7 +524,7 @@ def _iter_lvars(cfunc):
 
 
 def _build_arg_ordinal_map(cfunc):
-    """构建 局部变量 idx -> 形参序号 ordinal 的映射。"""
+    """Build a mapping from local-variable index to parameter ordinal."""
     arg_ord_map = {}
     try:
         args = list(getattr(cfunc, "arguments", [])) or []
@@ -541,7 +541,7 @@ def _build_arg_ordinal_map(cfunc):
 
 
 # ----------------------------------------------------------------------
-# 核心回溯
+# Core backward tracing
 # ----------------------------------------------------------------------
 def trace_var_sources(
     cfunc,
@@ -555,11 +555,11 @@ def trace_var_sources(
     arg_ord_map: Optional[dict] = None,
     propagators: Optional[dict] = None,
 ):
-    """回溯局部变量的来源。返回 (sources, func_name, ea, taint_source)。"""
+    """Trace the origin of a local variable. Return (sources, func_name, ea, taint_source)."""
     import logging
     _LOGGER = logging.getLogger(__name__)
 
-    _LOGGER.info(f"[DEBUG trace_var_sources] >>> ENTER var_idx={var_idx}, depth={depth}")
+    # _LOGGER.info(f"[DEBUG trace_var_sources] >>> ENTER var_idx={var_idx}, depth={depth}")
 
     if var_sources is None:
         var_sources = set()
@@ -567,15 +567,15 @@ def trace_var_sources(
         path_stack = set()
 
     if var_idx in path_stack:
-        _LOGGER.info(f"[DEBUG trace_var_sources] <<< EXIT (circular) var_idx={var_idx}")
+        # _LOGGER.info(f"[DEBUG trace_var_sources] <<< EXIT (circular) var_idx={var_idx}")
         return var_sources, None, None, None
 
     path_stack.add(var_idx)
-    _LOGGER.info(f"[DEBUG trace_var_sources] Calling find_var_assignments for var_idx={var_idx}")
+    # _LOGGER.info(f"[DEBUG trace_var_sources] Calling find_var_assignments for var_idx={var_idx}")
     assigns = find_var_assignments(
         cfunc, var_idx, cwe_sources, limit_ea=call_ea, propagators=propagators
     )
-    _LOGGER.info(f"[DEBUG trace_var_sources] find_var_assignments returned {len(assigns)} items")
+    # _LOGGER.info(f"[DEBUG trace_var_sources] find_var_assignments returned {len(assigns)} items")
     if not assigns:
         if arg_ord_map and var_idx in arg_ord_map:
             var_sources.add(arg_ord_map[var_idx])
@@ -586,7 +586,7 @@ def trace_var_sources(
             ea = item["ea"]
             rhs = item["expr"]
 
-            # 右值为调用返回：ret 源
+            # RHS is a call return: treat it as a ret source
             if rhs is not None and rhs.op == idaapi.cot_call and rhs.x.op == idaapi.cot_obj:
                 func_name = idaapi.get_func_name(rhs.x.obj_ea)
                 if func_name in cwe_sources.get("ret", set()):
@@ -605,11 +605,11 @@ def trace_var_sources(
                         if func_name in cwe_sources.get("ret", set()):
                             return var_sources, func_name, ea, "ret"
 
-            # 否则递归 RHS 子树中的变量
+            # Otherwise recurse into variables referenced by the RHS subtree
             sub_vars = extract_vars_from_expr(rhs) if rhs is not None else []
-            _LOGGER.info(f"[DEBUG trace_var_sources] RHS has {len(sub_vars)} sub-variables to trace")
+            # _LOGGER.info(f"[DEBUG trace_var_sources] RHS has {len(sub_vars)} sub-variables to trace")
             for sub_idx in sub_vars:
-                _LOGGER.info(f"[DEBUG trace_var_sources] Recursing into sub_idx={sub_idx} (depth={depth+1})")
+                # _LOGGER.info(f"[DEBUG trace_var_sources] Recursing into sub_idx={sub_idx} (depth={depth+1})")
                 sources, func_name, fea, taint_source = trace_var_sources(
                     cfunc,
                     sub_idx,
@@ -618,13 +618,13 @@ def trace_var_sources(
                     arg_size=arg_size,
                     depth=depth + 1,
                     var_sources=var_sources,
-                    path_stack=path_stack,  # 共享 path_stack，不复制
+                    path_stack=path_stack,  # Share path_stack instead of copying it
                     arg_ord_map=arg_ord_map,
                     propagators=propagators,
                 )
-                _LOGGER.info(f"[DEBUG trace_var_sources] Returned from sub_idx={sub_idx}, func_name={func_name}")
+                # _LOGGER.info(f"[DEBUG trace_var_sources] Returned from sub_idx={sub_idx}, func_name={func_name}")
                 if func_name:
-                    _LOGGER.info(f"[DEBUG trace_var_sources] <<< EXIT (found source) var_idx={var_idx}")
+                    # _LOGGER.info(f"[DEBUG trace_var_sources] <<< EXIT (found source) var_idx={var_idx}")
                     return sources, func_name, fea, taint_source
 
         elif item["type"] == "arg":
@@ -634,13 +634,13 @@ def trace_var_sources(
             return var_sources, func_name, ea, taint_source
 
         elif item["type"] == "propagator":
-            # 赋值型 propagator：把其"输入 expr"中的变量继续回溯
+            # Assignment-style propagator: continue tracing variables in its input expr
             ea = item["ea"]
             expr = item["expr"]
             prop_vars = extract_vars_from_expr(expr)
-            _LOGGER.info(f"[DEBUG trace_var_sources] Propagator has {len(prop_vars)} variables to trace")
+            # _LOGGER.info(f"[DEBUG trace_var_sources] Propagator has {len(prop_vars)} variables to trace")
             for sub_idx in prop_vars:
-                _LOGGER.info(f"[DEBUG trace_var_sources] Recursing into propagator sub_idx={sub_idx} (depth={depth+1})")
+                # _LOGGER.info(f"[DEBUG trace_var_sources] Recursing into propagator sub_idx={sub_idx} (depth={depth+1})")
                 sources, src_func, src_ea, taint_source = trace_var_sources(
                     cfunc,
                     sub_idx,
@@ -649,21 +649,21 @@ def trace_var_sources(
                     arg_size=arg_size,
                     depth=depth + 1,
                     var_sources=var_sources,
-                    path_stack=path_stack,  # 共享 path_stack，不复制
+                    path_stack=path_stack,  # Share path_stack instead of copying it
                     arg_ord_map=arg_ord_map,
                     propagators=propagators,
                 )
-                _LOGGER.info(f"[DEBUG trace_var_sources] Returned from propagator sub_idx={sub_idx}, src_func={src_func}")
+                # _LOGGER.info(f"[DEBUG trace_var_sources] Returned from propagator sub_idx={sub_idx}, src_func={src_func}")
                 if src_func:
-                    _LOGGER.info(f"[DEBUG trace_var_sources] <<< EXIT (found source via propagator) var_idx={var_idx}")
+                    # _LOGGER.info(f"[DEBUG trace_var_sources] <<< EXIT (found source via propagator) var_idx={var_idx}")
                     return sources, src_func, src_ea, taint_source
 
-    _LOGGER.info(f"[DEBUG trace_var_sources] <<< EXIT (no source found) var_idx={var_idx}")
+    # _LOGGER.info(f"[DEBUG trace_var_sources] <<< EXIT (no source found) var_idx={var_idx}")
     return var_sources, None, None, None
 
 
 # ----------------------------------------------------------------------
-# 向上 1 层：从 callee 的某形参回溯到它的 caller
+# Move one layer upward: trace a callee parameter back to its caller
 # ----------------------------------------------------------------------
 def analyze_arg_xrefs(
     caller_func_address: int,
@@ -675,7 +675,7 @@ def analyze_arg_xrefs(
     len_idx: Optional[int] = None,
     propagators: Optional[dict] = None,
 ) -> Optional[List[Dict[str, Any]]]:
-    """在 caller 中枚举所有对 callee 的调用点，针对 arg_index 做回溯准备。"""
+    """Enumerate all caller-side call sites to callee and prepare to trace arg_index."""
     import logging
     _LOGGER = logging.getLogger(__name__)
 
@@ -691,7 +691,7 @@ def analyze_arg_xrefs(
     visitor = CallVisitor(cfunc, callee_func_name)
     visitor.apply_to(cfunc.body, None)
 
-    # 变参/格式化
+    # Variadic / format handling
     is_variadic = False
     fmt_idx = None
     va_start_idx = None
@@ -703,22 +703,22 @@ def analyze_arg_xrefs(
 
     results: List[Dict[str, Any]] = []
 
-    # 传播器配置（例如 {"GetValue": {"input":0, "output":1}})
+    # Propagator configuration, for example {"GetValue": {"input":0, "output":1}}
     prop_conf = (propagators or {}).get(callee_func_name)
 
     import logging
     _LOGGER = logging.getLogger(__name__)
 
-    # ============ DEBUG: 函数入口信息 ============
-    _LOGGER.info(f"[DEBUG analyze_arg_xrefs] Analyzing {callee_func_name} in {func_name}")
+    # ============ DEBUG: function entry info ============
+    # _LOGGER.info(f"[DEBUG analyze_arg_xrefs] Analyzing {callee_func_name} in {func_name}")
     _LOGGER.info(f"  arg_index={arg_index}, vuln_type={vuln_type}, len_idx={len_idx}")
     _LOGGER.info(f"  is_variadic={is_variadic}, fmt_idx={fmt_idx}, va_start_idx={va_start_idx}")
-    _LOGGER.info(f"  Found {len(visitor.calls)} call sites")
+    # _LOGGER.info(f"  Found {len(visitor.calls)} call sites")
     # ==========================================
 
     for call_expr, _ in visitor.calls:
         call_ea = call_expr.ea
-        tag_here = _cond_tag(cfunc, call_expr)  # ★ 本调用点的条件标签
+        tag_here = _cond_tag(cfunc, call_expr)  # Condition label for this call site
 
         base_ctx = {
             "callee": callee_func_name,
@@ -728,19 +728,19 @@ def analyze_arg_xrefs(
             "cond_tag": tag_here,
         }
 
-        # ============ DEBUG: 调用点信息 ============
-        _LOGGER.info(f"[DEBUG call_site] Processing call at 0x{call_ea:x}")
+        # ============ DEBUG: call-site info ============
+        # _LOGGER.info(f"[DEBUG call_site] Processing call at 0x{call_ea:x}")
         _LOGGER.info(f"  call_line: {_cexpr_to_text(cfunc, call_expr)}")
         _LOGGER.info(f"  arg count: {call_expr.a.size()}")
         # ==========================================
 
         _LOGGER.debug(f"[analyze_arg_xrefs] Processing {callee_func_name} in {func_name} at 0x{call_ea:x}, vuln_type={vuln_type}")
 
-        # 计算本 callsite 需要检查的"实参绝对下标"
+        # Compute the absolute argument indices that must be checked at this call site
         indices_to_check: List[int] = []
 
-        # ============ DEBUG: 条件判断 ============
-        _LOGGER.info(f"[DEBUG branch] Checking condition: is_variadic and arg_index == fmt_idx")
+        # ============ DEBUG: branch condition ============
+        # _LOGGER.info(f"[DEBUG branch] Checking condition: is_variadic and arg_index == fmt_idx")
         _LOGGER.info(f"  is_variadic={is_variadic}, arg_index={arg_index}, fmt_idx={fmt_idx}")
         _LOGGER.info(f"  Condition result: {is_variadic and arg_index == fmt_idx}")
         # ==========================================
@@ -777,8 +777,8 @@ def analyze_arg_xrefs(
             else:
                 indices_to_check = [fmt_idx]
         else:
-            # ============ DEBUG: 进入 else 分支 ============
-            _LOGGER.info(f"[DEBUG branch] Entered ELSE branch (not is_variadic or arg_index != fmt_idx)")
+                    # ============ DEBUG: entering the else branch ============
+            # _LOGGER.info(f"[DEBUG branch] Entered ELSE branch (not is_variadic or arg_index != fmt_idx)")
             # ==========================================
 
             # For non-variadic functions, check if there's a length parameter that's a constant
@@ -788,14 +788,14 @@ def analyze_arg_xrefs(
                     len_expr.op == idaapi.cot_cast and len_expr.x.op == idaapi.cot_num
                 ):
                     # Length is a constant, skip this call for CWE-120
-                    _LOGGER.info(f"[DEBUG filter] Filtered: len_idx is constant")
+                    # _LOGGER.info(f"[DEBUG filter] Filtered: len_idx is constant")
                     results.append({"call_ea": call_ea, "edges": [], "source": None, "context": base_ctx})
                     continue
 
             # Special handling for scanf family functions that are configured as format functions
             # but we're checking a different parameter (e.g., checking arg 0 while fmt is at arg 1)
-            # ============ DEBUG: scanf 特殊处理条件 ============
-            _LOGGER.info(f"[DEBUG scanf_filter] Checking scanf filter condition:")
+                # ============ DEBUG: scanf special-case condition ============
+            # _LOGGER.info(f"[DEBUG scanf_filter] Checking scanf filter condition:")
             _LOGGER.info(f"  is_variadic={is_variadic}")
             _LOGGER.info(f"  fmt_idx={fmt_idx}, arg_index={arg_index}")
             _LOGGER.info(f"  fmt_idx != arg_index: {fmt_idx != arg_index if fmt_idx is not None else 'N/A'}")
@@ -807,15 +807,15 @@ def analyze_arg_xrefs(
 
             if (is_variadic and fmt_idx is not None and fmt_idx != arg_index and
                 fmt_idx < call_expr.a.size() and vuln_type == "CWE-120"):
-                # ============ DEBUG: 进入 scanf 过滤分支 ============
-                _LOGGER.info(f"[DEBUG scanf_filter] Entered scanf filter branch")
+                    # ============ DEBUG: entering the scanf filtering branch ============
+                # _LOGGER.info(f"[DEBUG scanf_filter] Entered scanf filter branch")
                 _LOGGER.info(f"  Trying to parse format string at arg index {fmt_idx}")
                 # ==========================================
 
                 s = try_get_cstr_from_cexpr(call_expr.a[fmt_idx])
 
-                # ============ DEBUG: 格式字符串解析结果 ============
-                _LOGGER.info(f"[DEBUG scanf_filter] Format string parse result: {repr(s)}")
+                    # ============ DEBUG: format-string parse result ============
+                # _LOGGER.info(f"[DEBUG scanf_filter] Format string parse result: {repr(s)}")
                 # ==========================================
 
                 if s:
@@ -824,18 +824,18 @@ def analyze_arg_xrefs(
                         s, {"s"}, include_width_star_for_s=True  # Only check %s for buffer overflow
                     )
 
-                    # ============ DEBUG: %s 位置检查 ============
-                    _LOGGER.info(f"[DEBUG scanf_filter] Format string: {s}")
-                    _LOGGER.info(f"[DEBUG scanf_filter] Used positions with %s: {used_positions}")
+                        # ============ DEBUG: %s position check ============
+                    # _LOGGER.info(f"[DEBUG scanf_filter] Format string: {s}")
+                    # _LOGGER.info(f"[DEBUG scanf_filter] Used positions with %s: {used_positions}")
                     # ==========================================
 
                     if not used_positions:
                         # No %s format specifiers found, skip this call for CWE-120
-                        _LOGGER.info(f"[DEBUG filter] Filtered: No %s in format string '{s}'")
+                        # _LOGGER.info(f"[DEBUG filter] Filtered: No %s in format string '{s}'")
                         results.append({"call_ea": call_ea, "edges": [], "source": None, "context": base_ctx})
                         continue
                 else:
-                    # ============ DEBUG: 格式字符串解析失败 ============
+                    # ============ DEBUG: format-string parsing failed ============
                     _LOGGER.warning(f"[DEBUG scanf_filter] Format string parse FAILED - filter skipped!")
                     _LOGGER.warning(f"  This may cause false positive!")
                     # ==========================================
@@ -848,7 +848,7 @@ def analyze_arg_xrefs(
 
 
 
-        # ---------- GetValue(key, dst) → 跳到 SetValue(key, val) 并对 val 回溯 ----------
+                # ---------- GetValue(key, dst) -> jump to SetValue(key, val) and trace val ----------
         if handle_propagator_assignments and prop_conf and isinstance(prop_conf, dict) and callee_func_name not in {"snprintf", "vsnprintf"}:
             prop_input = prop_conf.get("input")
             if isinstance(prop_input, int) and arg_index == int(prop_input):
@@ -857,7 +857,7 @@ def analyze_arg_xrefs(
                     "getvalue_call_line": _cexpr_to_text(cfunc, call_expr),
                     "setvalue_sites": [],
                 })
-                # 记录 key 字符串
+                    # Record the key string
                 try:
                     key_expr = call_expr.a[prop_input]
                     base_ctx["getvalue_key"] = try_get_cstr_from_cexpr(key_expr)
@@ -874,7 +874,7 @@ def analyze_arg_xrefs(
                         continue
                     set_ea = ph.get("ea")
                     set_func_name = ph.get("func_name")
-                    set_arg_idx = int(ph.get("input_idx", 1))  # SetValue 的 value 形参默认 1
+                    # SetValue defaults to parameter 1 for the value argument
 
                     if not isinstance(set_ea, int) or not set_func_name:
                         continue
@@ -894,9 +894,9 @@ def analyze_arg_xrefs(
                     if set_arg_idx >= set_call_expr.a.size():
                         continue
 
-                    host_tag = _cond_tag(host_cfunc, set_call_expr)  # ★ host 调用点标签
+                    # Host call-site label
 
-                    # 收集 SetValue 现场上下文
+                    # Collect SetValue-site context
                     site_ctx = {
                         "setvalue_func": set_func_name,
                         "setvalue_host": host_name,
@@ -910,7 +910,7 @@ def analyze_arg_xrefs(
                     }
                     base_ctx.setdefault("setvalue_sites", []).append(site_ctx)
 
-                    # 在 SetValue 所在函数中，回溯其 val 实参
+                    # Trace the val argument inside the function that contains SetValue
                     host_arg_map = _build_arg_ordinal_map(host_cfunc)
                     arg_expr2 = set_call_expr.a[set_arg_idx]
 
@@ -934,7 +934,7 @@ def analyze_arg_xrefs(
                         )
                         local_next2.update(sources2)
                         if fname2 and source_payload2 is None:
-                            # 在 source payload 里放入“跳转节点”信息与标签
+                        # Record jump-node metadata and labels in the source payload
                             source_payload2 = {
                                 "func": fname2,
                                 "ea": fea2,
@@ -944,10 +944,10 @@ def analyze_arg_xrefs(
                                 "jump_func_ea": host_func.start_ea,
                                 "jump_call_ea": set_ea,
                                 "jump_cond_tag": host_tag,
-                                "cond_tag": tag_here,  # caller 的标签
+                                # Caller label
                             }
 
-                    # 以“跳转边”的形式交给上层（边里也带上两个标签）
+                            # Hand the result to the upper layer as a jump edge, including both labels
                     jump_edges = []
                     for nx in local_next2:
                         jump_edges.append({
@@ -956,8 +956,8 @@ def analyze_arg_xrefs(
                             "jump_to_func": host_name,
                             "jump_func_ea": host_func.start_ea,
                             "jump_call_ea": set_ea,
-                            "cond_tag": tag_here,         # caller 的标签
-                            "jump_cond_tag": host_tag,    # host 的标签
+                            # Caller label
+                            # Host label
                         })
 
                     results.append({
@@ -968,23 +968,23 @@ def analyze_arg_xrefs(
                         "cond_tag": tag_here,
                     })
 
-                # 命中 propagator 后，这个 callsite 已处理完毕
+                # This call site is fully handled once the propagator rule matches
                 continue
         # -------------------------------------------------------------------
 
-        # 常规路径：对 indices_to_check 中的表达式回溯
+        # Regular path: trace the expressions referenced by indices_to_check
         edges: List[Dict[str, int]] = []
         source_payload: Optional[Dict[str, Any]] = None
 
-        # CWE-120: 在开始回溯前，检查当前函数是否有安全模式
+        # CWE-120: before tracing, check whether the current function matches a safe pattern
         if vuln_type == "CWE-120" and indices_to_check:
-            # 检查第一个需要检查的参数
+            # Check the first argument that needs inspection
             first_idx = indices_to_check[0]
             if first_idx < call_expr.a.size():
                 arg_expr = call_expr.a[first_idx]
                 _lvars_pre, _gvars_pre, lvar_exprs_pre = collect_vars_from_expr(cfunc, arg_expr)
 
-                # 检查任意一个变量是否符合安全模式
+                # Check whether any variable matches the safe pattern
                 has_safe_pattern = False
                 for lvar_idx_pre in lvar_exprs_pre:
                     if _check_strlen_safe_pattern(cfunc, lvar_idx_pre, call_ea, callee_func_name, len_idx):
@@ -992,18 +992,18 @@ def analyze_arg_xrefs(
                         break
 
                 if has_safe_pattern:
-                    # 跳过这个调用点，不生成任何路径
+                    # Skip this call site and emit no path
                     continue
 
         for abs_idx in indices_to_check:
-            _LOGGER.info(f"[DEBUG loop] Processing abs_idx={abs_idx} in indices_to_check={indices_to_check}")
+            # _LOGGER.info(f"[DEBUG loop] Processing abs_idx={abs_idx} in indices_to_check={indices_to_check}")
             arg_expr = call_expr.a[abs_idx]
             _lvars, _gvars, lvar_exprs = collect_vars_from_expr(cfunc, arg_expr)
-            _LOGGER.info(f"[DEBUG loop] Found {len(lvar_exprs)} lvar_exprs to trace")
+            # _LOGGER.info(f"[DEBUG loop] Found {len(lvar_exprs)} lvar_exprs to trace")
 
             local_next: Set[int] = set()
             for lvar_idx in lvar_exprs:
-                _LOGGER.info(f"[DEBUG trace_var_sources] Calling trace_var_sources for lvar_idx={lvar_idx}")
+                # _LOGGER.info(f"[DEBUG trace_var_sources] Calling trace_var_sources for lvar_idx={lvar_idx}")
                 sources, func_name2, ea, taint_source = trace_var_sources(
                     cfunc=cfunc,
                     var_idx=lvar_idx,
@@ -1023,7 +1023,7 @@ def analyze_arg_xrefs(
                         "ea": ea,
                         "taint": taint_source,
                         "abs_idx": abs_idx,
-                        "cond_tag": tag_here,  # caller 标签
+                        "cond_tag": tag_here,  # Caller label
                     }
 
             for nx in local_next:
@@ -1033,19 +1033,19 @@ def analyze_arg_xrefs(
             "call_ea": call_ea, "edges": edges, "source": source_payload, "context": base_ctx, "cond_tag": tag_here
         })
 
-    # ============ DEBUG: analyze_arg_xrefs 返回结果 ============
-    _LOGGER.info(f"[DEBUG analyze_arg_xrefs] Returning {len(results)} results for {callee_func_name} in {func_name}")
+    # ============ DEBUG: analyze_arg_xrefs return value ============
+    # _LOGGER.info(f"[DEBUG analyze_arg_xrefs] Returning {len(results)} results for {callee_func_name} in {func_name}")
     for i, r in enumerate(results):
         edges_count = len(r.get("edges", []))
         has_source = r.get("source") is not None
-        _LOGGER.info(f"  Result {i}: call_ea=0x{r['call_ea']:x}, edges={edges_count}, has_source={has_source}")
+        # _LOGGER.info(f"  Result {i}: call_ea=0x{r['call_ea']:x}, edges={edges_count}, has_source={has_source}")
     # ==========================================
 
     return results if results else None
 
 
 def analyze_func_xrefs(func_name: str) -> Set[int]:
-    """返回引用 `func_name` 的唯一 caller 函数起始 EA 集合。"""
+    """Return the set of unique caller entry EAs that reference `func_name`."""
     callee_ea = idc.get_name_ea(idaapi.BADADDR, func_name)
     if callee_ea == idaapi.BADADDR:
         return set()
@@ -1062,7 +1062,7 @@ def analyze_func_xrefs(func_name: str) -> Set[int]:
 
 
 # ----------------------------------------------------------------------
-# 多层回溯：构建完整路径
+# Multi-hop backward tracing: build complete paths
 # ----------------------------------------------------------------------
 def trace_data_flow(
     start_func: str,
@@ -1084,9 +1084,10 @@ def trace_data_flow(
     max_paths: int = 10000,
     root_label: Optional[str] = None,
 ):
-    """从 (start_func, arg_index) 开始向上传播，返回若干条路径（每条路径是**节点元组列表**）。
-       节点元组形如：(func, arg_index, call_ea, func_ea, label)。
-       label ∈ {"需要检查","确定","sink","source"}。
+    """Trace upward from (start_func, arg_index) and return a list of paths.
+       Each path is a list of node tuples of the form
+       (func, arg_index, call_ea, func_ea, label), where label is one of
+       {"needs_check", "certain", "sink", "source"}.
     """
     import logging
     _LOGGER = logging.getLogger(__name__)
@@ -1096,38 +1097,38 @@ def trace_data_flow(
     if visited is None:
         visited = set()
 
-    # ============ 为每个sink函数创建独立的计数器 ============
-    # 当这是一个新的sink函数分析起点时(func_ea == "sink" 且 path为空),创建独立计数器
+    # ============ Create a dedicated counter for each sink function ============
+    # Create an independent counter when this is a new sink root (func_ea == "sink" and path is empty)
     is_sink_root = (func_ea == "sink" and len(path) == 0)
     if is_sink_root and trace_path_counter is None:
         trace_path_counter = [0]
-        _LOGGER.info(f"[LIMIT] 为sink函数 {start_func} 创建独立路径计数器 (max_paths={max_paths})")
+        _LOGGER.info(f"[LIMIT] Created a dedicated path counter for sink function {start_func} (max_paths={max_paths})")
     elif is_sink_root and trace_path_counter is not None:
-        # 如果外部传入了计数器（共享模式），输出提示信息
-        _LOGGER.info(f"[LIMIT] sink函数 {start_func} 使用共享路径计数器 (当前已计数: {trace_path_counter[0]})")
+        # If an external counter was supplied (shared mode), log a hint
+        _LOGGER.info(f"[LIMIT] Sink function {start_func} is using the shared path counter (current count: {trace_path_counter[0]})")
     # ==========================================
 
-    # ============ 优先级1: 检查路径数量上限 ============
+    # ============ Priority 1: check the path-count limit ============
     if trace_path_counter is not None and trace_path_counter[0] >= max_paths:
-        _LOGGER.warning(f"[LIMIT] 已达到路径上限 {max_paths}，停止生成更多路径 (start_func={start_func})")
+        _LOGGER.warning(f"[LIMIT] Reached the path limit {max_paths}; stop generating more paths (start_func={start_func})")
         return []
     # ==========================================
 
-    # ============ DEBUG: trace_data_flow 入口 ============
+    # ============ DEBUG: trace_data_flow entry ============
     depth = len(path)
     call_ea_str = f"0x{call_ea:x}" if call_ea else "None"
-    _LOGGER.info(f"[DEBUG trace_data_flow] ===== ENTER =====")
-    _LOGGER.info(f"  start_func={start_func}, arg_index={arg_index}")
-    _LOGGER.info(f"  call_ea={call_ea_str}, func_ea={func_ea}")
-    _LOGGER.info(f"  depth={depth}, vuln_type={vuln_type}")
+    # _LOGGER.info(f"[DEBUG trace_data_flow] ===== ENTER =====")
+    # _LOGGER.info(f"  start_func={start_func}, arg_index={arg_index}")
+    # _LOGGER.info(f"  call_ea={call_ea_str}, func_ea={func_ea}")
+    # _LOGGER.info(f"  depth={depth}, vuln_type={vuln_type}")
     # ==========================================
 
     if len(path) > max_depth:
-        _LOGGER.info(f"[DEBUG trace_data_flow] Max depth exceeded ({len(path)} > {max_depth}), returning empty")
+        # _LOGGER.info(f"[DEBUG trace_data_flow] Max depth exceeded ({len(path)} > {max_depth}), returning empty")
         return []
 
-    # 当前节点（root 为 sink）
-    label_here = root_label if root_label is not None else ("sink" if func_ea == "sink" else "确定")
+    # Current node (the root is the sink)
+    label_here = root_label if root_label is not None else ("sink" if func_ea == "sink" else "certain")
     node = (
         start_func,
         display_index if display_index is not None else arg_index,
@@ -1136,15 +1137,15 @@ def trace_data_flow(
         label_here,
     )
     if node in visited:
-        _LOGGER.info(f"[DEBUG trace_data_flow] Node already visited: {start_func}, returning empty")
+        # _LOGGER.info(f"[DEBUG trace_data_flow] Node already visited: {start_func}, returning empty")
         return []
 
-    # 缓存键包含 call_ea，避免不同调用点串扰
-    cache_key = (start_func, arg_index, call_ea, vuln_type)
+    # Cache key: drop call_ea for better reuse so different call sites in the same function can share results
+    cache_key = (start_func, arg_index, vuln_type)
     if cache_get is not None:
         cached = cache_get(cache_key)
         if cached is not None:
-            _LOGGER.info(f"[DEBUG trace_data_flow] Cache hit for {start_func}, returning {len(cached)} cached results")
+            # _LOGGER.info(f"[DEBUG trace_data_flow] Cache hit for {start_func}, returning {len(cached)} cached results")
             return cached
 
     visited.add(node)
@@ -1152,10 +1153,10 @@ def trace_data_flow(
     results: List[List[tuple]] = []
 
     caller_addrs = analyze_func_xrefs(start_func)
-    _LOGGER.info(f"[DEBUG trace_data_flow] Found {len(caller_addrs)} callers for {start_func}")
+    # _LOGGER.info(f"[DEBUG trace_data_flow] Found {len(caller_addrs)} callers for {start_func}")
 
     if not caller_addrs:
-        _LOGGER.info(f"[DEBUG trace_data_flow] No callers found for {start_func}, path ends here (leaf node)")
+        # _LOGGER.info(f"[DEBUG trace_data_flow] No callers found for {start_func}, path ends here (leaf node)")
         results.append(path)
         if trace_path_counter is not None:
             trace_path_counter[0] += 1
@@ -1165,7 +1166,7 @@ def trace_data_flow(
 
     for addr in caller_addrs:
         caller_name = idc.get_func_name(addr)
-        _LOGGER.info(f"[DEBUG trace_data_flow] Processing caller: {caller_name} at 0x{addr:x}")
+        # _LOGGER.info(f"[DEBUG trace_data_flow] Processing caller: {caller_name} at 0x{addr:x}")
 
         call_infos = analyze_arg_xrefs(
             addr,
@@ -1178,30 +1179,30 @@ def trace_data_flow(
             propagators=propagators,
         )
         if not call_infos:
-            _LOGGER.info(f"[DEBUG trace_data_flow] No call_infos returned from {caller_name}, skipping")
+            # _LOGGER.info(f"[DEBUG trace_data_flow] No call_infos returned from {caller_name}, skipping")
             continue
 
-        _LOGGER.info(f"[DEBUG trace_data_flow] Got {len(call_infos)} call_infos from {caller_name}")
+        # _LOGGER.info(f"[DEBUG trace_data_flow] Got {len(call_infos)} call_infos from {caller_name}")
 
         for info in call_infos:
             this_call_ea = info["call_ea"]
             src = info.get("source")
             edges = info.get("edges", [])
-            info_cond = info.get("cond_tag", "确定")
+            info_cond = info.get("cond_tag", "certain")
 
-            # ============ DEBUG: 处理单个 call_info ============
-            _LOGGER.info(f"[DEBUG trace_data_flow] Processing call_info at 0x{this_call_ea:x}")
-            _LOGGER.info(f"  has_source={src is not None}, edges_count={len(edges)}")
+            # ============ DEBUG: processing one call_info ============
+            # _LOGGER.info(f"[DEBUG trace_data_flow] Processing call_info at 0x{this_call_ea:x}")
+            # _LOGGER.info(f"  has_source={src is not None}, edges_count={len(edges)}")
             # ==========================================
 
-            # 命中源：路径需要显式包含 caller 节点；若来自 GetValue→SetValue，还需插入 host 节点
+            # Source hit: explicitly include the caller node; insert the host node too for GetValue -> SetValue
             if src:
                 caller_node = (
                     caller_name,
                     src.get("abs_idx", arg_index),
                     this_call_ea,
                     addr,
-                    info_cond,  # caller 标签
+                    info_cond,  # Caller label
                 )
                 prefix_nodes = [caller_node]
 
@@ -1211,7 +1212,7 @@ def trace_data_flow(
                         src.get("abs_idx", arg_index),
                         src.get("jump_call_ea"),
                         src.get("jump_func_ea", "propagator"),
-                        src.get("jump_cond_tag", "确定"),  # host 标签
+                        src.get("jump_cond_tag", "certain"),  # Host label
                     )
                     prefix_nodes.append(host_node)
 
@@ -1222,18 +1223,18 @@ def trace_data_flow(
                 if trace_path_counter is not None:
                     trace_path_counter[0] += 1
 
-            # 未命中源：沿"边"继续传播
-            _LOGGER.info(f"[DEBUG trace_data_flow] Processing {len(edges)} edges from call at 0x{this_call_ea:x}")
+            # No source hit: keep propagating along the edges
+            # _LOGGER.info(f"[DEBUG trace_data_flow] Processing {len(edges)} edges from call at 0x{this_call_ea:x}")
             for edge_idx, edge in enumerate(edges):
                 next_idx = edge["next_idx"]
                 abs_idx = edge["abs_idx"]
                 caller_tag = edge.get("cond_tag", info_cond)
-                _LOGGER.info(f"[DEBUG trace_data_flow] Edge {edge_idx}: next_idx={next_idx}, abs_idx={abs_idx}")
+                # _LOGGER.info(f"[DEBUG trace_data_flow] Edge {edge_idx}: next_idx={next_idx}, abs_idx={abs_idx}")
 
 
-                # propagator 跳转边：路径里先插入 caller，再让下一层自动添加 host
+                # Propagator jump edge: insert caller first, then let the next layer add the host automatically
                 if "jump_to_func" in edge:
-                    _LOGGER.info(f"[DEBUG trace_data_flow] Recursing via JUMP to {edge['jump_to_func']}")
+                    # _LOGGER.info(f"[DEBUG trace_data_flow] Recursing via JUMP to {edge['jump_to_func']}")
                     caller_node = (caller_name, abs_idx, this_call_ea, addr, caller_tag)
                     prefix = path + [caller_node]
                     sub_paths = trace_data_flow(
@@ -1242,7 +1243,7 @@ def trace_data_flow(
                         cwe_sources=cwe_sources,
                         call_ea=edge.get("jump_call_ea"),
                         func_ea=edge.get("jump_func_ea", "propagator"),
-                        path=prefix,  # 前缀已包含 caller
+                        path=prefix,  # The prefix already contains the caller
                         visited=visited,
                         cache_get=cache_get,
                         cache_set=cache_set,
@@ -1255,23 +1256,23 @@ def trace_data_flow(
                         max_depth=max_depth,
                         max_paths=max_paths,
                     )
-                    # 在下一层的第一个节点补上 host（含标签）
-                    # 由于下一层的 root 会被当成"sink"加入，我们希望 host 节点可视化出现，
-                    # 故这里不额外插入，维持与上面 src 分支一致的策略。
-                    _LOGGER.info(f"[DEBUG trace_data_flow] Returned {len(sub_paths)} sub_paths from JUMP to {edge['jump_to_func']}")
-                    # ============ 优先级3: 在 extend 前检查路径数 ============
+                    # Let the first node in the next layer represent the host (with label)
+                    # The next layer treats its root as a sink node, and we want the host node to stay visible,
+                    # so do not insert it again here; keep the same strategy as the source branch above.
+                    # _LOGGER.info(f"[DEBUG trace_data_flow] Returned {len(sub_paths)} sub_paths from JUMP to {edge['jump_to_func']}")
+                    # ============ Priority 3: check the path count before extending ============
                     if trace_path_counter is not None and trace_path_counter[0] + len(sub_paths) > max_paths:
                         remaining = max_paths - trace_path_counter[0]
                         if remaining > 0:
-                            _LOGGER.warning(f"[LIMIT] 路径数接近上限，仅添加剩余 {remaining} 条路径")
+                            _LOGGER.warning(f"[LIMIT] Path count is near the limit; only append the remaining {remaining} paths")
                             results.extend(sub_paths[:remaining])
-                        _LOGGER.warning(f"[LIMIT] 已达到路径上限 {max_paths}，停止继续添加")
+                        _LOGGER.warning(f"[LIMIT] Reached the path limit {max_paths}; stop appending more paths")
                         return results
                     # ==========================================
                     results.extend(sub_paths)
                 else:
-                    # 常规：递归到 caller
-                    _LOGGER.info(f"[DEBUG trace_data_flow] Recursing NORMALLY to caller {caller_name}")
+                    # Regular case: recurse into the caller
+                    # _LOGGER.info(f"[DEBUG trace_data_flow] Recursing NORMALLY to caller {caller_name}")
                     caller_node = (caller_name, abs_idx, this_call_ea, addr, caller_tag)
                     sub_paths = trace_data_flow(
                         start_func=caller_name,
@@ -1279,7 +1280,7 @@ def trace_data_flow(
                         cwe_sources=cwe_sources,
                         call_ea=this_call_ea,
                         func_ea=addr,
-                        path=path,  # 不提前插 caller，下一层会自动添加（并携带标签）
+                        path=path,  # Do not insert the caller early; the next layer will add it with the label
                         visited=visited,
                         cache_get=cache_get,
                         cache_set=cache_set,
@@ -1291,23 +1292,23 @@ def trace_data_flow(
                         propagators=propagators,
                         max_depth=max_depth,
                         max_paths=max_paths,
-                        root_label=caller_tag,     # ★ 把"需要检查/确定"强制给下一层根
+                        root_label=caller_tag,     # Force the next-layer root label to be "needs_check" or "certain"
                     )
-                    _LOGGER.info(f"[DEBUG trace_data_flow] Returned {len(sub_paths)} sub_paths from NORMAL recursion to {caller_name}")
-                    # ============ 优先级3: 在 extend 前检查路径数 ============
+                    # _LOGGER.info(f"[DEBUG trace_data_flow] Returned {len(sub_paths)} sub_paths from NORMAL recursion to {caller_name}")
+                    # ============ Priority 3: check the path count before extending ============
                     if trace_path_counter is not None and trace_path_counter[0] + len(sub_paths) > max_paths:
                         remaining = max_paths - trace_path_counter[0]
                         if remaining > 0:
-                            _LOGGER.warning(f"[LIMIT] 路径数接近上限，仅添加剩余 {remaining} 条路径")
+                            _LOGGER.warning(f"[LIMIT] Path count is near the limit; only append the remaining {remaining} paths")
                             results.extend(sub_paths[:remaining])
-                        _LOGGER.warning(f"[LIMIT] 已达到路径上限 {max_paths}，停止继续添加")
+                        _LOGGER.warning(f"[LIMIT] Reached the path limit {max_paths}; stop appending more paths")
                         return results
                     # ==========================================
                     results.extend(sub_paths)
 
-            # 没有边也没命中源：落叶
+            # Leaf: no edges and no source hit
             if not src and not edges:
-                _LOGGER.info(f"[DEBUG trace_data_flow] No source and no edges at 0x{this_call_ea:x}, path ends here (filtered or leaf)")
+                # _LOGGER.info(f"[DEBUG trace_data_flow] No source and no edges at 0x{this_call_ea:x}, path ends here (filtered or leaf)")
                 results.append(path)
                 if trace_path_counter is not None:
                     trace_path_counter[0] += 1
@@ -1315,9 +1316,9 @@ def trace_data_flow(
     if cache_set is not None:
         cache_set(cache_key, results)
 
-    # ============ DEBUG: trace_data_flow 返回 ============
-    _LOGGER.info(f"[DEBUG trace_data_flow] ===== EXIT =====")
-    _LOGGER.info(f"  start_func={start_func}, returning {len(results)} paths")
+    # ============ DEBUG: trace_data_flow return ============
+    # _LOGGER.info(f"[DEBUG trace_data_flow] ===== EXIT =====")
+    # _LOGGER.info(f"  start_func={start_func}, returning {len(results)} paths")
     # ==========================================
 
     return results

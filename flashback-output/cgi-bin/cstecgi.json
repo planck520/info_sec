@@ -1,0 +1,602 @@
+[
+  {
+    "vuln_type": "CWE-78",
+    "sink_func": "doSystem",
+    "source_func": "websGetVar",
+    "param_idx": 0,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "doSystem",
+        "arg_index": 0,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_41E0A0",
+        "arg_index": 1,
+        "call_ea": "0x41ee6c",
+        "func_ea": "0x41e0a0",
+        "label": "needs_check"
+      },
+      {
+        "func": "websGetVar",
+        "arg_index": "ret",
+        "call_ea": "0x41ee38",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-78",
+    "sink_func": "doSystem",
+    "source_func": "websGetVar",
+    "param_idx": 0,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "doSystem",
+        "arg_index": 0,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_41BF38",
+        "arg_index": 1,
+        "call_ea": "0x41bf74",
+        "func_ea": "0x41bf38",
+        "label": "certain"
+      },
+      {
+        "func": "websGetVar",
+        "arg_index": "ret",
+        "call_ea": "0x41bf5c",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-78",
+    "sink_func": "doSystem",
+    "source_func": "websGetVar",
+    "param_idx": 0,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "doSystem",
+        "arg_index": 0,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_4263CC",
+        "arg_index": 1,
+        "call_ea": "0x4264f0",
+        "func_ea": "0x4263cc",
+        "label": "certain"
+      },
+      {
+        "func": "websGetVar",
+        "arg_index": "ret",
+        "call_ea": "0x426440",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-22",
+    "sink_func": "fopen",
+    "source_func": "websGetVar",
+    "param_idx": 0,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "fopen",
+        "arg_index": 0,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_425D60",
+        "arg_index": 0,
+        "call_ea": "0x425e70",
+        "func_ea": "0x425d60",
+        "label": "needs_check"
+      },
+      {
+        "func": "websGetVar",
+        "arg_index": "ret",
+        "call_ea": "0x425da8",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-22",
+    "sink_func": "unlink",
+    "source_func": "websGetVar",
+    "param_idx": 0,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "unlink",
+        "arg_index": 0,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_425D60",
+        "arg_index": 0,
+        "call_ea": "0x425fa8",
+        "func_ea": "0x425d60",
+        "label": "needs_check"
+      },
+      {
+        "func": "websGetVar",
+        "arg_index": "ret",
+        "call_ea": "0x425da8",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-120",
+    "sink_func": "strcpy",
+    "source_func": "websGetVar",
+    "param_idx": 1,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "strcpy",
+        "arg_index": 1,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "setDefResponse",
+        "arg_index": 1,
+        "call_ea": "0x42bca0",
+        "func_ea": "0x42bc00",
+        "label": "needs_check"
+      },
+      {
+        "func": "websGetVar",
+        "arg_index": "ret",
+        "call_ea": "0x42bc8c",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-120",
+    "sink_func": "strcpy",
+    "source_func": "websGetVar",
+    "param_idx": 1,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "strcpy",
+        "arg_index": 1,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_41AB08",
+        "arg_index": 1,
+        "call_ea": "0x41ac68",
+        "func_ea": "0x41ab08",
+        "label": "certain"
+      },
+      {
+        "func": "websGetVar",
+        "arg_index": "ret",
+        "call_ea": "0x41ac50",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-120",
+    "sink_func": "strcpy",
+    "source_func": "websGetVar",
+    "param_idx": 1,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "strcpy",
+        "arg_index": 1,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_41E0A0",
+        "arg_index": 1,
+        "call_ea": "0x41e594",
+        "func_ea": "0x41e0a0",
+        "label": "needs_check"
+      },
+      {
+        "func": "websGetVar",
+        "arg_index": "ret",
+        "call_ea": "0x41e310",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-120",
+    "sink_func": "strcpy",
+    "source_func": "websGetVar",
+    "param_idx": 1,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "strcpy",
+        "arg_index": 1,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_424228",
+        "arg_index": 1,
+        "call_ea": "0x424664",
+        "func_ea": "0x424228",
+        "label": "needs_check"
+      },
+      {
+        "func": "websGetVar",
+        "arg_index": "ret",
+        "call_ea": "0x4244d8",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-120",
+    "sink_func": "sprintf",
+    "source_func": "websGetVar",
+    "param_idx": 1,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "sprintf",
+        "arg_index": 1,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_41BC90",
+        "arg_index": 3,
+        "call_ea": "0x41bd38",
+        "func_ea": "0x41bc90",
+        "label": "certain"
+      },
+      {
+        "func": "websGetVar",
+        "arg_index": "ret",
+        "call_ea": "0x41bcf0",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-120",
+    "sink_func": "sprintf",
+    "source_func": "websGetVar",
+    "param_idx": 1,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "sprintf",
+        "arg_index": 1,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_41D618",
+        "arg_index": 2,
+        "call_ea": "0x41d938",
+        "func_ea": "0x41d618",
+        "label": "needs_check"
+      },
+      {
+        "func": "websGetVar",
+        "arg_index": "ret",
+        "call_ea": "0x41d760",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-120",
+    "sink_func": "sprintf",
+    "source_func": "websGetVar",
+    "param_idx": 1,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "sprintf",
+        "arg_index": 1,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_41E0A0",
+        "arg_index": 2,
+        "call_ea": "0x41e450",
+        "func_ea": "0x41e0a0",
+        "label": "needs_check"
+      },
+      {
+        "func": "websGetVar",
+        "arg_index": "ret",
+        "call_ea": "0x41e310",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-120",
+    "sink_func": "sprintf",
+    "source_func": "websGetVar",
+    "param_idx": 1,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "sprintf",
+        "arg_index": 1,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_425328",
+        "arg_index": 2,
+        "call_ea": "0x425408",
+        "func_ea": "0x425328",
+        "label": "needs_check"
+      },
+      {
+        "func": "websGetVar",
+        "arg_index": "ret",
+        "call_ea": "0x425384",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-120",
+    "sink_func": "sprintf",
+    "source_func": "websGetVar",
+    "param_idx": 1,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "sprintf",
+        "arg_index": 1,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_425328",
+        "arg_index": 2,
+        "call_ea": "0x425468",
+        "func_ea": "0x425328",
+        "label": "needs_check"
+      },
+      {
+        "func": "websGetVar",
+        "arg_index": "ret",
+        "call_ea": "0x42542c",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-120",
+    "sink_func": "sprintf",
+    "source_func": "websGetVar",
+    "param_idx": 1,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "sprintf",
+        "arg_index": 1,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_41BDD8",
+        "arg_index": 2,
+        "call_ea": "0x41be80",
+        "func_ea": "0x41bdd8",
+        "label": "certain"
+      },
+      {
+        "func": "websGetVar",
+        "arg_index": "ret",
+        "call_ea": "0x41be38",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-120",
+    "sink_func": "sprintf",
+    "source_func": "websGetVar",
+    "param_idx": 1,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "sprintf",
+        "arg_index": 1,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_419078",
+        "arg_index": 2,
+        "call_ea": "0x41925c",
+        "func_ea": "0x419078",
+        "label": "certain"
+      },
+      {
+        "func": "websGetVar",
+        "arg_index": "ret",
+        "call_ea": "0x4191c4",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-120",
+    "sink_func": "memset",
+    "source_func": "sscanf",
+    "param_idx": 0,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "memset",
+        "arg_index": 0,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_402A04",
+        "arg_index": 0,
+        "call_ea": "0x402e14",
+        "func_ea": "0x402a04",
+        "label": "needs_check"
+      },
+      {
+        "func": "sscanf",
+        "arg_index": 0,
+        "call_ea": "0x402c54",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-120",
+    "sink_func": "memset",
+    "source_func": "sscanf",
+    "param_idx": 0,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "memset",
+        "arg_index": 0,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_404E14",
+        "arg_index": 0,
+        "call_ea": "0x40515c",
+        "func_ea": "0x404e14",
+        "label": "needs_check"
+      },
+      {
+        "func": "sscanf",
+        "arg_index": 0,
+        "call_ea": "0x405144",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-120",
+    "sink_func": "memset",
+    "source_func": "sscanf",
+    "param_idx": 0,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "memset",
+        "arg_index": 0,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_404258",
+        "arg_index": 0,
+        "call_ea": "0x4044c4",
+        "func_ea": "0x404258",
+        "label": "needs_check"
+      },
+      {
+        "func": "sscanf",
+        "arg_index": 0,
+        "call_ea": "0x4043e0",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  },
+  {
+    "vuln_type": "CWE-120",
+    "sink_func": "memset",
+    "source_func": "websGetVar",
+    "param_idx": 0,
+    "len_idx": null,
+    "path": [
+      {
+        "func": "memset",
+        "arg_index": 0,
+        "call_ea": "None",
+        "func_ea": "sink",
+        "label": "sink"
+      },
+      {
+        "func": "sub_425D60",
+        "arg_index": 0,
+        "call_ea": "0x425e58",
+        "func_ea": "0x425d60",
+        "label": "needs_check"
+      },
+      {
+        "func": "websGetVar",
+        "arg_index": "ret",
+        "call_ea": "0x425dd0",
+        "func_ea": "source",
+        "label": "source"
+      }
+    ]
+  }
+]
