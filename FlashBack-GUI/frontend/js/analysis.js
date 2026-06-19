@@ -15,6 +15,10 @@
     startedAt: null,
     initialized: false,
     autoScroll: true,
+    lastProgress: null,
+    currentItemKey: null,
+    currentItemStartedAt: null,
+    lastCompleted: 0,
   };
 
   function $(id) { return document.getElementById(id); }
@@ -308,6 +312,10 @@
     }
 
     resetRuntimeUi();
+    state.lastProgress = null;
+    state.currentItemKey = null;
+    state.currentItemStartedAt = Date.now();
+    state.lastCompleted = 0;
     setRunning(true);
     addLog('INFO', '提交分析任务...');
 
@@ -321,6 +329,7 @@
       state.taskId = resp.task_id;
       state.outputDir = output;
       state.startedAt = Date.now();
+      state.currentItemStartedAt = state.startedAt;
       startTimer();
       connectLogs(state.taskId);
       addLog('INFO', '任务已创建：' + state.taskId);
@@ -356,14 +365,49 @@
   }
 
   function handleProgress(msg) {
-    const pct = Number(msg.progress != null ? msg.progress : (msg.total ? Math.round(msg.completed / msg.total * 100) : 0));
+    state.lastProgress = msg;
+    const display = estimateDisplayProgress(msg);
     const label = msg.status === 'stopped' ? 'STOPPED' : (msg.current ? msg.current : 'RUNNING');
-    setProgress(pct, label);
+    setProgress(display, label);
     setEngineTag((msg.status || 'running').toUpperCase(), msg.status === 'error' ? '#ef4444' : '#f59e0b');
     setText('stat-status', (msg.status || 'RUN').toUpperCase().slice(0, 6));
-    setText('stat-status-sub', (msg.completed || 0) + '/' + (msg.total || 0) + ' 已完成');
+    setText('stat-status-sub', (msg.completed || 0) + '/' + (msg.total || 0) + ' 已完成 · 估算 ' + display + '%');
     setText('stat-vulns', String(msg.success || 0));
     setText('stat-vulns-sub', '成功 ' + (msg.success || 0) + ' / 失败 ' + (msg.fail || 0));
+  }
+
+  function estimateDisplayProgress(msg) {
+    const status = msg.status || 'running';
+    const total = Math.max(0, Number(msg.total || 0));
+    const completed = Math.max(0, Number(msg.completed || 0));
+    const serverPct = Number(msg.progress != null ? msg.progress : (total ? Math.round(completed / total * 100) : 0));
+
+    if (status === 'done') return 100;
+    if (status === 'error' || status === 'stopped') return Math.max(0, Math.min(100, serverPct || 0));
+    if (!total) return Math.max(1, Math.min(95, serverPct || 1));
+
+    const itemKey = String(msg.current || '') + ':' + completed + '/' + total;
+    if (state.currentItemKey !== itemKey || state.lastCompleted !== completed) {
+      state.currentItemKey = itemKey;
+      state.currentItemStartedAt = Date.now();
+      state.lastCompleted = completed;
+    }
+
+    const base = Math.round((completed / total) * 100);
+    const slot = Math.max(1, Math.round(100 / total));
+    const elapsed = Math.max(0, Math.floor((Date.now() - (state.currentItemStartedAt || Date.now())) / 1000));
+    const itemEstimate = estimateItemPercent(elapsed);
+    const estimated = base + Math.round(slot * itemEstimate / 100);
+    const cap = completed >= total ? 100 : Math.min(95, base + slot - 1);
+    return Math.max(base, Math.min(cap, Math.max(serverPct || 0, estimated)));
+  }
+
+  function estimateItemPercent(elapsedSeconds) {
+    if (elapsedSeconds <= 5) return 8 + elapsedSeconds * 2;
+    if (elapsedSeconds <= 30) return 18 + (elapsedSeconds - 5) * 1.2;
+    if (elapsedSeconds <= 120) return 48 + (elapsedSeconds - 30) * 0.35;
+    if (elapsedSeconds <= 300) return 80 + (elapsedSeconds - 120) * 0.06;
+    return 92;
   }
 
   function finishTask(label, msg) {
@@ -421,6 +465,9 @@
       const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
       const s = String(elapsed % 60).padStart(2, '0');
       setText('stat-time', m + ':' + s);
+      if (state.lastProgress && state.lastProgress.status === 'running') {
+        handleProgress(state.lastProgress);
+      }
     }, 1000);
   }
 
