@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="css/analysis.css">
   <link rel="stylesheet" href="css/results.css">
   <link rel="stylesheet" href="css/settings.css">
+  <link rel="stylesheet" href="css/llm-review.css">
 
   <!-- Three.js 本地加载（离线可用） -->
   <script type="importmap">
@@ -114,6 +115,7 @@
 
       <!-- ─── 仪表盘页 ─── -->
       <section class="page-section active" id="page-dashboard">
+
         <!-- Header 卡片 -->
         <div class="panel dash-header">
           <div class="panel-body flex-between">
@@ -124,131 +126,133 @@
           </div>
         </div>
 
-        <div style="flex:1;display:flex;gap:20px;min-height:0;">
-
-          <!-- 主内容区 -->
-          <div style="flex:1;display:flex;flex-direction:column;gap:16px;min-width:0;">
-
-            <!-- 4 统计卡片 -->
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
-              <div class="stat-card">
-                <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
-                  <div>
-                    <div class="stat-card-label">SCANS</div>
-                    <div class="stat-card-value" id="dash-scans">0</div>
-                    <div class="stat-card-sub" style="color:var(--accent);">总分析次数</div>
-                  </div>
-                  <div class="stat-card-icon" style="background:rgba(59,130,246,0.15);color:var(--accent);">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                  </div>
-                </div>
+        <!-- 4 统计卡片 -->
+        <div class="dash-stat-grid">
+          <div class="stat-card" style="--accent-color:var(--accent);">
+            <div class="stat-card-inner">
+              <div class="stat-card-left">
+                <div class="stat-card-label">Total Scans</div>
+                <div class="stat-card-value" id="dash-scans">0</div>
+                <div class="stat-card-sub">固件分析次数</div>
               </div>
-              <div class="stat-card">
-                <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
-                  <div>
-                    <div class="stat-card-label">VULNS</div>
-                    <div class="stat-card-value" id="dash-vulns">0</div>
-                    <div class="stat-card-sub" style="color:var(--danger);">累计发现漏洞</div>
-                  </div>
-                  <div class="stat-card-icon" style="background:rgba(248,113,113,0.15);color:var(--danger);">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m21.7 18-8-14a2 2 0 0 0-3.5 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z"/></svg>
-                  </div>
+              <div class="stat-card-right">
+                <div class="stat-card-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                 </div>
-              </div>
-              <div class="stat-card">
-                <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
-                  <div>
-                    <div class="stat-card-label">DEVICES</div>
-                    <div class="stat-card-value" id="dash-devices">0</div>
-                    <div class="stat-card-sub" style="color:var(--accent-cyan);">已分析设备</div>
-                  </div>
-                  <div class="stat-card-icon" style="background:rgba(0,199,184,0.15);color:var(--accent-cyan);">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18"/></svg>
-                  </div>
-                </div>
-              </div>
-              <div class="stat-card">
-                <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
-                  <div>
-                    <div class="stat-card-label">UPTIME</div>
-                    <div class="stat-card-value" id="dash-uptime">--</div>
-                    <div class="stat-card-sub" style="color:var(--success);">引擎运行时间</div>
-                  </div>
-                  <div class="stat-card-icon" style="background:rgba(52,211,153,0.15);color:var(--success);">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  </div>
-                </div>
+                <span class="stat-card-trend up">+3</span>
               </div>
             </div>
-
-            <!-- 两列：最近扫描 + 漏洞分布 -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;flex:1;min-height:0;">
-              <!-- 最近扫描 -->
-              <div class="panel" style="display:flex;flex-direction:column;">
-                <div class="section-hd">
-                  <span class="dot green"></span>
-                  RECENT SCANS
-                </div>
-                <div class="panel-body" id="dash-recent-scans" style="flex:1;display:flex;align-items:center;justify-content:center;">
-                  <div style="text-align:center;">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="color:rgba(255,255,255,0.28);margin-bottom:10px;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                    <p class="code-label">NO SCANS YET</p>
-                    <p class="text-muted text-sm mt-sm">运行首次分析后显示</p>
-                  </div>
-                </div>
+          </div>
+          <div class="stat-card" style="--accent-color:var(--danger);">
+            <div class="stat-card-inner">
+              <div class="stat-card-left">
+                <div class="stat-card-label">Vulnerabilities</div>
+                <div class="stat-card-value" id="dash-vulns">0</div>
+                <div class="stat-card-sub">累计发现漏洞</div>
               </div>
+              <div class="stat-card-right">
+                <div class="stat-card-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m21.7 18-8-14a2 2 0 0 0-3.5 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z"/></svg>
+                </div>
+                <span class="stat-card-trend up">+40</span>
+              </div>
+            </div>
+          </div>
+          <div class="stat-card" style="--accent-color:var(--accent-cyan);">
+            <div class="stat-card-inner">
+              <div class="stat-card-left">
+                <div class="stat-card-label">Devices</div>
+                <div class="stat-card-value" id="dash-devices">0</div>
+                <div class="stat-card-sub">已分析设备数</div>
+              </div>
+              <div class="stat-card-right">
+                <div class="stat-card-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18"/></svg>
+                </div>
+                <span class="stat-card-trend up">+2</span>
+              </div>
+            </div>
+          </div>
+          <div class="stat-card" style="--accent-color:var(--success);">
+            <div class="stat-card-inner">
+              <div class="stat-card-left">
+                <div class="stat-card-label">Uptime</div>
+                <div class="stat-card-value" id="dash-uptime">--</div>
+                <div class="stat-card-sub">引擎运行时间</div>
+              </div>
+              <div class="stat-card-right">
+                <div class="stat-card-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <span class="stat-card-trend up">live</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
-              <!-- 漏洞概览 -->
-              <div class="panel" style="display:flex;flex-direction:column;">
-                <div class="section-hd">
-                  <span class="dot amber"></span>
-                  VULNERABILITY OVERVIEW
-                </div>
-                <div class="panel-body" id="dash-vuln-overview" style="flex:1;display:flex;align-items:center;justify-content:center;">
-                  <div style="text-align:center;">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="color:rgba(255,255,255,0.28);margin-bottom:10px;"><path d="m21.7 18-8-14a2 2 0 0 0-3.5 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z"/></svg>
-                    <p class="code-label">NO DATA</p>
-                    <p class="text-muted text-sm mt-sm">完成扫描后显示漏洞分布</p>
-                  </div>
-                </div>
+        <!-- 三列布局：最近扫描 | 漏洞分布 | 快捷操作+动态 -->
+        <div class="dash-main-grid">
+          <!-- 左列：最近扫描 -->
+          <div class="panel dash-panel">
+            <div class="section-hd">
+              <span class="dot green"></span> Recent Scans
+              <span class="spacer"></span>
+              <a href="#results" class="section-link">View all</a>
+            </div>
+            <div class="panel-body dash-scroll" id="dash-recent-scans">
+              <div class="dash-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                <p>No scans yet</p>
               </div>
             </div>
           </div>
 
-          <!-- 右侧面板 -->
-          <div style="width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:16px;">
-            <!-- Quick Actions -->
+          <!-- 中列：漏洞概览 -->
+          <div class="panel dash-panel">
+            <div class="section-hd">
+              <span class="dot amber"></span> CWE Distribution
+              <span class="spacer"></span>
+              <a href="#results" class="section-link">View all</a>
+            </div>
+            <div class="panel-body dash-scroll" id="dash-vuln-overview">
+              <div class="dash-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="m21.7 18-8-14a2 2 0 0 0-3.5 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z"/></svg>
+                <p>No data</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 右列：快捷操作 + 动态 -->
+          <div class="dash-right-col">
+            <!-- 快捷操作 -->
             <div class="panel">
               <div class="section-hd">
-                <span class="dot green"></span>
-                QUICK ACTIONS
+                <span class="dot green"></span> Quick Actions
               </div>
-              <div class="panel-body" style="display:flex;flex-direction:column;gap:6px;">
-                <button class="btn btn-secondary" style="width:100%;justify-content:flex-start;" onclick="AppState.navigateTo('analysis')">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <div class="panel-body dash-quick-actions">
+                <button class="btn btn-secondary" onclick="AppState.navigateTo('analysis')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                   New Scan
                 </button>
-                <button class="btn btn-secondary" style="width:100%;justify-content:flex-start;" onclick="AppState.navigateTo('results')">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18"/></svg>
+                <button class="btn btn-secondary" onclick="AppState.navigateTo('results')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18"/></svg>
                   View Results
                 </button>
-                <button class="btn btn-secondary" style="width:100%;justify-content:flex-start;" onclick="AppState.navigateTo('settings')">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>
+                <button class="btn btn-secondary" onclick="AppState.navigateTo('settings')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>
                   Settings
                 </button>
               </div>
             </div>
 
-            <!-- Recent Activity -->
+            <!-- 动态 -->
             <div class="panel" style="flex:1;display:flex;flex-direction:column;">
               <div class="section-hd">
-                <span class="dot amber"></span>
-                ACTIVITY
+                <span class="dot amber"></span> Activity
               </div>
-              <div class="panel-body" style="flex:1;display:flex;flex-direction:column;gap:8px;" id="dash-activity-list">
-                <div style="text-align:center;padding:20px 0;">
-                  <p class="code-label">NO ACTIVITY</p>
-                  <p class="text-muted text-sm mt-sm">运行首次分析后将在此显示活动记录</p>
+              <div class="panel-body dash-scroll" id="dash-activity-list">
+                <div class="dash-empty">
+                  <p>No activity</p>
                 </div>
               </div>
             </div>
@@ -263,9 +267,9 @@
           <div class="sub">$ flashback scan --deep --report json</div>
         </div>
 
-        <div style="display:flex;gap:24px;flex:1;min-height:0;">
+        <div style="display:flex;gap:24px;flex:1;">
           <!-- 左栏 -->
-          <div style="flex:1;display:flex;flex-direction:column;gap:20px;min-width:0;">
+          <div style="flex:1;display:flex;flex-direction:column;gap:20px;">
 
             <!-- 扫描引擎面板 -->
             <div class="panel flex-1" style="display:flex;flex-direction:column;">
@@ -297,14 +301,10 @@
                 </div>
 
                 <!-- 按钮组 -->
-                <div class="analysis-action-row">
+                <div class="flex-row gap-md">
                   <button class="btn btn-secondary btn-sm" id="btn-select-dir">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-                    SELECT FOLDER
-                  </button>
-                  <button class="btn btn-secondary btn-sm" id="btn-select-file">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-                    SELECT FILE
+                    SELECT FIRMWARE DIR
                   </button>
                   <button class="btn btn-primary" id="btn-start-scan" onclick="startScan()">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
@@ -358,11 +358,6 @@
                 <span class="terminal-dot amber"></span>
                 <span class="terminal-dot green"></span>
                 <span class="terminal-title">SYSTEM CONSOLE</span>
-                <div class="terminal-actions">
-                  <button class="terminal-action" id="btn-log-autoscroll" title="切换自动滚动">AUTO</button>
-                  <button class="terminal-action" id="btn-log-copy" title="复制日志">COPY</button>
-                  <button class="terminal-action" id="btn-log-clear" title="清空日志">CLEAR</button>
-                </div>
               </div>
               <div class="terminal-body" id="terminal-body">
                 <div class="terminal-line"><span class="ts">[12:00:00]</span> <span class="info">●</span> FlashBack-GUI v1.0 初始化完成</div>
@@ -404,6 +399,23 @@
                 Export
               </button>
             </div>
+          </div>
+        </div>
+
+        <!-- LLM 审查操作栏 -->
+        <div class="llm-action-bar">
+          <button class="btn btn-primary btn-sm" id="llm-review-btn" disabled>AI Review</button>
+          <select class="select mode-select" id="llm-review-mode" style="min-width:150px;">
+            <option value="reasoning">Reasoning (Deep)</option>
+            <option value="direct">Direct (Fast)</option>
+          </select>
+          <span class="selected-count" id="llm-selected-count"></span>
+          <span style="flex:1;"></span>
+          <div id="llm-review-progress-wrap" style="display:none;flex:1;max-width:200px;flex-direction:column;gap:4px;">
+            <div class="llm-progress-mini">
+              <div class="llm-progress-mini-fill" id="llm-review-progress-bar" style="width:0%;"></div>
+            </div>
+            <span class="code-label" id="llm-review-progress-text" style="font-size:10px;"></span>
           </div>
         </div>
 
@@ -594,6 +606,9 @@
                       <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);cursor:pointer;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                     </div>
                   </div>
+                  <div style="display:flex;justify-content:flex-end;padding-top:4px;">
+                    <button class="btn btn-primary btn-sm" id="settings-save-btn">Save Configuration</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -738,10 +753,104 @@
     if (tbClose) tbClose.addEventListener('click', function () { api.close(); });
   });
   </script>
+  <script src="js/dashboard.js"></script>
   <script src="js/analysis.js"></script>
   <script src="js/results.js"></script>
   <script src="js/settings.js"></script>
+  <script src="js/llm-review.js"></script>
 
+  <!-- 模拟扫描脚本（骨架演示；成员 A 替换为真实逻辑） -->
+  <script>
+  var _scanInterval, _scanProgress = 0;
+  var _demoLogs = [
+    '正在加载固件镜像: RT-AX88U_3.0.0.4.trx...',
+    '正在识别文件系统类型: SquashFS (Little Endian)...',
+    '正在解压内核镜像 (lzma)...',
+    '正在提取根文件系统 (24.8 MB)...',
+    '正在初始化启发式扫描引擎...',
+    '正在扫描共享库文件 (142 个文件)...',
+    '正在分析 /usr/lib/libnvram.so...',
+    '发现潜在风险: strcpy 调用未检查边界 (0x00401A2C)',
+    '正在匹配已知 CVE 模式库...',
+    '正在分析 /usr/sbin/httpd...',
+    '发现可疑硬编码字符串: \'support:password123\'',
+    '正在生成静态分析控制流图 (CFG)...',
+    '正在调用 LLM 进行漏洞成因解释...',
+    '正在整合扫描报告...',
+    '分析完成。发现 1 个高危, 1 个中危, 1 个低危漏洞。'
+  ];
+  var _logIdx = 0, _startTime;
+
+  function startScan() {
+    if (_scanInterval) return;
+    _scanProgress = 0; _logIdx = 0;
+    _startTime = Date.now();
+
+    var btn = document.getElementById('btn-start-scan');
+    btn.disabled = true;
+    btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> SCANNING...';
+
+    document.getElementById('ring-glow').classList.add('on');
+    document.getElementById('scan-engine-tag').textContent = 'RUNNING';
+    document.getElementById('scan-engine-tag').style.color = '#f59e0b';
+    document.getElementById('stat-status').textContent = 'RUN';
+    document.getElementById('stat-status').style.color = 'var(--accent)';
+    document.getElementById('stat-status-sub').textContent = '扫描中';
+    document.getElementById('terminal-body').innerHTML = '';
+
+    _scanInterval = setInterval(function () {
+      _scanProgress += Math.floor(Math.random() * 4) + 1;
+      if (_scanProgress >= 100) {
+        _scanProgress = 100; clearInterval(_scanInterval); _scanInterval = null;
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg> START SCAN';
+        document.getElementById('ring-status').textContent = 'COMPLETE';
+        document.getElementById('ring-status').style.color = 'var(--success)';
+        document.getElementById('scan-engine-tag').textContent = 'DONE';
+        document.getElementById('scan-engine-tag').style.color = '#22c55e';
+        document.getElementById('stat-status').textContent = 'OK';
+        document.getElementById('stat-status').style.color = 'var(--success)';
+        document.getElementById('stat-status-sub').textContent = '分析完成';
+        document.getElementById('stat-vulns').textContent = '3';
+        document.getElementById('stat-vulns').style.color = 'var(--danger)';
+        document.getElementById('stat-vulns-sub').textContent = '1H / 1M / 1L';
+      }
+
+      var ring = document.getElementById('ring-fill');
+      var total = 565.5;
+      ring.style.strokeDashoffset = total - (_scanProgress / 100) * total;
+      document.getElementById('ring-pct').textContent = _scanProgress + '%';
+
+      if (_scanProgress < 30) document.getElementById('ring-status').textContent = 'EXTRACTING...';
+      else if (_scanProgress < 70) document.getElementById('ring-status').textContent = 'SCANNING...';
+      else if (_scanProgress < 100) document.getElementById('ring-status').textContent = 'AI ANALYSIS...';
+
+      var elapsed = Math.floor((Date.now() - _startTime) / 1000);
+      var m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+      var s = String(elapsed % 60).padStart(2, '0');
+      document.getElementById('stat-time').textContent = m + ':' + s;
+
+      if (_scanProgress % 7 === 0 && _logIdx < _demoLogs.length) {
+        var term = document.getElementById('terminal-body');
+        var now = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+        var msg = _demoLogs[_logIdx];
+        var cls = 'info';
+        if (msg.indexOf('发现') >= 0 || msg.indexOf('可疑') >= 0) cls = 'warn';
+        if (msg.indexOf('完成') >= 0) cls = 'ok';
+        var div = document.createElement('div');
+        div.className = 'terminal-line';
+        div.innerHTML = '<span class="ts">[' + now + ']</span> <span class="' + cls + '">●</span>  ' + msg;
+        term.appendChild(div);
+        term.scrollTop = term.scrollHeight;
+        _logIdx++;
+      }
+    }, 150);
+  }
+
+  document.getElementById('btn-select-dir').addEventListener('click', function () {
+    showToast('目录选择功能待成员 A 实现', 'info');
+  });
+  </script>
 
 </body>
 </html>

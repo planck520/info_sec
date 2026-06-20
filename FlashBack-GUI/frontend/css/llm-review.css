@@ -1,0 +1,113 @@
+/* ============================================================
+   LLM Review panel — integrated into results page
+   Dark glassmorphism, reuses project CSS variables
+   ============================================================ */
+
+/* ── action bar (above result list) ─────────────────────── */
+.llm-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  flex-shrink: 0;
+}
+
+.llm-action-bar .mode-select {
+  min-width: 150px;
+}
+
+.llm-action-bar .selected-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── result card selection highlight ────────────────────── */
+.result-card.selected {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 1px var(--accent), 0 4px 24px rgba(59,130,246,0.15);
+}
+
+/* ── LLM badge on result card ───────────────────────────── */
+.result-card .llm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.3px;
+  margin-left: 8px;
+}
+
+.result-card .llm-badge.pending    { background: rgba(255,255,255,0.06); color: var(--text-muted); }
+.result-card .llm-badge.running    { background: rgba(59,130,246,0.15); color: var(--accent); }
+.result-card .llm-badge.completed  { background: rgba(52,211,153,0.15); color: var(--success); }
+.result-card .llm-badge.vulnerable { background: rgba(248,113,113,0.18); color: var(--danger); }
+.result-card .llm-badge.safe       { background: rgba(52,211,153,0.14); color: var(--success); }
+
+/* ── mini progress bar ──────────────────────────────────── */
+.llm-progress-mini {
+  height: 3px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+  flex: 1;
+}
+.llm-progress-mini-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-cyan));
+  border-radius: 2px;
+  transition: width 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+
+/* ── spinner ────────────────────────────────────────────── */
+.llm-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: llmSpin 0.6s linear infinite;
+}
+@keyframes llmSpin { to { transform: rotate(360deg); } }
+
+/* ── reasoning panel (expandable) ───────────────────────── */
+.llm-reasoning {
+  margin-top: 14px;
+  padding: 16px 18px;
+  background: rgba(0,0,0,0.28);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  font-size: 12px;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  max-height: 320px;
+  overflow-y: auto;
+  display: none;
+}
+.llm-reasoning.open { display: block; }
+
+.llm-reasoning .verdict-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-weight: 700;
+  font-size: 13px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.llm-reasoning .verdict-header.true-positive  { color: var(--danger); }
+.llm-reasoning .verdict-header.false-positive { color: var(--success); }
+
+.llm-reasoning .verdict-reasoning {
+  white-space: pre-wrap;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
