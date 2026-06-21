@@ -35,6 +35,9 @@ def _resolve_items(task, result_ids: list[str]) -> list[dict]:
         if len(parts) != 3:
             continue
         device, firmware, idx_str = parts
+        # Reject path traversal — result_id is server-generated but defense-in-depth
+        if ".." in device or ".." in firmware or "\\" in device or "\\" in firmware:
+            continue
         try:
             idx = int(idx_str)
         except ValueError:

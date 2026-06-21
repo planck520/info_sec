@@ -52,6 +52,9 @@ def _resolve_result_ids(
             LOGGER.warning("Invalid result_id format: %s", rid)
             continue
         device, firmware, idx_str = parts
+        if ".." in device or ".." in firmware:
+            LOGGER.warning("Path traversal attempt in result_id: %s", rid)
+            continue
         try:
             idx = int(idx_str)
         except ValueError:

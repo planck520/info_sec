@@ -109,6 +109,8 @@ async def get_result_detail(
         raise HTTPException(status_code=422, detail="result_id must be device/firmware/index")
 
     device, firmware, idx_str = parts
+    if ".." in device or ".." in firmware:
+        raise HTTPException(status_code=422, detail="Invalid characters in result_id")
     try:
         idx = int(idx_str)
     except ValueError:
