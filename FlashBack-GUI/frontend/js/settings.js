@@ -106,12 +106,59 @@ function initSettingsSaveButton() {
   });
 }
 
+// ── IDA path buttons ───────────────────────────────────────
+
+function initIDAPathButtons() {
+  var browseBtn = document.getElementById('btn-ida-browse');
+  var detectBtn = document.getElementById('btn-ida-detect');
+  var pathInput = document.getElementById('settings-ida-path');
+
+  // Browse: open file dialog, fill path, auto-save
+  if (browseBtn) {
+    browseBtn.addEventListener('click', async function () {
+      try {
+        var resp = await api.get('/api/scan/select-file', { title: '选择 IDA 可执行文件' });
+        if (resp && resp.path) {
+          pathInput.value = resp.path;
+          saveSettings();
+        }
+      } catch (e) {
+        showToast('选择文件失败: ' + e.message, 'error');
+      }
+    });
+  }
+
+  // Auto Detect: call backend to find IDA, update status
+  if (detectBtn) {
+    detectBtn.addEventListener('click', async function () {
+      detectBtn.disabled = true;
+      detectBtn.textContent = 'Detecting…';
+      try {
+        var resp = await api.post('/api/settings/detect-ida', {});
+        if (resp && resp.found) {
+          pathInput.value = resp.path;
+          saveSettings();
+          showToast('IDA 已检测到: ' + resp.path, 'success');
+        } else {
+          showToast(resp.message || '未找到 IDA', 'warning');
+        }
+      } catch (e) {
+        showToast('检测失败: ' + e.message, 'error');
+      } finally {
+        detectBtn.disabled = false;
+        detectBtn.textContent = 'Auto Detect';
+      }
+    });
+  }
+}
+
 // ── page lifecycle ─────────────────────────────────────────
 
 AppState.registerPage('settings', {
   init: function () {
     initLLMProviderSwitch();
     initSettingsSaveButton();
+    initIDAPathButtons();
     loadSettings();
   },
   destroy: function () {},
