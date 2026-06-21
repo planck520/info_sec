@@ -58,3 +58,15 @@ firmware_extraction/
 
 # FlashBack analysis output (do NOT commit)
 flashback-output/
+
+# Local MCP / dev config
+.mcp.json
+draw-mcp-main/
+
+# Backup files
+*.bkp
+*.rar
+
+# Image source files (do NOT commit)
+图片源文件/
+图片源文件.rar

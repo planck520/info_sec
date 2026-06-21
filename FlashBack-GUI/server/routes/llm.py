@@ -124,22 +124,27 @@ def _run_review_task(
         results = svc.analyze_batch(items, mode=mode, on_progress=on_progress)
 
         with _reviews_lock:
+            prev = _reviews.get(review_id, {})
             _reviews[review_id] = {
                 "status": "done",
                 "results": results,
                 "progress": {"completed": len(results), "total": len(results), "current": ""},
                 "mode": mode,
+                "model": prev.get("model", ""),
+                "provider": prev.get("provider", ""),
             }
     except Exception as exc:
         LOGGER.exception("LLM review %s failed", review_id)
         with _reviews_lock:
-            entry = _reviews.get(review_id, {"progress": {}})
+            prev = _reviews.get(review_id, {"progress": {}})
             _reviews[review_id] = {
                 "status": "error",
                 "results": [],
                 "error": str(exc),
-                "progress": entry.get("progress", {}),
+                "progress": prev.get("progress", {}),
                 "mode": mode,
+                "model": prev.get("model", ""),
+                "provider": prev.get("provider", ""),
             }
 
 
@@ -165,7 +170,7 @@ async def start_llm_review(body: dict, request: Request):
         raise HTTPException(status_code=422, detail="mode must be 'direct' or 'reasoning'")
 
     config = get_config()
-    if not config.get("llm_enabled", True):
+    if not config.get("llm_enabled"):
         raise HTTPException(status_code=400, detail="LLM analysis is disabled. Enable it in Settings.")
     api_key = config.get("llm_api_key")
     if not api_key:
@@ -191,6 +196,8 @@ async def start_llm_review(body: dict, request: Request):
             "results": [],
             "progress": {"completed": 0, "total": len(items), "current": ""},
             "mode": mode,
+            "model": model,
+            "provider": base_url,
         }
 
     thread = threading.Thread(
@@ -201,7 +208,7 @@ async def start_llm_review(body: dict, request: Request):
     )
     thread.start()
 
-    LOGGER.info("Started LLM review %s — %d items, mode=%s", review_id, len(items), mode)
+    LOGGER.info("Started LLM review %s — %d items, mode=%s, model=%s", review_id, len(items), mode, model)
     return {"review_id": review_id}
 
 
@@ -217,6 +224,8 @@ async def get_llm_review_status(review_id: str):
         "review_id": review_id,
         "status": review["status"],
         "mode": review.get("mode", ""),
+        "model": review.get("model", ""),
+        "provider": review.get("provider", ""),
         "progress": review.get("progress", {}),
         "results": review.get("results", []),
         "error": review.get("error"),
