@@ -14,6 +14,7 @@ var LLMReview = (function () {
     selectedIds: {},
     pollingTimer: null,
     running: false,
+    bound: false,
   };
 
   // ── selection ─────────────────────────────────────────
@@ -76,6 +77,9 @@ var LLMReview = (function () {
     var modeEl = document.getElementById('llm-review-mode');
     var mode = modeEl ? modeEl.value : 'reasoning';
     var ids = Object.keys(_state.selectedIds);
+    var outputDir = (window.ResultsPage && typeof window.ResultsPage.getOutputDir === 'function')
+      ? window.ResultsPage.getOutputDir()
+      : '';
 
     _state.running = true;
     _updateUI();
@@ -84,6 +88,7 @@ var LLMReview = (function () {
       var resp = await api.post('/api/llm-review', {
         result_ids: ids,
         mode: mode,
+        output_dir: outputDir,
       });
 
       _state.reviewId = resp.review_id;
@@ -250,6 +255,12 @@ var LLMReview = (function () {
   // ── public API ────────────────────────────────────────
 
   function init() {
+    if (_state.bound) {
+      _updateUI();
+      return;
+    }
+    _state.bound = true;
+
     var btn = document.getElementById('llm-review-btn');
     if (btn) btn.addEventListener('click', startReview);
 

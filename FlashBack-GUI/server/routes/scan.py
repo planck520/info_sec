@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from engine.config_manager import get_config
 from engine.orchestrator import FlashBackRunner
 from server.routes.settings import _settings
 from server.websocket import broadcast_task_event
@@ -221,6 +222,8 @@ async def start_scan(request: Request, body: ScanStartRequest):
             raise HTTPException(status_code=400, detail=f"固件文件不存在：{item}")
     if not body.output_dir:
         raise HTTPException(status_code=400, detail="输出目录不能为空")
+    _settings["output_dir"] = body.output_dir
+    get_config().update({"output_dir": body.output_dir})
 
     resource_dir = Path(request.app.state.resource_dir)
     max_parallel = int(_settings.get("max_parallel", 4) or 4)

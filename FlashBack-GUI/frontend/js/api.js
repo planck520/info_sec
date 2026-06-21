@@ -13,7 +13,7 @@ const api = (() => {
   // ── 通用 fetch 包装 ───────────────────────────────────
   async function _request(method, path, paramsOrBody) {
     let url = BASE_URL + path;
-    const options = { method, headers: {} };
+    const options = { method, headers: {}, cache: 'no-store' };
 
     if (method === 'GET' || method === 'DELETE') {
       if (paramsOrBody) {

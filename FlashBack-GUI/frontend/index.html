@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FlashBack — Firmware Vulnerability Analyzer</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><polygon points='13,2 3,14 12,14 11,22 21,10 12,10 13,2' fill='%233b82f6'/></svg>">
-  <link rel="stylesheet" href="css/main.css">
-  <link rel="stylesheet" href="css/components.css">
-  <link rel="stylesheet" href="css/analysis.css">
-  <link rel="stylesheet" href="css/results.css">
-  <link rel="stylesheet" href="css/settings.css">
-  <link rel="stylesheet" href="css/llm-review.css">
+  <link rel="stylesheet" href="css/main.css?v=20260621-5">
+  <link rel="stylesheet" href="css/components.css?v=20260621-5">
+  <link rel="stylesheet" href="css/analysis.css?v=20260621-5">
+  <link rel="stylesheet" href="css/results.css?v=20260621-5">
+  <link rel="stylesheet" href="css/settings.css?v=20260621-5">
+  <link rel="stylesheet" href="css/llm-review.css?v=20260621-5">
 
   <!-- Three.js 本地加载（离线可用） -->
   <script type="importmap">
@@ -398,12 +398,12 @@
                 <input class="input" placeholder="Search CWE / function name..." style="padding-left:36px;" id="results-search">
               </div>
               <select class="select" style="min-width:150px;" id="results-device-filter">
-                <option>All Devices</option>
+                <option value="">All Devices</option>
               </select>
               <select class="select" style="min-width:150px;" id="results-cwe-filter">
-                <option>All CWE Types</option>
+                <option value="">All CWE Types</option>
               </select>
-              <button class="btn btn-secondary btn-sm">
+              <button class="btn btn-secondary btn-sm" id="results-export-btn">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Export
               </button>
@@ -748,7 +748,7 @@
       initWebGLBackground('bg-canvas');
     });
   </script>
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=20260621-5"></script>
   <script>
   /* 自定义标题栏窗口控制（Electron / pywebview 兼容） */
   document.addEventListener('DOMContentLoaded', function () {
@@ -762,11 +762,11 @@
     if (tbClose) tbClose.addEventListener('click', function () { api.close(); });
   });
   </script>
-  <script src="js/dashboard.js"></script>
-  <script src="js/analysis.js"></script>
-  <script src="js/results.js"></script>
-  <script src="js/settings.js"></script>
-  <script src="js/llm-review.js"></script>
+  <script src="js/dashboard.js?v=20260621-5"></script>
+  <script src="js/analysis.js?v=20260621-5"></script>
+  <script src="js/results.js?v=20260621-5"></script>
+  <script src="js/settings.js?v=20260621-5"></script>
+  <script src="js/llm-review.js?v=20260621-5"></script>
 
 
 </body>

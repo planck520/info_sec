@@ -8,6 +8,8 @@ from pathlib import Path
 
 from fastapi import APIRouter
 
+from engine.config_manager import get_config
+
 router = APIRouter(tags=["settings"])
 
 # 硬编码默认值（C 同学替换为 ConfigManager 后删除）
@@ -20,8 +22,10 @@ _DEFAULTS = {
     "llm_model": "deepseek-chat",
     "max_parallel": 4,
     "theme": "dark",
+    "output_dir": "",
 }
 _settings = dict(_DEFAULTS)
+_settings.update(get_config().get_all())
 
 
 @router.get("/settings")
@@ -40,6 +44,7 @@ async def update_settings(body: dict):
     for k in _DEFAULTS:
         if k in body and body[k] is not None:
             _settings[k] = body[k]
+    get_config().update(_settings)
     return {"ok": True}
 
 
@@ -61,18 +66,21 @@ async def detect_ida():
         path = Path(raw)
         if path.is_file():
             _settings["ida_path"] = str(path)
+            get_config().update({"ida_path": _settings["ida_path"]})
             return {"found": True, "path": str(path), "message": "IDA 已检测到"}
         if path.is_dir():
             for name in exe_names:
                 exe = path / name
                 if exe.exists():
                     _settings["ida_path"] = str(path)
+                    get_config().update({"ida_path": _settings["ida_path"]})
                     return {"found": True, "path": str(path), "message": "IDA 已检测到"}
 
     for name in exe_names:
         found = shutil.which(name)
         if found:
             _settings["ida_path"] = str(Path(found).parent)
+            get_config().update({"ida_path": _settings["ida_path"]})
             return {"found": True, "path": _settings["ida_path"], "message": "IDA 已检测到"}
 
     return {"found": False, "message": "未找到 IDA，请手动填写 IDA 安装目录或 ida.exe/idat.exe 路径"}
