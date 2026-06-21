@@ -9,7 +9,7 @@
   min-height: 0;
 }
 
-/* 扫描引擎按钮组：支持换行，避免 SELECT FILE 加入后挤压 */
+/* 扫描引擎按钮组：支持换行 */
 .analysis-action-row {
   display: flex;
   flex-wrap: wrap;
@@ -23,13 +23,22 @@
   justify-content: center;
 }
 
-.analysis-action-row #btn-start-scan {
-  min-width: 126px;
+/* 终端锁定为右栏高度，不随日志内容撑高 */
+#page-analysis .terminal {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
 }
 
-/* 终端始终填满右栏，与左栏组件总高度一致 */
-#page-analysis .terminal {
-  height: 100%;
+/* 状态卡片文字过长时截断 */
+#page-analysis .stat-card .stat-card-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#page-analysis .stat-card .stat-card-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 #terminal-body {

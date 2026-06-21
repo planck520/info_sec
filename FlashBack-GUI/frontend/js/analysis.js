@@ -36,6 +36,14 @@
     if (label) setText('ring-status', label);
   }
 
+  function statusLabel(s) {
+    var u = (s || '').toUpperCase();
+    if (u === 'DONE') return 'OK';
+    if (u === 'ERROR') return 'ERR';
+    if (u === 'STOPPED') return 'STOP';
+    return 'RUN';
+  }
+
   function addLog(level, message, timestamp) {
     const term = $('terminal-body');
     if (!term) return;
@@ -91,7 +99,7 @@
     const startWrap = startBtn && startBtn.parentElement;
     if (startWrap && !$('btn-stop-scan')) {
       const stopBtn = document.createElement('button');
-      stopBtn.className = 'btn btn-secondary';
+      stopBtn.className = 'btn btn-secondary btn-sm';
       stopBtn.id = 'btn-stop-scan';
       stopBtn.disabled = true;
       stopBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg> STOP';
@@ -370,7 +378,7 @@
     const label = msg.status === 'stopped' ? 'STOPPED' : (msg.current ? msg.current : 'RUNNING');
     setProgress(display, label);
     setEngineTag((msg.status || 'running').toUpperCase(), msg.status === 'error' ? '#ef4444' : '#f59e0b');
-    setText('stat-status', (msg.status || 'RUN').toUpperCase().slice(0, 6));
+    setText('stat-status', statusLabel(msg.status || 'running'));
     setText('stat-status-sub', (msg.completed || 0) + '/' + (msg.total || 0) + ' 已完成 · 估算 ' + display + '%');
     setText('stat-vulns', String(msg.success || 0));
     setText('stat-vulns-sub', '成功 ' + (msg.success || 0) + ' / 失败 ' + (msg.fail || 0));
@@ -416,7 +424,7 @@
     const isStopped = status === 'STOPPED';
     setProgress(isOk ? 100 : Number(msg.progress || 0), isOk ? 'COMPLETE' : status);
     setEngineTag(status, isOk ? '#22c55e' : (isStopped ? '#f59e0b' : '#ef4444'));
-    setText('stat-status', isOk ? 'OK' : status.slice(0, 6));
+    setText('stat-status', statusLabel(msg.status || label || ''));
     setText('stat-status-sub', isOk ? '分析完成' : (msg.error || msg.message || '任务结束'));
     if (msg.message || msg.error) addLog(isOk ? 'INFO' : 'ERROR', msg.message || msg.error);
     if (msg.result_files && msg.result_files.length) addLog('INFO', '结果文件：' + msg.result_files.join(', '));
