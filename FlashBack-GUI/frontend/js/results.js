@@ -105,6 +105,28 @@
     if (searchInput) searchInput.addEventListener('input', _applyFilters);
   }
 
+  async function _loadLatestTask() {
+    var container = document.getElementById('results-list');
+    try {
+      var resp = await api.get('/api/scan/tasks');
+      var tasks = (resp.tasks || []).filter(function (t) { return t.status === 'done' && t.output_dir; });
+      if (tasks.length > 0) {
+        var latest = tasks[tasks.length - 1];
+        window.__lastTaskId = latest.task_id;
+        window.__lastOutputDir = latest.output_dir;
+        loadResults(latest.task_id);
+        return;
+      }
+    } catch (e) {
+      console.error('Failed to discover tasks:', e);
+    }
+    if (container) {
+      container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);">' +
+        'No completed scans found.<br><br>Run a scan in the <b>Analysis</b> tab first, then return here.' +
+        '</div>';
+    }
+  }
+
   async function loadResults(taskId) {
     if (!taskId) return;
 
@@ -133,18 +155,12 @@
     init: function () {
       _initFilters();
 
-      // Try to load from last completed scan
       var taskId = window.__lastTaskId;
       if (taskId) {
         loadResults(taskId);
       } else {
-        // Show guidance if no scan has been run
-        var container = document.getElementById('results-list');
-        if (container) {
-          container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);">' +
-            'No scan data loaded.<br><br>Run a scan in the <b>Analysis</b> tab first, then return here.' +
-            '</div>';
-        }
+        // Auto-discover: find the most recent completed task
+        _loadLatestTask();
       }
 
       if (typeof LLMReview !== 'undefined') {

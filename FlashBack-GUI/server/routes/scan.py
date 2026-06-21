@@ -284,6 +284,19 @@ async def start_scan(request: Request, body: ScanStartRequest):
     return {"task_id": task_id}
 
 
+@router.get("/scan/tasks")
+async def list_tasks(request: Request):
+    """Return all tasks (for results page to find completed scans)."""
+    tasks = request.app.state.tasks
+    return {
+        "tasks": [
+            {"task_id": tid, "status": t.status, "output_dir": t.output_dir,
+             "completed": t.completed, "total": t.total, "created_at": t.created_at}
+            for tid, t in tasks.items()
+        ]
+    }
+
+
 @router.get("/scan/progress/{task_id}")
 async def get_progress(request: Request, task_id: str):
     return _get_task(request, task_id).snapshot()
