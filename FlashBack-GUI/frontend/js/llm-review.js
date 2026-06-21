@@ -73,6 +73,12 @@ var LLMReview = (function () {
       return;
     }
 
+    // Check LLM toggle
+    if (!AppState.getState('llm_enabled')) {
+      showToast('LLM analysis is disabled. Enable it in Settings.', 'warning');
+      return;
+    }
+
     var modeEl = document.getElementById('llm-review-mode');
     var mode = modeEl ? modeEl.value : 'reasoning';
     var ids = Object.keys(_state.selectedIds);
@@ -81,9 +87,11 @@ var LLMReview = (function () {
     _updateUI();
 
     try {
+      // Get output_dir from settings (loaded by settings.js into a data attr or global)
       var resp = await api.post('/api/llm-review', {
         result_ids: ids,
         mode: mode,
+        output_dir: AppState.getState('output_dir') || 'C:/Users/Lwf15/Desktop/flashback-test-output',
       });
 
       _state.reviewId = resp.review_id;
@@ -108,6 +116,11 @@ var LLMReview = (function () {
     if (!_state.reviewId) return;
     try {
       var resp = await api.get('/api/llm-review/' + _state.reviewId);
+
+      // Store model info for display on cards
+      if (resp.model) {
+        _state._modelInfo = resp.model + (resp.mode ? ' (' + resp.mode + ')' : '');
+      }
 
       _updateProgress(resp.progress);
 
@@ -182,15 +195,17 @@ var LLMReview = (function () {
     panel.classList.add('open');
 
     var conf = verdict.confidence != null
-      ? '  (confidence: ' + (Math.round(verdict.confidence * 100)) + '%)'
+      ? ' (confidence: ' + (Math.round(verdict.confidence * 100)) + '%)'
       : '';
     var headerClass = isVuln ? 'true-positive' : 'false-positive';
     var headerIcon = isVuln ? 'TRUE POSITIVE' : 'FALSE POSITIVE / SAFE';
     var reasoning = verdict.reasoning_chain || verdict.analysis_result || '';
+    var modelTag = _state._modelInfo || '';
 
     panel.innerHTML =
       '<div class="verdict-header ' + headerClass + '">' +
         headerIcon + conf +
+        (modelTag ? '<span style="font-weight:400;font-size:10px;color:var(--text-muted);margin-left:8px;">' + _escapeHtml(modelTag) + '</span>' : '') +
       '</div>' +
       '<div class="verdict-reasoning">' + _escapeHtml(reasoning) + '</div>';
   }
@@ -248,19 +263,20 @@ var LLMReview = (function () {
   }
 
   // ── public API ────────────────────────────────────────
+  var _llmInitialized = false;
 
   function init() {
+    if (_llmInitialized) return;
+    _llmInitialized = true;
+
     var btn = document.getElementById('llm-review-btn');
     if (btn) btn.addEventListener('click', startReview);
 
-    // Handle click on result cards for selection
-    // Use event delegation on the results list
     var list = document.getElementById('results-list');
     if (list) {
       list.addEventListener('click', function (e) {
         var card = e.target.closest('.result-card[data-result-id]');
         if (card) {
-          // Ctrl/Cmd click to multi-select, plain click to toggle
           toggleSelection(card.dataset.resultId);
         }
       });

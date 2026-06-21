@@ -3,13 +3,51 @@
    IDA 配置 / LLM 提供商切换 / 通用偏好
    ============================================================ */
 
-// ── LLM 提供商默认参数 ────────────────────────────────────
+// ── LLM 提供商数据（URL 和模型均经过验证）─────────────────
 var LLM_PROVIDERS = {
-  deepseek: { name: 'DeepSeek', tag: 'DEEPSEEK', url: 'https://api.deepseek.com',           model: 'deepseek-chat' },
-  openai:   { name: 'OpenAI',   tag: 'OPENAI',   url: 'https://api.openai.com/v1',          model: 'gpt-4o' },
-  groq:     { name: 'Groq',     tag: 'GROQ',     url: 'https://api.groq.com/openai/v1',     model: 'llama-3.3-70b-versatile' },
-  ollama:   { name: 'Ollama',   tag: 'OLLAMA',   url: 'http://localhost:11434/v1',          model: 'llama3.2' },
-  custom:   { name: 'Custom',   tag: 'CUSTOM',   url: '',                                   model: '' },
+  deepseek: {
+    name: 'DeepSeek', tag: 'DEEPSEEK',
+    url: 'https://api.deepseek.com',
+    models: [
+      { id: 'deepseek-chat',       name: 'DeepSeek-V3 (deepseek-chat)' },
+      { id: 'deepseek-reasoner',   name: 'DeepSeek-R1 (deepseek-reasoner)' },
+      { id: 'deepseek-v4-flash',   name: 'DeepSeek-V4 Flash [1M]' },
+      { id: 'deepseek-v4-pro',     name: 'DeepSeek-V4 Pro [1M]' }
+    ]
+  },
+  openai: {
+    name: 'OpenAI', tag: 'OPENAI',
+    url: 'https://api.openai.com/v1',
+    models: [
+      { id: 'gpt-4o',      name: 'GPT-4o' },
+      { id: 'gpt-4.1',     name: 'GPT-4.1' },
+      { id: 'o4-mini',     name: 'o4-mini' },
+      { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' }
+    ]
+  },
+  grok: {
+    name: 'xAI Grok', tag: 'GROK',
+    url: 'https://api.x.ai/v1',
+    models: [
+      { id: 'grok-2',        name: 'Grok-2' },
+      { id: 'grok-2-vision', name: 'Grok-2 Vision' }
+    ]
+  },
+  ollama: {
+    name: 'Ollama', tag: 'OLLAMA',
+    url: 'http://localhost:11434/v1',
+    models: [
+      { id: 'llama3.2', name: 'Llama 3.2 (本地)' },
+      { id: 'qwen2.5',  name: 'Qwen 2.5 (本地)' }
+    ]
+  },
+  custom: {
+    name: 'Custom', tag: 'CUSTOM',
+    url: '',
+    models: [
+      { id: '', name: '— 自行输入 —' }
+    ]
+  }
 };
 
 // ── helpers ────────────────────────────────────────────────
@@ -24,95 +62,229 @@ function _setSettingsField(id, value) {
   if (el) el.value = value || '';
 }
 
-// ── load / save ────────────────────────────────────────────
+// ── toggle ─────────────────────────────────────────────────
 
-async function loadSettings() {
-  try {
-    var settings = await api.get('/api/settings');
-    _setSettingsField('settings-llm-provider', settings.llm_provider);
-    _setSettingsField('settings-llm-url',      settings.llm_base_url);
-    _setSettingsField('settings-llm-model',    settings.llm_model);
-    _setSettingsField('settings-llm-key',      settings.llm_api_key);
-    _setSettingsField('settings-ida-path',     settings.ida_path);
-
-    var tagEl = document.getElementById('llm-provider-tag');
-    if (tagEl) {
-      var p = LLM_PROVIDERS[settings.llm_provider];
-      if (p) tagEl.textContent = p.tag;
-    }
-  } catch (e) {
-    console.error('Failed to load settings:', e);
+function _setToggle(id, on) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  if (on) {
+    el.classList.add('on');
+    el.setAttribute('aria-checked', 'true');
+  } else {
+    el.classList.remove('on');
+    el.setAttribute('aria-checked', 'false');
   }
 }
 
-async function saveSettings() {
-  var keyEl = document.getElementById('settings-llm-key');
-  var payload = {
-    llm_provider: _settingsField('settings-llm-provider'),
-    llm_base_url: _settingsField('settings-llm-url'),
-    llm_model:    _settingsField('settings-llm-model'),
-    ida_path:     _settingsField('settings-ida-path'),
-  };
-  // Only send api_key if user typed a new value (not the masked placeholder)
-  if (keyEl && keyEl.value && keyEl.value.indexOf('****') === -1) {
-    payload.llm_api_key = keyEl.value;
-  }
-  // Strip empties so we don't wipe existing values
-  Object.keys(payload).forEach(function (k) {
-    if (payload[k] === '' || payload[k] === undefined) delete payload[k];
+function _isToggleOn(id) {
+  var el = document.getElementById(id);
+  return el ? el.classList.contains('on') : false;
+}
+
+function initLLMToggle() {
+  var toggle = document.getElementById('settings-llm-enabled');
+  if (!toggle) return;
+  toggle.addEventListener('click', function () {
+    this.classList.toggle('on');
+    var on = this.classList.contains('on');
+    this.setAttribute('aria-checked', on ? 'true' : 'false');
+    saveSettings(true);
   });
-
-  try {
-    await api.post('/api/settings', payload);
-    showToast('Settings saved', 'success');
-  } catch (e) {
-    showToast('Save failed: ' + e.message, 'error');
-  }
 }
 
-// ── provider switch ────────────────────────────────────────
+// ── provider / model switch ────────────────────────────────
+
+function _populateModelSelect(providerKey) {
+  var p = LLM_PROVIDERS[providerKey];
+  if (!p) return;
+  // Custom provider: show input, hide select
+  if (providerKey === 'custom') {
+    var selWrap = document.getElementById('settings-model-select-wrap');
+    var inpWrap = document.getElementById('settings-model-input-wrap');
+    if (selWrap) selWrap.style.display = 'none';
+    if (inpWrap) inpWrap.style.display = 'block';
+    return;
+  }
+  // Normal provider: show select
+  var selWrap = document.getElementById('settings-model-select-wrap');
+  var inpWrap = document.getElementById('settings-model-input-wrap');
+  if (selWrap) selWrap.style.display = 'block';
+  if (inpWrap) inpWrap.style.display = 'none';
+  var sel = document.getElementById('settings-llm-model');
+  if (!sel) return;
+  sel.innerHTML = p.models.map(function (m) {
+    return '<option value="' + m.id + '">' + m.name + '</option>';
+  }).join('');
+}
 
 function initLLMProviderSwitch() {
   var providerEl = document.getElementById('settings-llm-provider');
   var urlEl = document.getElementById('settings-llm-url');
-  var modelEl = document.getElementById('settings-llm-model');
   var tagEl = document.getElementById('llm-provider-tag');
+  var modelEl = document.getElementById('settings-llm-model');
 
-  if (!providerEl || !urlEl || !modelEl || !tagEl) return;
+  if (!providerEl || !urlEl || !tagEl) return;
 
   providerEl.addEventListener('change', function () {
     var p = LLM_PROVIDERS[this.value];
     if (!p) return;
 
-    urlEl.value   = p.url;
+    urlEl.value = p.url;
     urlEl.placeholder = p.url || 'https://api.example.com/v1';
-    modelEl.value = p.model;
-    modelEl.placeholder = p.model || 'model-name';
     tagEl.textContent = p.tag;
-
-    // auto-save on provider switch
-    saveSettings();
+    _populateModelSelect(this.value);
+    saveSettings(true);
   });
+
+  // Save on model change too
+  if (modelEl) {
+    modelEl.addEventListener('change', function () { saveSettings(true); });
+  }
+}
+
+// ── load / save ────────────────────────────────────────────
+
+async function loadSettings() {
+  try {
+    var settings = await api.get('/api/settings');
+    var provider = settings.llm_provider || 'deepseek';
+
+    _setSettingsField('settings-llm-provider', provider);
+    _populateModelSelect(provider);
+    if (provider === 'custom') {
+      _setSettingsField('settings-llm-model-custom', settings.llm_model);
+    } else {
+      _setSettingsField('settings-llm-model', settings.llm_model);
+    }
+    _setSettingsField('settings-llm-url', settings.llm_base_url);
+    _setSettingsField('settings-llm-key', settings.llm_api_key);
+    _setSettingsField('settings-ida-path', settings.ida_path);
+    _setSettingsField('settings-output-dir', settings.output_dir);
+    _setToggle('settings-llm-enabled', settings.llm_enabled !== false);
+
+    var tagEl = document.getElementById('llm-provider-tag');
+    if (tagEl) {
+      var p = LLM_PROVIDERS[provider];
+      if (p) tagEl.textContent = p.tag;
+    }
+
+    AppState.setState('llm_enabled', settings.llm_enabled !== false);
+    AppState.setState('output_dir', settings.output_dir || '');
+  } catch (e) {
+    console.error('Failed to load settings:', e);
+  }
+}
+
+async function testLLMConnection() {
+  var payload = {
+    llm_base_url: _settingsField('settings-llm-url'),
+    llm_api_key:  _settingsField('settings-llm-key'),
+    llm_model:    _getModelValue(),
+  };
+  // If key field shows masked value, we need the real key from saved config
+  var keyEl = document.getElementById('settings-llm-key');
+  if (keyEl && keyEl.value.indexOf('****') !== -1) {
+    // Key is masked — need to use the stored real key
+    // We'll send what we have and let the backend use config
+    delete payload.llm_api_key;
+  }
+  try {
+    var resp = await api.post('/api/settings/test-llm', payload);
+    if (resp.ok) {
+      showToast(resp.message, 'success');
+    } else {
+      showToast(resp.message, 'error');
+    }
+  } catch (e) {
+    showToast('Test failed: ' + e.message, 'error');
+  }
+}
+
+function initOutputBrowse() {
+  var btn = document.getElementById('settings-output-browse');
+  if (!btn) return;
+  btn.addEventListener('click', function () {
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.webkitdirectory = true;
+    input.directory = true;
+    input.addEventListener('change', function () {
+      if (this.files && this.files.length > 0) {
+        var path = this.files[0].webkitRelativePath || this.files[0].name;
+        var dir = path.split('/')[0];
+        var fullPath = this.files[0].path || this.files[0].name;
+        if (fullPath.indexOf('\\') !== -1 || fullPath.indexOf('/') !== -1) {
+          // Extract directory from first file's full path
+          var sep = fullPath.indexOf('\\') !== -1 ? '\\' : '/';
+          var parts = fullPath.split(sep);
+          parts.pop();
+          _setSettingsField('settings-output-dir', parts.join(sep));
+        }
+      }
+    });
+    input.click();
+  });
+}
+
+function _getModelValue() {
+  var provider = _settingsField('settings-llm-provider');
+  if (provider === 'custom') {
+    return _settingsField('settings-llm-model-custom');
+  }
+  return _settingsField('settings-llm-model');
+}
+
+async function saveSettings(silent) {
+  var keyEl = document.getElementById('settings-llm-key');
+  var payload = {
+    llm_provider: _settingsField('settings-llm-provider'),
+    llm_base_url: _settingsField('settings-llm-url'),
+    llm_model:    _getModelValue(),
+    ida_path:     _settingsField('settings-ida-path'),
+    output_dir:   _settingsField('settings-output-dir'),
+    llm_enabled:  _isToggleOn('settings-llm-enabled'),
+  };
+  if (keyEl && keyEl.value && keyEl.value.indexOf('****') === -1) {
+    payload.llm_api_key = keyEl.value;
+  }
+  Object.keys(payload).forEach(function (k) {
+    if (payload[k] === '' || payload[k] === undefined) delete payload[k];
+  });
+
+  AppState.setState('llm_enabled', _isToggleOn('settings-llm-enabled'));
+
+  try {
+    await api.post('/api/settings', payload);
+    if (!silent) showToast('Settings saved', 'success');
+  } catch (e) {
+    showToast('Save failed: ' + e.message, 'error');
+  }
 }
 
 function initSettingsSaveButton() {
   var btn = document.getElementById('settings-save-btn');
-  if (btn) btn.addEventListener('click', saveSettings);
+  if (btn) btn.addEventListener('click', function () { saveSettings(false); });
 
-  // auto-save on blur for text fields
-  ['settings-llm-url', 'settings-llm-model', 'settings-llm-key', 'settings-ida-path'].forEach(function (id) {
+  ['settings-llm-url', 'settings-llm-key', 'settings-ida-path', 'settings-output-dir'].forEach(function (id) {
     var el = document.getElementById(id);
-    if (el) el.addEventListener('blur', saveSettings);
+    if (el) el.addEventListener('blur', function () { saveSettings(true); });
   });
 }
 
 // ── page lifecycle ─────────────────────────────────────────
+var _settingsInitialized = false;
 
 AppState.registerPage('settings', {
   init: function () {
+    if (_settingsInitialized) return;
+    _settingsInitialized = true;
     initLLMProviderSwitch();
+    initLLMToggle();
     initSettingsSaveButton();
+    initOutputBrowse();
     loadSettings();
+    var testBtn = document.getElementById('settings-test-llm');
+    if (testBtn) testBtn.addEventListener('click', testLLMConnection);
   },
   destroy: function () {},
 });

@@ -514,7 +514,7 @@
                       <div style="font-size:13px;font-weight:600;">LLM 智能分析</div>
                       <div class="code-label">ENABLE_LLM</div>
                     </div>
-                    <div class="toggle on" id="settings-llm-enabled"></div>
+                    <button class="toggle on" role="switch" aria-checked="true" id="settings-llm-enabled"></button>
                   </div>
                   <div class="flex-between" style="padding:10px 12px;border-radius:8px;">
                     <div>
@@ -571,7 +571,7 @@
                     <select class="select" id="settings-llm-provider">
                       <option value="deepseek">DeepSeek</option>
                       <option value="openai">OpenAI</option>
-                      <option value="groq">Groq</option>
+                      <option value="grok">xAI (Grok)</option>
                       <option value="ollama">Ollama (本地)</option>
                       <option value="custom">Custom</option>
                     </select>
@@ -581,10 +581,18 @@
                     <label class="code-label" style="display:block;margin-bottom:6px;">BASE_URL</label>
                     <input class="input input-mono" type="text" value="https://api.deepseek.com" id="settings-llm-url" placeholder="https://api.deepseek.com">
                   </div>
-                  <!-- Model -->
-                  <div>
+                  <!-- Model (下拉) -->
+                  <div id="settings-model-select-wrap">
                     <label class="code-label" style="display:block;margin-bottom:6px;">MODEL</label>
-                    <input class="input input-mono" type="text" value="deepseek-chat" id="settings-llm-model" placeholder="deepseek-chat">
+                    <select class="select" id="settings-llm-model" style="width:100%;">
+                      <option value="deepseek-chat">DeepSeek-V3 (deepseek-chat)</option>
+                      <option value="deepseek-reasoner">DeepSeek-R1 (deepseek-reasoner)</option>
+                    </select>
+                  </div>
+                  <!-- Model (自定义输入，Custom 时显示) -->
+                  <div id="settings-model-input-wrap" style="display:none;">
+                    <label class="code-label" style="display:block;margin-bottom:6px;">MODEL (自定义)</label>
+                    <input class="input input-mono" type="text" placeholder="your-model-name" id="settings-llm-model-custom">
                   </div>
                   <!-- API Key -->
                   <div>
@@ -594,7 +602,15 @@
                       <svg style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);cursor:pointer;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                     </div>
                   </div>
-                  <div style="display:flex;justify-content:flex-end;padding-top:4px;">
+                  <div>
+                    <label class="code-label" style="display:block;margin-bottom:6px;">OUTPUT_DIR</label>
+                    <div class="flex-row gap-sm" style="margin:0;">
+                      <input class="input input-mono" type="text" placeholder="C:\FlashBack\output" id="settings-output-dir" style="flex:1;">
+                      <button class="btn btn-secondary btn-sm" id="settings-output-browse" style="flex-shrink:0;">Browse</button>
+                    </div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding-top:4px;">
+                    <button class="btn btn-secondary btn-sm" id="settings-test-llm">Test Connection</button>
                     <button class="btn btn-primary btn-sm" id="settings-save-btn">Save Configuration</button>
                   </div>
                 </div>
