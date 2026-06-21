@@ -42,12 +42,14 @@ def create_app(resource_dir: Path) -> FastAPI:
     from server.routes.results import router as results_router
     from server.routes.settings import router as settings_router
     from server.routes.llm import router as llm_router
+    from server.routes.history import router as history_router
     from server.websocket import router as ws_router
 
     app.include_router(scan_router, prefix="/api")
     app.include_router(results_router, prefix="/api")
     app.include_router(settings_router, prefix="/api")
     app.include_router(llm_router, prefix="/api")
+    app.include_router(history_router, prefix="/api")
     app.include_router(ws_router)
 
     # 静态文件（最后挂载，API 路由优先匹配）

@@ -29,16 +29,19 @@
   top: 0; left: 0; right: 0; bottom: 0;
 }
 
-/* 状态卡片文字过长时截断 */
+/* 状态卡片标题始终单行截断 */
 #page-analysis .stat-card .stat-card-value {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* 状态卡片副标题允许换行，最多两行 */
 #page-analysis .stat-card .stat-card-sub {
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.4;
 }
 
 #terminal-body {

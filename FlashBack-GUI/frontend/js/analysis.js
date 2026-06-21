@@ -319,6 +319,11 @@
       return;
     }
 
+    // Auto-save remaining results from previous scan before starting new one
+    if (window.__resultsAutoSave) {
+      try { await window.__resultsAutoSave(); } catch (e) {}
+    }
+
     resetRuntimeUi();
     state.lastProgress = null;
     state.currentItemKey = null;
@@ -379,9 +384,9 @@
     setProgress(display, label);
     setEngineTag((msg.status || 'running').toUpperCase(), msg.status === 'error' ? '#ef4444' : '#f59e0b');
     setText('stat-status', statusLabel(msg.status || 'running'));
-    setText('stat-status-sub', (msg.completed || 0) + '/' + (msg.total || 0) + ' 已完成 · 估算 ' + display + '%');
+    setText('stat-status-sub', (msg.completed || 0) + '/' + (msg.total || 0) + ' · ~' + display + '%');
     setText('stat-vulns', String(msg.success || 0));
-    setText('stat-vulns-sub', '成功 ' + (msg.success || 0) + ' / 失败 ' + (msg.fail || 0));
+    setText('stat-vulns-sub', 'OK:' + (msg.success || 0) + '  FAIL:' + (msg.fail || 0));
   }
 
   function estimateDisplayProgress(msg) {

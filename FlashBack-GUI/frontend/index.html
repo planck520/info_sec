@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="css/results.css">
   <link rel="stylesheet" href="css/settings.css">
   <link rel="stylesheet" href="css/llm-review.css">
+  <link rel="stylesheet" href="css/history.css">
 
   <!-- Three.js 本地加载（离线可用） -->
   <script type="importmap">
@@ -79,6 +80,12 @@
             <rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18"/><path d="M3 9h6"/><path d="M3 15h6"/><path d="M14 8h4"/><path d="M14 12h4"/><path d="M14 16h3"/>
           </svg>
           扫描结果
+        </a></li>
+        <li><a href="#history" data-page="history">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+          历史记录
         </a></li>
       </ul>
 
@@ -406,6 +413,8 @@
             <option value="reasoning">Reasoning (Deep)</option>
             <option value="direct">Direct (Fast)</option>
           </select>
+          <button class="btn btn-secondary btn-sm" id="btn-save-history">Save to History</button>
+          <button class="btn btn-secondary btn-sm" id="btn-delete-selected">Delete</button>
           <span class="selected-count" id="llm-selected-count"></span>
           <span style="flex:1;"></span>
           <div id="llm-review-progress-wrap" style="display:none;flex:1;max-width:200px;flex-direction:column;gap:4px;">
@@ -425,6 +434,17 @@
               <p class="text-muted text-sm mt-sm">尚未加载结果数据。请先运行固件分析（成员 B 开发中）</p>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- ─── 历史记录页 ─── -->
+      <section class="page-section" id="page-history">
+        <div class="page-title">
+          <h1>历史记录</h1>
+          <div class="sub">$ cat history.json | jq '.records[]'</div>
+        </div>
+        <div style="flex:1;overflow-y:auto;min-height:0;" id="history-list">
+          <div style="padding:40px;text-align:center;color:var(--text-muted);">Loading...</div>
         </div>
       </section>
 
@@ -772,6 +792,7 @@
   <script src="js/results.js"></script>
   <script src="js/settings.js"></script>
   <script src="js/llm-review.js"></script>
+  <script src="js/history.js"></script>
 
 
 </body>

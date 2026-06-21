@@ -12,6 +12,7 @@ var LLMReview = (function () {
   var _state = {
     reviewId: null,
     selectedIds: {},
+    verdicts: {},
     pollingTimer: null,
     running: false,
   };
@@ -137,6 +138,7 @@ var LLMReview = (function () {
             '.result-card[data-result-id="' + _escapeAttr(r.result_id) + '"]'
           );
           if (card && r.verdict) {
+            _state.verdicts[r.result_id] = r.verdict;
             _renderVerdict(card, r.verdict);
           }
         });
@@ -297,11 +299,16 @@ var LLMReview = (function () {
     _state.running = false;
   }
 
+  function getVerdicts() {
+    return _state.verdicts;
+  }
+
   return {
     init: init,
     destroy: destroy,
     toggleSelection: toggleSelection,
     selectAll: selectAll,
     clearSelection: clearSelection,
+    getVerdicts: getVerdicts,
   };
 })();

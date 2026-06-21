@@ -11,6 +11,79 @@
   var _results = [];
   var _outputDir = '';
   var _taskId = '';
+  var _initialized = false;
+
+  // ── history save helpers ────────────────────────────────
+
+  function _removeResults(idsToRemove) {
+    var removeSet = {};
+    idsToRemove.forEach(function (id) { removeSet[id] = true; });
+    _results = _results.filter(function (r) { return !removeSet[r.id]; });
+    _applyFilters();  // preserve active filters
+    if (typeof LLMReview !== 'undefined' && LLMReview.clearSelection) {
+      LLMReview.clearSelection();
+    }
+  }
+
+  async function saveSelected() {
+    var selected = [];
+    document.querySelectorAll('.result-card.selected[data-result-id]').forEach(function (c) {
+      selected.push(c.dataset.resultId);
+    });
+    if (!selected.length) {
+      showToast('Select at least one result', 'warning');
+      return;
+    }
+    // Save first, only remove on success
+    var verdicts = (typeof LLMReview !== 'undefined' && LLMReview.getVerdicts)
+      ? LLMReview.getVerdicts() : {};
+    try {
+      await api.post('/api/history', {
+        task_id: _taskId,
+        result_ids: selected,
+        verdicts: verdicts,
+      });
+      _removeResults(selected);
+      showToast('Saved ' + selected.length + ' to history', 'success');
+    } catch (e) {
+      showToast('Save failed: ' + e.message, 'error');
+    }
+  }
+
+  function deleteSelected() {
+    var selected = [];
+    document.querySelectorAll('.result-card.selected[data-result-id]').forEach(function (c) {
+      selected.push(c.dataset.resultId);
+    });
+    if (!selected.length) {
+      showToast('Select at least one result', 'warning');
+      return;
+    }
+    _removeResults(selected);
+    showToast('Deleted ' + selected.length, 'info');
+  }
+
+  async function autoSaveRemaining() {
+    if (!_results.length || !_taskId) return;
+    var ids = _results.map(function (r) { return r.id; });
+    var verdicts = (typeof LLMReview !== 'undefined' && LLMReview.getVerdicts)
+      ? LLMReview.getVerdicts() : {};
+    try {
+      await api.post('/api/history', {
+        task_id: _taskId,
+        result_ids: ids,
+        verdicts: verdicts,
+      });
+      _results = [];
+    } catch (e) {
+      console.error('Auto-save failed:', e);
+      // Keep results — they'll be retried on next auto-save trigger
+    }
+  }
+
+  function getRemainingIds() {
+    return _results.map(function (r) { return r.id; });
+  }
 
   function _renderResults(list) {
     var container = document.getElementById('results-list');
@@ -153,25 +226,50 @@
 
   AppState.registerPage('results', {
     init: function () {
-      _initFilters();
+      if (!_initialized) {
+        _initialized = true;
+        _initFilters();
+
+        // Bind save/delete buttons (once)
+        var saveBtn = document.getElementById('btn-save-history');
+        var delBtn = document.getElementById('btn-delete-selected');
+        if (saveBtn) saveBtn.addEventListener('click', saveSelected);
+        if (delBtn) delBtn.addEventListener('click', deleteSelected);
+      }
 
       var taskId = window.__lastTaskId;
-      if (taskId) {
+      if (taskId && !_taskId) {
         loadResults(taskId);
-      } else {
-        // Auto-discover: find the most recent completed task
+      } else if (!taskId && !_taskId) {
         _loadLatestTask();
       }
+      // else: keep existing results, don't re-render
 
       if (typeof LLMReview !== 'undefined') {
         LLMReview.init();
       }
     },
     destroy: function () {
+      // Don't clear results — keep them for when user comes back
       if (typeof LLMReview !== 'undefined') {
         LLMReview.destroy();
       }
     },
+  });
+
+  // Expose for auto-save from analysis.js / app.js
+  window.__resultsAutoSave = autoSaveRemaining;
+  window.__resultsGetRemaining = getRemainingIds;
+
+  window.addEventListener('beforeunload', function () {
+    if (_results.length && _taskId) {
+      // Best-effort sync save via sendBeacon
+      var ids = _results.map(function (r) { return r.id; });
+      var verdicts = (typeof LLMReview !== 'undefined' && LLMReview.getVerdicts)
+        ? LLMReview.getVerdicts() : {};
+      var payload = JSON.stringify({ task_id: _taskId, result_ids: ids, verdicts: verdicts });
+      try { navigator.sendBeacon('/api/history', new Blob([payload], { type: 'application/json' })); } catch (e) {}
+    }
   });
 
 })();
