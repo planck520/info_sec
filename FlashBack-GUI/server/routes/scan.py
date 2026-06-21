@@ -11,8 +11,8 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from engine.config_manager import get_config
 from engine.orchestrator import FlashBackRunner
-from server.routes.settings import _settings
 from server.websocket import broadcast_task_event
 
 router = APIRouter(tags=["scan"])
@@ -188,7 +188,7 @@ async def scan_directory(request: Request, path: str):
     if not path or not target.exists():
         raise HTTPException(status_code=400, detail="路径不存在")
 
-    runner = _get_runner(Path(request.app.state.resource_dir), _settings.get("ida_path", ""))
+    runner = _get_runner(Path(request.app.state.resource_dir), get_config().get("ida_path"))
     try:
         if target.is_file():
             if not runner._looks_like_program_binary(target):
@@ -223,10 +223,10 @@ async def start_scan(request: Request, body: ScanStartRequest):
         raise HTTPException(status_code=400, detail="输出目录不能为空")
 
     resource_dir = Path(request.app.state.resource_dir)
-    max_parallel = int(_settings.get("max_parallel", 4) or 4)
+    max_parallel = int(get_config().get("max_parallel") or 4)
     parallel = max(1, min(int(body.parallel or 1), max_parallel, len(body.firmwares)))
     task_id = str(uuid.uuid4())
-    runner = _get_runner(resource_dir, _settings.get("ida_path", ""))
+    runner = _get_runner(resource_dir, get_config().get("ida_path"))
     task = TaskState(task_id, body.firmwares, body.output_dir, body.mode, parallel, runner)
     request.app.state.tasks[task_id] = task
 
