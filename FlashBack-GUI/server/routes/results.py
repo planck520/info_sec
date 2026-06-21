@@ -91,9 +91,19 @@ async def get_results(request: Request, task_id: str = Query(...)):
 async def get_result_detail(
     request: Request,
     result_id: str = Query(...),
-    output_dir: str = Query(...),
+    task_id: str = Query(...),
 ):
-    """Return full detail (path hops + source code) for a single result."""
+    """Return full detail (path hops + source code) for a single result.
+
+    output_dir is derived server-side from task_id — never trusted from client.
+    """
+    task = request.app.state.tasks.get(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    output_dir = task.output_dir
+    if not output_dir:
+        raise HTTPException(status_code=400, detail="Task has no output_dir")
+
     parts = result_id.split("/")
     if len(parts) != 3:
         raise HTTPException(status_code=422, detail="result_id must be device/firmware/index")
