@@ -1,0 +1,5 @@
+BEGIN
+  eid         = EID_WAN_CHECK
+  name        = wan_check
+  flags       = EIF_MESSAGING_CAPABLE
+END

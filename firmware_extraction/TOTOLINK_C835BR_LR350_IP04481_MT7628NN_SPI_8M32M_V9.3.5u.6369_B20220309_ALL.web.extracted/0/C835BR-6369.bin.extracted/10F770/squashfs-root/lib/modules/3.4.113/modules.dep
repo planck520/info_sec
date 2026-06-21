@@ -1,0 +1,61 @@
+kernel/arch/mips/rt2880/rt_timer_wdg.ko:
+kernel/crypto/aead.ko:
+kernel/crypto/hmac.ko:
+kernel/crypto/md4.ko:
+kernel/crypto/md5.ko:
+kernel/crypto/des_generic.ko:
+kernel/crypto/deflate.ko: kernel/lib/zlib_inflate/zlib_inflate.ko kernel/lib/zlib_deflate/zlib_deflate.ko
+kernel/crypto/authenc.ko: kernel/crypto/aead.ko
+kernel/crypto/authencesn.ko: kernel/crypto/aead.ko
+kernel/drivers/net/wireless/ralink/mt7628_ap/mt7628_ap.ko:
+kernel/drivers/net/mii.ko:
+kernel/drivers/net/usb/cdc_ether.ko: kernel/drivers/net/usb/usbnet.ko kernel/drivers/net/mii.ko
+kernel/drivers/net/usb/usbnet.ko: kernel/drivers/net/mii.ko
+kernel/drivers/usb/host/ehci-hcd.ko:
+kernel/drivers/usb/host/ohci-hcd.ko:
+kernel/drivers/usb/class/cdc-wdm.ko:
+kernel/drivers/usb/serial/usbserial.ko:
+kernel/drivers/usb/serial/option.ko: kernel/drivers/usb/serial/usb_wwan.ko kernel/drivers/usb/serial/usbserial.ko
+kernel/drivers/usb/serial/qcserial.ko: kernel/drivers/usb/serial/usb_wwan.ko kernel/drivers/usb/serial/usbserial.ko
+kernel/drivers/usb/serial/usb_wwan.ko: kernel/drivers/usb/serial/usbserial.ko
+kernel/drivers/crypto/cryptodev/cryptodev.ko: kernel/crypto/aead.ko
+kernel/drivers/crypto/mtk_aes/mtk_aes.ko:
+kernel/net/netfilter/nf_conntrack_proto_gre.ko:
+kernel/net/netfilter/nf_conntrack_ftp.ko:
+kernel/net/netfilter/nf_conntrack_h323.ko:
+kernel/net/netfilter/nf_conntrack_pptp.ko: kernel/net/netfilter/nf_conntrack_proto_gre.ko
+kernel/net/netfilter/nf_conntrack_rtsp.ko:
+kernel/net/netfilter/nf_conntrack_sip.ko:
+kernel/net/netfilter/xt_CT.ko:
+kernel/net/netfilter/xt_DSCP.ko:
+kernel/net/netfilter/xt_HL.ko:
+kernel/net/netfilter/xt_NOTRACK.ko:
+kernel/net/netfilter/xt_connbytes.ko:
+kernel/net/netfilter/xt_dscp.ko:
+kernel/net/netfilter/xt_length.ko:
+kernel/net/netfilter/xt_webstr.ko:
+kernel/net/bridge/netfilter/ebtables.ko:
+kernel/net/bridge/netfilter/ebtable_filter.ko: kernel/net/bridge/netfilter/ebtables.ko
+kernel/net/bridge/netfilter/ebt_ip.ko:
+kernel/net/bridge/netfilter/ebt_pkttype.ko:
+kernel/net/ipv4/netfilter/nf_nat_ftp.ko: kernel/net/netfilter/nf_conntrack_ftp.ko
+kernel/net/ipv4/netfilter/nf_nat_h323.ko: kernel/net/netfilter/nf_conntrack_h323.ko
+kernel/net/ipv4/netfilter/nf_nat_pptp.ko: kernel/net/ipv4/netfilter/nf_nat_proto_gre.ko kernel/net/netfilter/nf_conntrack_pptp.ko kernel/net/netfilter/nf_conntrack_proto_gre.ko
+kernel/net/ipv4/netfilter/nf_nat_rtsp.ko: kernel/net/netfilter/nf_conntrack_rtsp.ko
+kernel/net/ipv4/netfilter/nf_nat_sip.ko: kernel/net/netfilter/nf_conntrack_sip.ko
+kernel/net/ipv4/netfilter/nf_nat_proto_gre.ko:
+kernel/net/ipv4/netfilter/iptable_mangle.ko:
+kernel/net/ipv4/netfilter/iptable_raw.ko:
+kernel/net/ipv4/netfilter/ipt_REDIRECT.ko:
+kernel/net/ipv4/ah4.ko:
+kernel/net/ipv4/esp4.ko: kernel/crypto/aead.ko
+kernel/net/ipv4/ipcomp.ko: kernel/net/xfrm/xfrm_ipcomp.ko
+kernel/net/ipv4/xfrm4_tunnel.ko:
+kernel/net/xfrm/xfrm_user.ko:
+kernel/net/xfrm/xfrm_ipcomp.ko:
+kernel/lib/zlib_inflate/zlib_inflate.ko:
+kernel/lib/zlib_deflate/zlib_deflate.ko:
+kernel/online-client/host_list.ko:
+kernel/online-client/xt_host.ko: kernel/online-client/host_list.ko
+kernel/online-client/online_client.ko:
+kernel/online-client/ct_host.ko:

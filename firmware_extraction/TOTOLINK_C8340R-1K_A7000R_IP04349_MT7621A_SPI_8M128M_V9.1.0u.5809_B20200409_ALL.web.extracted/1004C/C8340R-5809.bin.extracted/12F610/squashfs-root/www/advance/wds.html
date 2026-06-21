@@ -1,0 +1,109 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <!--子菜单-->
+  <adv-child-menu childType="wifi"></adv-child-menu>  
+  <div class="advance-box">
+    <x-help :text="lang_t('rule.help_wds')"></x-help>
+	<br><br>
+    <div class="fun-box">
+		<table class="table" v-show="wifiDualband != '0'">
+		  <tr>
+			<td class="btn-tab-m">
+				<a @click="wifiChange('0')" :class="['btn-tab',wifiActive == '0' ? 'btn-tab-active' : '']">2.4GHz</a>
+				<a v-show="wifiDualband == '1'" @click="wifiChange('1')" :class="['btn-tab',wifiActive == '1' ? 'btn-tab-active' : '']">5GHz</a>
+				<a v-show="wifiDualband == '2'" @click="wifiChange('1')" :class="['btn-tab',wifiActive == '1' ? 'btn-tab-active' : '']">5GHz(1)</a>
+				<a v-show="wifiDualband == '2'" @click="wifiChange('2')" :class="['btn-tab',wifiActive == '2' ? 'btn-tab-active' : '']">5GHz(2)</a>
+			</td>
+		  </tr>       
+		</table>
+		<br v-show="wifiDualband != '0'">
+      <div>
+	  	<span class="fun-title">{{ lang_t('common.state') }}</span>
+	  	&nbsp;&nbsp;
+	  	<x-switch v-model="macfState" @change="stateChange"></x-switch>
+	  </div>
+      <table v-show="macfState">
+        <tr><td align="right">
+        	<x-icon type="add" cursor="pointer" @click="addRuleVal">{{ lang_t('common.add') }}</x-icon>
+			<x-icon type="del" cursor="pointer" @click="trashFun('all')">{{ lang_t('common.delete') }}</x-icon>
+        </td></tr>
+        <tr><td height="5"></td></tr>
+        <tr>
+          <td><table class="t_table3 table-bordered table-striped" style="width: 100%;">
+       	    <thead>
+			<tr>
+			  <th>{{ lang_t('rule.description') }}</th>
+			  <th>{{ lang_t('rule.mac') }}</th>
+			  <th>{{ lang_t('rule.operate') }}</th>
+			  <th>{{ lang_t('common.select') }}<x-checkbox v-model="selectall" @change="selectAll"></x-checkbox></th>
+		  	</tr>
+		  	</thead>
+			<tr v-show="addShow">
+              <td><input type="text" class="desc" v-model="desc" v-verify="formRules" data-name="desc" :maxlength="descLen"></td>
+              <td>
+              	<input type="text" class="mac" v-model="mac" v-verify="formRules" data-name="mac" maxlength="17">
+              	<img src="/static/images/search.png" :title="lang_t('common.scan')" class="cursor" @click="scanFun">
+              </td>
+              <td><button :disabled="disable_addBtn" @click="addRule"><img src="/static/images/added.png" :title="lang_t('common.add')" class="cursor"></button></td>
+              <td></td>
+            </tr>
+            <tbody>
+            <tr v-for="(rule,v) in ruleList">
+			  <td>
+			  	<input type="text" class="desc" v-model="editDesc[rule.idx]" v-verify="formRules" :data-name="'desc'+Number(rule.idx)"  :maxlength="descLen" v-if="edit[rule.idx]" @input="watchValue(rule.idx)">
+			  	<span v-else>{{ rule.desc }}</span>
+			  </td>
+			  <td>
+			  	<div v-if="edit[rule.idx]">
+				  	<input type="text" class="mac" v-model="editMac[rule.idx]" v-verify="formRules" :data-name="'mac'+Number(rule.idx)" maxlength="17" @input="watchValue(rule.idx)">
+				  	<img src="/static/images/search.png" class="cursor" :title="lang_t('common.scan')" @click="scanFun(rule.idx)">
+				  </div>
+			  	<span v-else>{{ rule.mac }}</span>
+			  </td>
+			  <td>
+				<img :src="operate[rule.idx]" :title="lang_t('rule.edit')" class="cursor" @click="editFun(rule.idx)">
+				&nbsp;&nbsp;
+				<img src="/static/images/trash.png" :title="lang_t('common.delete')" class="cursor" @click="trashFun(rule.idx)">
+			  </td>
+			  <td>
+				<x-checkbox v-model="select[rule.idx]"></x-checkbox>
+			  </td>
+			</tr>
+			<tr v-show="dataTotal==0">
+				<td colspan="12">{{ lang_t('common.no_data') }}</td>
+			</tr>
+		  	</tbody>
+          </table></td>
+        </tr>
+		<tr><td><x-page :total="dataTotal" @on-page="pageChange" :data="data"></x-page></td></tr>
+      </table>
+    </div>
+    <x-modal v-model="modelShow" :title="lang_t('rule.ap_list')" :ok_text="lang_t('common.scan')" type="confirm" @on-ok="scanFun">
+		<div style="overflow:hidden;overflow-y:auto;height:250px;padding:0;">
+			<table class="t_table3 table-bordered table-striped table-tr-active" style="padding-bottom:0;margin-bottom:0;">
+				<thead>
+					<th>{{ lang_t('wifi.channel') }}</th>
+					<th>SSID</th>
+					<th>MAC</th>
+					<th>{{ lang_t('wifi.encryption') }}</th>
+					<th>{{ lang_t('opmode.signal') }}</th>
+				</thead>
+				<tbody>
+					<tr v-for="(list,v) in listData" style="cursor: pointer;" @click="selectFun(list)" v-if="apTotal>0">
+						<td>{{ list.channel }}</td>
+						<td style="white-space:pre">{{ list.ssid }}</td>
+						<td>{{ list.bssid }}</td>
+						<td><img :src="encryptImg(list.encrypt)"></td>
+						<td><img :src="signalImg(list.signal)"></td>
+					</tr>
+					<tr v-if="apTotal==0">
+						<td colspan="12">{{lang_t('common.no_data')}}</td>
+					</tr>
+					<tr v-if="scanFlag">
+					  <td colspan="12"><img src="/static/images/load.gif"></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</x-modal>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,macfState:!1,selectall:!1,operate:[],select:[],data:[],edit:[],ruleList:[],desc:"",mac:"",editDesc:[],editMac:[],dataTotal:0,addShow:!1,tempIdx:0,modelShow:!1,disable_addBtn:!1,listData:[],descLen:globalConfig.descLen,wifiActive:"0",wifiDualband:"0",apTotal:0,scanFlag:!1}},watch:{select:function(){var t=0;for(var i in this.select)this.select[i]&&t++;t==this.select.length?this.selectall=!0:this.selectall=!1}},computed:{formRules:function(){var a=this;return{mac:function(t,i){t||i(a.lang_t("rule.mac")+a.lang_t("rule.msg12"));var e=cs.mac(t);1==e?i(a.lang_t("rule.msg17")):2==e?i(a.lang_t("rule.msg18")):3==e?i(a.lang_t("rule.msg19")):99==e&&i()},desc:function(t,i){var e=cs.commentstr(t);1==e||2==e?i(a.lang_t("rule.msg4")):0!=e&&99!=e||i()}}}},created:function(){this.wifiActive=cs.local(this.wifiActive),this.dataInit(this.wifiActive)},methods:{dataInit:function(t){var i=this,e={wifiIdx:t};uiPost.getWiFiWdsCfg(e,function(t){i.macfState="0"!=t.enable,i.wifiDualband=t.wifiDualband,t.rule&&i.tableInit(t.rule)})},wifiChange:function(t){this.wifiActive=t,this.dataInit(t)},encryptImg:function(t){var i="/static/images/lock.png";return"NONE"==t&&(i="/static/images/unlock.png"),i},signalImg:function(t){var i="/static/images/signal_weak.png";return 40<=(t=Number(t))&&t<80?i="/static/images/signal_medium.png":80<=t&&(i="/static/images/signal_good.png"),i},pageChange:function(t,i){this.ruleList=i},stateChange:function(t){var i={};i.wifiIdx=this.wifiActive,i.enable=t?"1":"0",i.addEffect="0",uiPost.setWiFiWdsCfg(i,function(t){var i=10;t&&t.wtime&&"0"!=t.wtime&&(i=t.wtime),Cstool.Count(i,"js",function(){cs.local(_this.wifiActive,"href")})})},selectAll:function(t){var i=!1;t&&(i=!0);var e=this.select.length;this.select=[];for(var a=0;a<e;a++)this.select[a]=i},addRuleVal:function(){this.addShow=!0},compare:function(s,n){return function(t,i){var e=t[s],a=i[s];return 1==n?e-a:a-e}},scanFun:function(t){var i=this;this.tempIdx=t,this.scanFlag=!0,this.modelShow=!0,this.listData=[],uiPost.getWiFiApcliScan(function(t){i.listData=i.getWifiApFun(t),i.listData.sort(i.compare("signal",!1)),i.apTotal=t.length,i.scanFlag=!1})},getWifiApFun:function(t){var i=[];for(var e in t)t[e].wifiIdx==this.wifiActive&&i.push(t[e]);return i},selectFun:function(t){"number"!=typeof this.tempIdx?this.mac=t.bssid:(this.editMac[this.tempIdx]=t.bssid,this.watchValue(this.tempIdx)),this.modelShow=!1},addRule:function(){var e=this;if(e.disable_addBtn=!0,e.dataTotal){if(4<=e.dataTotal)return Cstool.Msg({content:this.lang_t("rule.msg30",[4])}),e.disable_addBtn=!1;for(i=0;i<e.dataTotal;i++)if(e.mac.toUpperCase()==e.data[i].mac.toUpperCase())return Cstool.Msg({content:this.lang_t("rule.msg00")}),e.disable_addBtn=!1}Cstool.Verify(this.formRules,function(t){if(t||(e.disable_addBtn=!1),t){var i={};i.wifiIdx=e.wifiActive,i.mac=e.mac.toUpperCase(),i.desc=e.desc,i.addEffect="1",uiPost.setWiFiWdsCfg(i,function(t){var i=10;t&&t.wtime&&"0"!=t.wtime&&(i=t.wtime),Cstool.Count(i,"js",function(){cs.local(e.wifiActive,"href")})})}})},editFun:function(t){"/static/images/edit.png"==this.operate[t]?this.edit[t]?(this.edit.splice(t,1),this.edit.splice(t,0,!1)):(this.edit.splice(t,1),this.edit.splice(t,0,!0)):this.modefyFun(t)},modefyFun:function(e){var a={},s=this;if(s.dataTotal)for(i=0;i<s.dataTotal&&(i==e&&i++,i!=s.dataTotal);i++)if(s.editMac[e]==s.data[i].mac)return Cstool.Msg({content:this.lang_t("rule.rule_conflict",[this.lang_t("rule.mac")])}),!1;Cstool.Verify(this.formRules,function(t){t&&(a.wifiIdx=s.wifiActive,a.mac=s.editMac[e].toUpperCase(),a.desc=s.editDesc[e],a.idx=String(e+1),a.addEffect="2",uiPost.setWiFiWdsCfg(a,function(t){var i=10;t&&t.wtime&&"0"!=t.wtime&&(i=t.wtime),Cstool.Count(i,"js",function(){cs.local(s.wifiActive,"href")})}))},s.dataTotal,e)},trashFun:function(t){var i={},e=this;if("all"!=t)i[this.data[t].delRuleName]=String(t),Cstool.Msg({content:this.lang_t("rule.msg15"),type:"confirm",ok:function(){i.wifiIdx=e.wifiActive,uiPost.delWiFiWdsRules(i,function(t){var i=10;t&&t.wtime&&"0"!=t.wtime&&(i=t.wtime),Cstool.Count(i,"js",function(){cs.local(e.wifiActive,"href")})})}});else{var a=0;for(var s in this.select)this.select[s]&&(a++,i[[this.data[s].delRuleName]]=String(s),Cstool.Msg({content:a==this.select.length?this.lang_t("rule.msg26"):this.lang_t("rule.msg15"),type:"confirm",ok:function(){i.wifiIdx=e.wifiActive,uiPost.delWiFiWdsRules(i,function(t){var i=10;t&&t.wtime&&"0"!=t.wtime&&(i=t.wtime),Cstool.Count(i,"js",function(){cs.local(e.wifiActive,"href")})})}}));if(0==a)return Cstool.Msg({content:this.lang_t("rule.msg14")}),!1}},watchValue:function(t){this.editDesc[t]!=this.data[t].desc||this.editMac[t]!=this.data[t].mac?"/static/images/edited.png"!=this.operate[t]&&(this.operate.splice(t,1),this.operate.splice(t,0,"/static/images/edited.png")):(this.operate.splice(t,1),this.operate.splice(t,0,"/static/images/edit.png"))},tableInit:function(t){var i=0;for(var e in t)this.edit[e]=!1,this.select[e]=!1,this.operate[e]="/static/images/edit.png",this.editDesc[e]=t[e].desc,this.editMac[e]=t[e].mac,t[e].idx=i,i++;this.ruleList=t,this.data=t,this.dataTotal=this.ruleList.length}}}</script><script src="/static/js/main.js"></script></body></html>

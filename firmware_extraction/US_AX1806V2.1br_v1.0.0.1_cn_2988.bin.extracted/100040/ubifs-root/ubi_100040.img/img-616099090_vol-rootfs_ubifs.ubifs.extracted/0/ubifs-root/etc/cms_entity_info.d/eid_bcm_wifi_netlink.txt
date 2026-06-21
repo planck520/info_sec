@@ -1,0 +1,5 @@
+BEGIN
+  eid         = EID_WIFI_NETLINK
+  name        = wifi_netlink
+  flags       = EIF_MDM|EIF_MESSAGING_CAPABLE|EIF_LAUNCH_ON_BOOT
+END

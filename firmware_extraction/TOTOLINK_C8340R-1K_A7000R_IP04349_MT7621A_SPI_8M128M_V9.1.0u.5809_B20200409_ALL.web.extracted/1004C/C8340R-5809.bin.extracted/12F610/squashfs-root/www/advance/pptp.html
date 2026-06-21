@@ -1,0 +1,85 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <!--子菜单-->
+  <adv-child-menu childType="vpn"></adv-child-menu>
+  <div class="advance-box">
+  	<x-help :text="lang_t('vpn.help_pptp')"></x-help>
+	<br><br>
+	<div class="fun-box">
+	  <table class="table"> 
+	  	<tbody>
+	  	<tr>
+	  	  <td class="fun-left">{{ lang_t('common.state') }}</td>
+	  	  <td>
+	  	  	<x-switch v-model="status"  @change="pptp_enable"></x-switch>
+	  	  </td>
+		</tr>
+  		</tbody> 
+		<tbody v-show="status">  
+		<tr>
+		  <td class="fun-left">{{ lang_t('vpn.start_ip') }}</td>
+		  <td>
+			<input type="text" v-model="sip" v-verify="formRules" data-name="sip" maxlength="15" >
+		  </td>
+		</tr>
+		<tr>
+		  <td class="fun-left">{{ lang_t('vpn.end_ip') }}</td>
+		  <td>
+			<input type="text" v-model="eip" v-verify="formRules" data-name="eip" maxlength="15">
+		  </td>
+		</tr>
+		<tr>
+		  <td class="fun-left">{{ lang_t('vpn.server') }}</td>
+		  <td>
+			<input type="text" v-model="server" v-verify="formRules" data-name="server" maxlength="15">
+		  </td>
+		</tr>
+		<tr>
+		  <td class="fun-left">{{ lang_t('vpn.pri_dns') }}</td>
+		  <td>
+			<input type="text" v-model="priDns" v-verify="formRules" data-name="priDns" maxlength="15">
+		  </td>
+		</tr>
+		<tr>
+		  <td class="fun-left">{{ lang_t('vpn.sec_dns') }}</td>
+		  <td>
+			<input type="text" v-model="secDns" v-verify="formRules" data-name="secDns" maxlength="15">
+		  </td>
+		</tr>
+		<tr>
+		  <td class="fun-left">MPPE</td>
+		  <td>
+			<select v-model="mppe">
+			  <option value="0">{{ lang_t('vpn.optional') }}</option>
+			  <option value="1">{{ lang_t('vpn.not_encrypted') }}</option>
+			  <option value="2">{{ lang_t('vpn.encryption') }}</option>
+			</select>
+		  </td>
+		</tr>  
+		<tr>
+		  <td class="fun-left">MTU</td>
+		  <td>
+			<input type="text" v-model="mtu" v-verify="formRules" data-name="mtu" maxlength="4">
+			&nbsp;&nbsp;
+			<small>({{ lang_t('vpn.range') }}:1400~1500)</small>
+		  </td>
+		</tr>
+		<tr>
+		  <td class="fun-left">MRU</td>
+		  <td>
+			<input type="text" v-model="mru" v-verify="formRules" data-name="mru" maxlength="4">
+			&nbsp;&nbsp;
+			<small>({{ lang_t('vpn.range') }}1400~1500)</small>
+		  </td>
+		</tr>
+		<tr><td colspan="2"></td></tr>
+		<tr>
+		  <td class="fun-left"></td>
+		  <td>
+			<button type="button" class="btn" @click="handleSubmit">{{ lang_t('common.apply') }}</button>
+		  </td>
+		</tr>
+	  	</tbody>
+	  </table>
+  	</div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,status:!1,InitialStatusVal:!1,sip:"",eip:"",server:"",priDns:"",secDns:"",mtu:"",mru:"",mppe:""}},computed:{modeName:function(){return[this.lang_t("schedule.disable"),this.lang_t("schedule.spec_time"),this.lang_t("schedule.countdown")]},formRules:function(){var e=this;return{sip:function(n,t){var s=cs.ip(n);n||t(e.lang_t("vpn.start_ip")+e.lang_t("network.msg1")),0==s?t(e.lang_t("vpn.start_ip")+e.lang_t("network.msg1")):1==s?t(e.lang_t("vpn.start_ip")+e.lang_t("network.msg2")):2==s||3==s||4==s?t(e.lang_t("vpn.start_ip")+e.lang_t("network.msg6")):t()},eip:function(n,t){var s=cs.ip(n);n||t(e.lang_t("vpn.end_ip")+e.lang_t("network.msg1")),0==s?t(e.lang_t("vpn.end_ip")+e.lang_t("network.msg1")):1==s?t(e.lang_t("vpn.end_ip")+e.lang_t("network.msg2")):2==s||3==s||4==s?t(e.lang_t("vpn.end_ip")+e.lang_t("network.msg6")):t()},server:function(n,t){n?99!=cs.ip(n)?t(e.lang_t("vpn.server")+e.lang_t("vpn.msg6")):t():t(e.lang_t("vpn.server")+e.lang_t("vpn.msg1"))},priDns:function(n,t){n?99!=cs.ip(n)?t(e.lang_t("vpn.pri_dns")+e.lang_t("vpn.msg6")):t():t(e.lang_t("vpn.pri_dns")+e.lang_t("vpn.msg1"))},secDns:function(n,t){""==n?t():99!=cs.ip(n)?t(e.lang_t("vpn.sec_dns")+e.lang_t("vpn.msg6")):t()},mtu:function(n,t){var s=cs.num_range(n,1400,1500);0==s?t("MTU"+e.lang_t("vpn.msg1")):1==s?t("MTU"+e.lang_t("vpn.msg5")):2==s?t("MTU"+e.lang_t("vpn.msg7")):t()},mru:function(n,t){var s=cs.num_range(n,1400,1500);0==s?t("MRU"+e.lang_t("vpn.msg1")):1==s?t("MRU"+e.lang_t("vpn.msg5")):2==s?t("MRU"+e.lang_t("vpn.msg7")):t()}}}},created:function(){var t=this;uiPost.getPptpServerCfg(function(n){t.status=1==n.enable,t.InitialStatusVal=1==n.enable,t.sip=n.sip,t.eip=n.eip,t.server=n.server,t.priDns=n.priDns,t.secDns=n.secDns,t.mtu=n.mtu,t.mru=n.mru,t.mppe=n.mppe})},methods:{pptp_enable:function(n){var t=this;if(0==t.status&&t.status!=t.InitialStatusVal){var s={enable:"0"};uiPost.setPptpServerCfg(s,function(n){var t=1;n&&(n.wtime&&"0"!=n.wtime&&(t=n.wtime),Cstool.applyLoad(t,function(){location.href=location.href}))})}},handleSubmit:function(){var t=this,s={};Cstool.Verify(this.formRules,function(n){n&&t.status&&(s.enable=t.status?"1":"0",s.sip=t.sip,s.eip=t.eip,s.server=t.server,s.priDns=t.priDns,s.secDns=t.secDns,s.mtu=t.mtu,s.mru=t.mru,s.mppe=t.mppe,uiPost.setPptpServerCfg(s,function(n){var t=1;n&&(n.wtime&&"0"!=n.wtime&&(t=n.wtime),Cstool.applyLoad(t,function(){location.href=location.href}))}))})}}}</script><script src="/static/js/main.js"></script></body></html>

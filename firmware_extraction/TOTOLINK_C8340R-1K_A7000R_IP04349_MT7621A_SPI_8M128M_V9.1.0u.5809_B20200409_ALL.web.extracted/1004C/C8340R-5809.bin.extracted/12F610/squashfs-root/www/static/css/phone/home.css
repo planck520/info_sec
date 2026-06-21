@@ -1,0 +1,77 @@
+.circle{position:absolute;left:0;right:0;bottom:20%;text-align:center;}
+.position{position:absolute;}
+.position1{position:absolute;}
+.router3{top:2%;left:6%;}
+.router3 span{color:#fff;font-size:12px;margin-left:12px;}
+.speed_down{top:4%;left:6%;}
+.speed_down span{color:#fff;font-size:16px;padding-left:4px;}
+.speed_up{top:4%;right:32%;}
+.speed_up span{color:#00688b;font-size:16px;padding-left:2px;}
+.cpu{top:12%;left:10%;text-align:center;}
+.ram{top:12%;right:10%;text-align:center;}
+.devices{top:30%;width:16%;left:10%;text-align:center;}
+.wireless{top:30%;right:10%;width:16%;text-align:center;}
+.opmode{bottom:-8%;width:16%;left:42%;text-align:center;}
+.internet{bottom:90%;left:42%;text-align:center;}
+.router{bottom:40%;left:42%;text-align:center;}
+.wizard{top:1%;right:2%;text-align:center;}
+.wire{bottom:75%;left:50%;background:#fff;width:2px;height:40px;}
+.app{bottom:3%;left:4%;text-align:center;}
+.tools{bottom:3%;right:4%;text-align:center;}
+.pc{bottom:3%;right:46%;text-align:center;}
+img{padding:0;margin:0;color:#fff;}
+p{padding:0;margin:0;color:#fff;}
+
+/* 菜单 */
+.menu-box{z-index:1000;position:absolute;left:0;top:0;width:35%;height:100%;background:#91aec6;}
+.menu-box .menu{display:block;position:absolute;float:left;overflow-y: auto;}
+/*.menu-box-on{animation:bomaction 15s linear forwards 1;-webkit-animation:bomaction 1s 1;}*/
+.menu-box-off{position:absolute;bottom:5%;right:-45%;}
+.menu-box ul{position:relative;width:100%;list-style:none;padding:0 60px 0 2%;}
+.menu-box li a{display:block;width:100%;cursor:pointer;color:#fff;text-align:center;text-decoration:none;padding-top:50px;}
+
+.menu-box .parental{background:url(/static/images/basic_menu/parental_on.png) no-repeat center;background-size:30px 30px;}
+.menu-box .qos{background:url(/static/images/basic_menu/qos_on.png) no-repeat center;background-size:30px 30px;}
+.menu-box .guest{background:url(/static/images/basic_menu/guest_on.png) no-repeat center;background-size:30px 30px;}
+.menu-box .appfilter{background:url(/static/images/basic_menu/appfilter_on.png) no-repeat center;background-size:30px 30px;}
+.menu-box .storage{background:url(/static/images/basic_menu/storage_on.png) no-repeat center;background-size:30px 30px;}
+.menu-box .vpn{background:url(/static/images/basic_menu/vpn_on.png) no-repeat center;background-size:30px 30px;}
+.menu-box .gamespeed{background:url(/static/images/basic_menu/gamespeed_on.png) no-repeat center;background-size:30px 30px;}
+.menu-box .urlfilter{background:url(/static/images/basic_menu/urlfilter_on.png) no-repeat center;background-size:30px 30px;}
+.menu-box .wifi_schedule{background:url(/static/images/basic_menu/wifi_schedule_on.png) no-repeat center;background-size:30px 30px;}
+/*
+@keyframes bomaction{
+	from {width:0%;}
+	to {width:30%;}
+}
+@-webkit-keyframes bomaction{
+	from {width:0%;}
+	to {width:30%;}
+}
+*/
+
+.system-badge-count{
+    position:absolute;
+    -webkit-transform:translateX(50%);
+    transform:translateX(50%);
+    top:-10px;
+    right:0;
+    height:20px;
+    border-radius:30px;
+    min-width:10px;
+    border:1px solid transparent;
+    color:#fff;
+    line-height:18px;
+    padding:0 6px;
+    font-size:12px;
+    white-space:nowrap;
+    -webkit-transform-origin:-10% center;
+    transform-origin:-10% center;
+}
+.system-badge-count, 
+.system-badge-dot{
+	background:rgb(233,153,0);
+	z-index:10;
+	box-shadow:0 0 0 1px #fff;
+	text-align:center;
+}

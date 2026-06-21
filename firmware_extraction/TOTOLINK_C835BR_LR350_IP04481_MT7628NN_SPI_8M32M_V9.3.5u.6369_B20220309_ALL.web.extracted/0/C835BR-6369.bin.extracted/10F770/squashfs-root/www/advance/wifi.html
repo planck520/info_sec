@@ -1,0 +1,241 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"><style>input[type=password],input[type=text]{width:180px;height:25px;padding:0 5px;outline:0}select:disabled{cursor:not-allowed;background-color:#eee;border-color:#ddd}</style></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <!--子菜单-->
+  <adv-child-menu childType="wifi"></adv-child-menu>
+  <div class="advance-box">
+  	<x-help :text="lang_t('wifi.help')"></x-help>
+	<br><br>
+	<div class="fun-box">
+	  <table class="table" v-show="wifiDualband != '0'">
+	    <tr>
+		  <td class="btn-tab-m">
+		    <a @click="wifiChange('0')" :class="['btn-tab def-b-hover',wifiActive == '0' ? 'def-b' : '']">2.4GHz</a>
+		    <a v-show="wifiDualband == '1'" @click="wifiChange('1')" :class="['btn-tab def-b-hover',wifiActive == '1' ? 'def-b' : '']">5GHz</a>
+		    <a v-show="wifiDualband == '2'" @click="wifiChange('1')" :class="['btn-tab def-b-hover',wifiActive == '1' ? 'def-b' : '']">5GHz(1)</a>
+		    <a v-show="wifiDualband == '2'" @click="wifiChange('2')" :class="['btn-tab def-b-hover',wifiActive == '2' ? 'def-b' : '']">5GHz(2)</a>
+		  </td>
+	    </tr>       
+	  </table>
+	  <br  v-show="wifiDualband != '0'">
+	  <table class="table">
+	    <tbody>
+		<tr>
+		  <td class="fun-left">{{ lang_t('wifi.state') }}</td>
+		  <td>
+			<x-switch v-model="wifiOff" @change="wifiState" :disabled="powerDis"></x-switch>
+		  </td>
+		</tr>
+	    </tbody>
+		<tr><td colspan="2">&nbsp;</td></tr>
+	    <tbody>
+		<tr>
+		  <td class="fun-left">{{ lang_t('wifi.ssid') }}</td>
+		  <td>
+			<input type="text" v-model="ssid" maxlength="32" v-verify="fromRule" data-name="ssid"/>
+			<x-checkbox v-model="hssid" :disabled="hssidclass">{{ lang_t('wifi.hide') }}</x-checkbox>
+		  </td>
+		</tr>
+  		<tr v-if="globalConfig.addFlag=='1'">
+		  	<td class="fun-left">{{ lang_t('wifi.encryption') }}</td>
+		  	<td>
+				<select v-model="encryption">
+					<option value="0">{{ lang_t('wifi.personal') }}</option>
+			  		<option value="1">{{ lang_t('wifi.enterprise') }}</option>
+				</select>
+		  	</td>
+		</tr>
+	</tbody>
+	<tbody v-if="encryption=='0'&&!globalConfig.wifiWepWpaSupport">
+		<tr>
+		  <td class="fun-left">{{ lang_t('wifi.pass_state') }}</td>
+		  <td>
+			<x-switch v-model="ispass" :disabled="hssidclass"></x-switch>
+		  </td>
+		</tr>
+	</tbody>
+	<tbody v-if="globalConfig.wifiWepWpaSupport" id="wep-wpa">
+		<tr>
+		  <td class="fun-left">{{ lang_t('wifi.encryption') }}</td>
+		  <td>
+			<select v-model="encryptionWay" @change="ewChange()">
+				<option value="0">{{ lang_t('wifi.dispass') }}</option>
+				<option value="5">WPA/WPA2-PSK ({{lang_t('common.recommend')}})</option>
+				<option value="4">WPA2-PSK</option>
+				<option value="3">WPA-PSK</option>
+				<option value="2" v-if="!globalConfig.wifiWepNoSupport&&(wifiActive != '0'||(wifiActive == '0'&&band!='6'))">{{ lang_t('wifi.shared_key') }}</option>
+				<option value="1" v-if="!globalConfig.wifiWepNoSupport&&(wifiActive != '0'||(wifiActive == '0'&&band!='6'))">{{ lang_t('wifi.open_key') }}</option>
+			</select>
+		  </td>
+		</tr>
+		<tr v-show="encryptionWay!='0'">
+			<td class="fun-left">{{ lang_t('wifi.encryption_type') }}</td>
+			<td>
+				<select v-model="encryptionType">
+					<option v-for="data in passTypeOp" :value="data.value">{{data.name}}</option>
+				</select>
+			</td>
+		</tr>
+		<tr v-show="encryptionWay!='0'">
+			<td class="fun-left">{{ lang_t('wifi.pass_type') }}</td>
+			<td>
+				<select v-model="keyType">
+					<option value="0">HEX</option>
+					<option value="1">ASCII</option>
+				</select>
+			</td>
+		</tr>
+	</tbody>
+	<tbody v-if="passwordShow">
+		<tr>
+		  <td class="fun-left">{{ lang_t('wifi.pass') }}</td>
+		  <td>
+			<input type="password" class="input input-err" v-model="key" :maxlength="passMaxLen" v-pass v-verify="fromRule" data-name="key">
+			<x-checkbox v-model="wpa3" v-if="globalConfig.wifiWpa2Wpa3Support" @change="tipsFun">{{ lang_t('wifi.wpa3') }}</x-checkbox>
+		  </td>
+		</tr>
+	</tbody>
+	<tbody v-if="encryption=='1'">
+			<tr>
+			  	<td class="fun-left">{{ lang_t('wifi.radius_ip') }}</td>
+			  	<td>
+					<input type="text" v-model="radiusIp" v-verify="fromRule" data-name="ip">
+			  	</td>
+			</tr>
+			<tr>
+			  	<td class="fun-left">{{ lang_t('wifi.radius_port') }}</td>
+			  	<td>
+					<input type="text" v-model="radiusPort" v-verify="fromRule" data-name="port">
+			  	</td>
+			</tr>
+			<tr>
+			  	<td class="fun-left">{{ lang_t('wifi.radius_pass') }}</td>
+			  	<td>
+					<input type="password" v-model="radiusPass" v-pass v-verify="fromRule" data-name="pass">
+			  	</td>
+			</tr>
+	</tbody>
+	<tbody v-if="globalConfig.addFlag=='1'||globalConfig.ssidQosSupport">
+			<tr>
+			  <td class="fun-left">{{ lang_t('index.upload') }}</td>
+			  <td>
+				<input type="text" v-model="upload" maxlength="5" v-verify="fromRule" data-name="upload">&nbsp;&nbsp;
+				<small>Mbps</small>
+			  </td>
+			</tr>
+			<tr>
+			  <td class="fun-left">{{ lang_t('index.donwload') }}</td>
+			  <td>
+				<input type="text" v-model="download" maxlength="5" v-verify="fromRule" data-name="download">&nbsp;&nbsp;
+				<small>Mbps</small>
+			  </td>
+			</tr>
+	    </tbody>
+	    <tbody id="wireless-adv">
+		<tr>
+		  <td class="fun-left">{{ lang_t('wifi.country') }}</td>
+		  <td>
+			<select v-model="countryCode" @change="countryChange">
+			  <option v-for="country in countryList" :value="country.value">{{ country.name }}</option>
+			</select>
+		  </td>
+		</tr>
+		<tr>
+		  <td class="fun-left">{{ lang_t('wifi.band') }}</td>
+		  <td>
+			  <div style="display:flex;">
+			<select v-model="band" v-show="wifiActive == '0'" @change="autoChange('band','2.4')">
+			  <option value="1">802.11b</option>
+			  <option value="4">802.11g</option>
+			  <option value="6">802.11n</option>
+			  <option value="9">802.11b/g/n</option>
+			  <option value="16" v-if="globalConfig.wifi11axSupport">802.11b/g/n/ax</option>
+			</select>
+			<select v-model="band5g" v-show="wifiActive == '1'" @change="autoChange('band')">
+			  <option value="2">802.11a</option>
+			  <option value="8">802.11a/n</option>
+			  <option value="14">802.11a/n/ac</option>
+			  <option value="17" v-if="globalConfig.wifi11axSupport">802.11a/n/ac/ax</option>
+			</select>
+			<select v-model="band5g_2" v-show="wifiActive == '2'" @change="autoChange_2('band')">
+			  <option value="2">802.11a</option>
+			  <option value="8">802.11a/n</option>
+			  <option value="14">802.11a/n/ac</option>
+			  <option value="17" v-if="globalConfig.wifi11axSupport">802.11a/n/ac/ax</option>
+			</select>
+		</div>
+		  </td>
+		</tr>
+		<tr v-if="globalConfig.wifiWepWpaSupport&&(wifiActive=='0'&&band==9)">
+		  <td class="fun-left">&nbsp;</td>
+		  <td><span style="color: #abcddb;font-size:12px;">{{ globalConfig.wifiWepNoSupport ? lang_t('wifi.bgn_keytips2') : lang_t('wifi.bgn_keytips') }}</span></td>
+		</tr>
+		<tr v-if="(wifiActive=='0'&&band==16)||(wifiActive=='1'&&band5g==17)||(wifiActive=='2'&&band5g_2==17)">
+		  <td class="fun-left">&nbsp;</td>
+		  <td><span style="color: #abcddb;font-size:12px;">{{ lang_t('wifi.ax_tips') }}</span></td>
+		</tr>
+		<tr>
+		  <td class="fun-left">{{ lang_t('wifi.bandwidth') }}</td>
+		  <td>
+			<select v-model="bw" v-show="wifiActive == '0'">
+			  <option value="0" v-if="band == '6' || band == '9' || band == '16'" v-show="!globalConfig.certificatSoftware||(globalConfig.certificatSoftware&&countryCode!='IA')">{{ lang_t('wifi.auto') }}</option>
+			  <option value="1">20M</option>
+			  <option value="2" v-if="band == '6' || band == '9' || band == '16'">40M</option>
+			</select>
+			<select v-model="bw5g" v-show="wifiActive == '1'" @change="autoChange">
+			  <option v-for="bw in bw5gOption" :value="bw.value">{{ bw.name }}</option>
+			</select>
+			<select v-model="bw5g_2" v-show="wifiActive == '2'" @change="autoChange_2">
+			  <option v-for="bw in bw5gOption_2" :value="bw.value">{{ bw.name }}</option>
+			</select>
+		  </td>
+		</tr>
+		<tr>
+		  <td class="fun-left">{{ lang_t('wifi.channel') }}</td>
+		  <td>
+			<select v-model="channel" v-show="wifiActive == '0'" :disabled="channel_enable">
+			  <option value="0">{{ lang_t('wifi.auto') }}</option>
+			  <option v-for="v in channel2gOption" :key="v" :value="v">{{ v }}</option>
+			</select>
+			<select v-model="channel5g" v-show="wifiActive == '1'" :disabled="channel_enable">
+			  <option value="0">{{ lang_t('wifi.auto') }}</option>
+			  <option v-for="_channel in channel5gOption" :value="_channel">{{ _channel }}</option>
+			</select>
+			<select v-model="channel5g_2" v-show="wifiActive == '2'" :disabled="channel_enable">
+			  <option value="0">{{ lang_t('wifi.auto') }}</option>
+			  <option v-for="_channel in channel5gOption" :value="_channel">{{ _channel }}</option>
+			</select>
+		  </td>
+		</tr>
+		</tbody>
+		<tbody v-if="globalConfig.wifi11axSupport">
+			<tr>
+				<td class="fun-left">TWT</td>
+				<td>
+					<x-radio v-model="twt" :name="[lang_t('dmz.off'),lang_t('dmz.on')]" pos="col"></x-radio>
+				</td>
+			</tr>
+			<tr>
+				<td class="fun-left">MU-MIMO</td>
+				<td>
+					<x-radio v-model="mumimo" :name="[lang_t('dmz.off'),lang_t('dmz.on')]" pos="col"></x-radio>
+				</td>
+			</tr>
+			<tr>
+				<td class="fun-left">OFDMA</td>
+				<td>
+					<x-radio v-model="ofdma" :name="[lang_t('dmz.off'),lang_t('dmz.on')]" pos="col"></x-radio>
+				</td>
+			</tr>
+		</tbody>
+		<tbody >
+		<tr>
+			<tr><td colspan="2"></td></tr>
+		  <td class="fun-left"></td>
+		  <td>
+			<button type="button" id="applyBtn" class="btn" @click="applyFun">{{ lang_t('common.apply') }}</button>
+		  </td>
+		</tr>
+	    </tbody>
+	  </table>
+    </div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,wifiActive:"0",wifiOff:!1,wifiOff2:!1,wifiOff5:!1,wifiOff5_2:!1,hssid:!1,wifiDualband:"0",wifiSchEnabled:!1,ssid:"",key:"",countryCode:"CN",band:"9",band5g:"14",band5g_2:"14",bw:"0",bw5g:"0",bw5g_2:"0",channel:"0",channel5g:"0",channel5g_2:"0",list:"",hssidclass:!1,powerDis:!1,channel_enable:!1,ispass:!1,download:"",upload:"",encryption:"0",radiusIp:"",radiusPort:"",radiusPass:"",wpa3:!1,twt:"",mumimo:"",ofdma:"0",encryptionWay:"0",encryptionType:"",keyType:""}},computed:{passwordShow:function(){return globalConfig.wifiWepWpaSupport?"0"!=this.encryptionWay:"0"==this.encryption?this.ispass:void 0},passMaxLen:function(){var i=63;if(globalConfig.wifiWepWpaSupport){var t=this.keyType,a=this.encryptionType;0!=t||3!=this.encryptionWay&&4!=this.encryptionWay&&5!=this.encryptionWay?"1"==a?i="0"==t?10:5:"2"==a&&(i="0"==t?26:13):i=64}return this.key.length>i&&(this.key=""),i},passTypeOp:function(){var i=["WEP-64","WEP-128","TKIP","AES","TKIP/AES"],t=[];switch(this.encryptionWay.toString()){case"1":case"2":t=[0,1];break;case"3":t=[2];break;case"4":case"5":t=[3,4]}"0"==this.wifiActive&&"6"==this.band&&(t=[3]);for(var a=0;a<t.length;a++)t[a]={value:t[a]+1,name:i[t[a]]};return t},fromRule:function(){var n=this;return{ssid:function(i,t){var a=cs.ssid(i);0==a?t(n.lang_t("wifi.msg1")):4==a?t(n.lang_t("wifi.msg18")):1==a?t(n.lang_t("wifi.msg2")):2==a?t(n.lang_t("wifi.msg3")):t()},key:function(i,t){var a=cs.string(i);if(0==a)t(lang_t("wifi.pass")+lang_t("wifi.msg6"));else{if(globalConfig.wifiWepWpaSupport&&63!=n.passMaxLen)return void("1"!=n.keyType||i.length==n.passMaxLen&&99==a?"0"!=n.keyType||i.length==n.passMaxLen&&/^[\da-fA-F]+$/.test(i)?t():t(lang_t("wifi.pass_16",[n.passMaxLen])):t(lang_t("wifi.pass_ascii",[n.passMaxLen])));if(globalConfig.wifiWepWpaSupport&&"0"==n.keyType)return void(/^[\da-fA-F]+$/.test(i)&&i.length==n.passMaxLen?t():t(lang_t("wifi.pass_16",[n.passMaxLen])));n.ispass||globalConfig.wifiWepWpaSupport?1==a?t(lang_t("wifi.msg5")):i.length<8||i.length>n.passMaxLen?t(lang_t("wifi.msg4")):t():t()}},download:function(i,t){99!=cs.num(i)?t(n.lang_t("index.donwload")+lang_t("wifi.msg7")):t()},upload:function(i,t){99!=cs.num(i)?t(n.lang_t("index.upload")+lang_t("wifi.msg7")):t()},ip:function(i,t){},port:function(i,t){},pass:function(i,t){}}},countryList:function(){var i=[];if(this.list){var t=this.list.split(",");for(var a in t)"CN"==t[a]?i.push({name:this.lang_t("wifi.china"),value:"CN"}):"US"==t[a]?i.push({name:this.lang_t("wifi.usa"),value:"US"}):"EU"==t[a]?"2"==this.wifiDualband&&"1"==this.wifiActive||i.push({name:this.lang_t("wifi.europe"),value:"EU"}):"OT"==t[a]?i.push({name:this.lang_t("wifi.other"),value:"OT"}):"IA"==t[a]&&i.push({name:this.lang_t("wifi.malaysia"),value:"IA"})}return i},bw5gOption:function(){var i=[{value:"0",name:this.lang_t("wifi.auto")},{value:"1",name:"20M"},{value:"2",name:"40M"},{value:"3",name:"80M"}];if(globalConfig.certificatSoftware)return[i[1]];var t=[],a=this.band5g;return"2"==a?(t.push(i[1]),this.bw5g="1"):t=("8"==a&&i.splice(3,1),i),t},bw5gOption_2:function(){var i=[{value:"0",name:this.lang_t("wifi.auto")},{value:"1",name:"20M"},{value:"2",name:"40M"},{value:"3",name:"80M"}],t=[],a=this.band5g_2;return"2"==a?(t.push(i[1]),this.bw5g_2="1"):t=("8"==a&&i.splice(3,1),i),t},channel2gOption:function(){var i=this.countryCode,t=[],a=1,n=13;for("US"===i&&(n=11),globalConfig.certificatSoftware&&"IA"===i&&"2"==this.bw&&(a=3,n=11);a<=n;a++)t.push(a);return t},channel5gOption:function(){var i=this.countryCode,t=this.bw5g,a=this.band5g,n=["149","153","157","161"],e=["36","40","44","48"];globalConfig.certificatSoftware||"2"==a||"1"!=t||n.push("165");var s,o=["52","56","60","64","100","104","108","112","116","120","124","128","132","136","140"],f=["100","104","108","112","116","120","124","128","132","136","140","149","153","157","161"];o=e.concat(o,n),"2"==this.wifiDualband?"1"==this.wifiActive?(s=n,"2"!=a&&"1"==t&&f.push("165"),o=f):"2"==this.wifiActive?(n=s=e,o=["36","40","44","48","52","56","60","64"]):s=e.concat(n):s=e.concat(n);var c=[];switch(i){case"CN":c="1"==this.wifiDualband?e.concat(n):n;break;case"US":c=s;break;case"EU":c=e;break;case"OT":c=o;break;case"IA":c=globalConfig.certificatSoftware&&"1"==this.wifiActive?e.concat(n):n}return c}},created:function(){this.wifiActive=cs.local(this.wifiActive),this.wifiInit(this.wifiActive)},methods:{wifiChange:function(i){this.wifiActive=i,this.wifiInit(i)},ewChange:function(){switch(this.encryptionWay.toString()){case"1":case"2":this.encryptionType="1";break;case"3":this.encryptionType="3";break;case"4":case"5":this.encryptionType="5"}this.keyType="1"},wifiInit:function(t){var a=this,i={};i.wifiIdx=t,this.powerDis=!1,$("#wireless-adv select").attr("disabled",!1),uiPost.getWiFiBasicCfg(i,function(i){"0"==t?(a.wifiOff2="1"!=i.wifiOff,a.bw=i.bw,a.band=i.band,a.channel=i.channel):"1"==t?(a.wifiOff5="1"!=i.wifiOff,a.bw5g=i.bw,a.band5g=i.band,a.channel5g=i.channel):"2"==t&&(a.wifiOff5_2="1"!=i.wifiOff,a.bw5g_2=i.bw,a.band5g_2=i.band,a.channel5g_2=i.channel),a.wifiDualband=i.wifiDualband,a.wifiOff="1"!=i.wifiOff,a.hssid="0"!=i.hssid,a.ssid=i.ssid,a.key=i.key,a.wpa3="2"==i.wpaMode,a.ispass=""!=i.key,a.countryCode=i.countryCode,a.upload=i.txRate,a.download=i.rxRate,"1"==globalConfig.addFlag&&(a.radiusIp=i.radiusIp,a.radiusPort=i.radiusPort,a.radiusPass=i.radiusPass,a.encryption=i.encryption),i.countryCodeList&&(a.list=i.countryCodeList),globalConfig.wifi11axSupport&&(a.twt=i.twt,a.mumimo=i.mumimo,a.ofdma=i.ofdma),"1"==i.rpt_enable?(a.disabled(a.wifiOff,i.wifiSchEnabled),$("#wireless-adv select").attr("disabled",!0),a.powerDis=!0):a.disabled(a.wifiOff,i.wifiSchEnabled),globalConfig.wifiWepWpaSupport&&(a.encryptionWay=i.encryptionWay||"0",a.encryptionType=i.encryptionType,a.keyType=i.keyType)})},countryChange:function(){"0"==this.wifiActive?this.channel="0":"1"==this.wifiActive?this.channel5g="0":this.channel5g_2="0"},tipsFun:function(i){var t=lang_t("wifi.wpa3_info");this.wpa3&&Cstool.Msg({content:t})},autoChange:function(i,t){if("2.4"!=t&&(cs.isInArray(this.channel5gOption,this.channel5g)||(this.channel5g="0")),"band"==i)if("2.4"==t)"1"!=this.band&&"4"!=this.band||(this.bw="1"),globalConfig.wifiWepWpaSupport&&"6"==this.band&&(Cstool.Msg({content:lang_t("wifi.n_keytips")}),this.encryptionWay="4",this.encryptionType="4");else{var a=!1;if(1==this.bw5gOption.length)return;for(var n in this.bw5gOption)if(this.bw5gOption[n].value==this.bw5g){a=!0;break}a||(this.bw5g="0"),"14"!=this.band5g&&"17"!=this.band5g||(this.bw5g="3",this.channel5g="0")}},autoChange_2:function(i){if(cs.isInArray(this.channel5gOption,this.channel5g_2)||(this.channel5g_2="0"),"band"==i){var t=!1;for(var a in this.bw5gOption_2)if(this.bw5gOption_2[a].value==this.bw5g_2){t=!0;break}t||(this.bw5g_2="0"),"14"!=this.band5g_2&&"17"!=this.band5g_2||(this.bw5g_2="3")}},wifiState:function(i){var a=this,t={};"2"==this.wifiActive?(this.wifiOff5_2=i,t.wifiIdx="2"):"1"==this.wifiActive?(this.wifiOff5=i,t.wifiIdx="1"):"0"==this.wifiActive&&(this.wifiOff2=i,t.wifiIdx="0"),this.wifiOff=i,t.wifiOff=i?"0":"1",t.addEffect="1",uiPost.setWiFiBasicCfg(t,function(i){var t=30;i.wtime&&"0"!=i.wtime?(t=i.wtime,Cstool.Count(t,"js",function(){cs.local(a.wifiActive,"href")})):cs.local(a.wifiActive,"href")})},disabled:function(i,t){i?(this.hssidclass=!1,$('input[type="text"],input[type="password"]').attr("disabled",!1),$("button#applyBtn").attr("disabled",!1),$("#wep-wpa select").attr("disabled",!1)):($('input[type="text"],input[type="password"]').attr("disabled",!0),$("button#applyBtn").attr("disabled",!0),$("#wep-wpa select").attr("disabled",!0),this.hssidclass=!0),"1"==t?(this.powerDis=!0,i?$("button#applyBtn").attr("disabled",!1):$("button#applyBtn").attr("disabled",!0)):this.powerDis=!1},applyFun:function(){var a=this,t={addEffect:"0"};Cstool.Verify(this.fromRule,function(i){i&&("2"==a.wifiActive?(t.wifiIdx="2",t.bw=a.bw5g_2,t.band=a.band5g_2,t.channel=a.channel5g_2):"1"==a.wifiActive?(t.wifiIdx="1",t.bw=a.bw5g,t.band=a.band5g,t.channel=a.channel5g):(t.wifiIdx="0",t.bw=a.bw,t.band=a.band,t.channel=a.channel),t.hssid=a.hssid?"1":"0",t.ssid=a.ssid,globalConfig.wifiWepWpaSupport?(t.encryptionWay=a.encryptionWay,t.encryptionType=a.encryptionType,t.keyType=a.keyType,"0"!=a.encryptionWay&&(t.key=a.key)):a.ispass?(t.key=a.key,t.wpaMode=a.wpa3?"2":"1"):t.key="",t.countryCode=a.countryCode,"1"==globalConfig.addFlag&&(t.encryption=a.encryption,"1"==a.encryption&&(t.radiusIp=a.radiusIp,t.radiusPort=a.radiusPort,t.radiusPass=a.radiusPass)),(globalConfig.ssidQosSupport||"1"==globalConfig.addFlag)&&(t.txRate=a.upload,t.rxRate=a.download),globalConfig.wifi11axSupport&&(t.twt=a.twt,t.mumimo=a.mumimo,t.ofdma=a.ofdma),uiPost.setWiFiBasicCfg(t,function(i){var t=30;i.wtime&&"0"!=i.wtime?(t=i.wtime,Cstool.Count(t,"js",function(){cs.local(a.wifiActive,"href")})):cs.local(a.wifiActive,"href")}))})}}}</script><script src="/static/js/main.js"></script></body></html>

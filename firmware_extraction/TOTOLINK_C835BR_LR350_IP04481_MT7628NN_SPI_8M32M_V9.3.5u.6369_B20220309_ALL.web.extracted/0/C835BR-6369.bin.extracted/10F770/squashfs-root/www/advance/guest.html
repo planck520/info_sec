@@ -1,0 +1,99 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"><style>input[type=password],input[type=text]{width:220px;height:25px;padding:0 5px;outline:0}</style></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <!--子菜单-->
+  <adv-child-menu childType="wifi"></adv-child-menu>
+  <div class="advance-box">
+  	<x-help :text="lang_t('wifi.help_guest')"></x-help>
+	<br><br>
+	<div class="fun-box">
+	  <table class="table" v-show="wifiDualband != '0'">
+	    <tr>
+			<td class="btn-tab-m">
+				<a @click="wifiChange('0')" :class="['btn-tab def-b-hover',wifiActive == '0' ? 'def-b' : '']">2.4GHz</a>
+				<a v-show="wifiDualband == '1'" @click="wifiChange('1')" :class="['btn-tab def-b-hover',wifiActive == '1' ? 'def-b' : '']">5GHz</a>
+				<a v-show="wifiDualband == '2'" @click="wifiChange('1')" :class="['btn-tab def-b-hover',wifiActive == '1' ? 'def-b' : '']">5GHz(1)</a>
+				<a v-show="wifiDualband == '2'" @click="wifiChange('2')" :class="['btn-tab def-b-hover',wifiActive == '2' ? 'def-b' : '']">5GHz(2)</a>
+			</td>
+	    </tr>       
+	  </table>
+	  <br  v-show="wifiDualband != '0'">
+	  <table class="table">
+	    <tbody>
+		<tr>
+		  <td class="fun-left">{{ lang_t('wifi.state') }}</td>
+		  <td>
+			<x-switch v-model="wifiOff" :disabled="disablePower" @change="wifiState"></x-switch>
+		  </td>
+		</tr>
+	    </tbody>
+		<tr><td colspan="2">&nbsp;</td></tr>
+	    <tbody>
+			<tr>
+				<td class="fun-left">{{ lang_t('wifi.ssid') }}</td>
+				<td>
+					<input type="text" v-model="ssid" maxlength="32" v-verify="fromRule" data-name="ssid"/>
+					<x-checkbox v-model="hssid" :disabled="hssidclass">{{ lang_t('wifi.hide') }}</x-checkbox>
+				</td>
+			</tr>
+			<tr v-if="!globalConfig.wifiWepWpaSupport">
+				<td class="fun-left">{{ lang_t('wifi.pass_state') }}</td>
+				<td>
+					<x-switch v-model="ispass" :disabled="hssidclass"></x-switch>
+				</td>
+			</tr>
+		</tbody>
+		<tbody v-if="globalConfig.wifiWepWpaSupport" id="wep-wpa">
+			<tr>
+			  <td class="fun-left">{{ lang_t('wifi.encryption') }}</td>
+			  <td>
+				<select v-model="encryptionWay" @change="ewChange()">
+					<option value="0">{{ lang_t('wifi.dispass') }}</option>
+					<!-- <option value="1">{{ lang_t('wifi.open_key') }}</option>
+					<option value="2">{{ lang_t('wifi.shared_key') }}</option> -->
+					<option value="5">WPA/WPA2-PSK ({{lang_t('common.recommend')}})</option>
+					<option value="4">WPA2-PSK</option>
+					<option value="3">WPA-PSK</option>
+				</select>
+			  </td>
+			</tr>
+			<tr v-show="encryptionWay!='0'">
+				<td class="fun-left">{{ lang_t('wifi.encryption_type') }}</td>
+				<td>
+					<select v-model="encryptionType">
+						<option v-for="data in passTypeOp" :value="data.value">{{data.name}}</option>
+					</select>
+				</td>
+			</tr>
+			<tr v-show="encryptionWay!='0'">
+				<td class="fun-left">{{ lang_t('wifi.pass_type') }}</td>
+				<td>
+					<select v-model="keyType">
+						<option value="0">HEX</option>
+						<option value="1">ASCII</option>
+					</select>
+				</td>
+			</tr>
+		</tbody>
+		<tbody>
+			<tr v-if="passwordShow">
+				<td class="fun-left">{{ lang_t('wifi.pass') }}</td>
+				<td>
+					<input type="password" class="input input-err" v-model="key" :maxlength="passMaxLen" v-pass v-verify="fromRule" data-name="key">
+				</td>
+			</tr>
+			<tr>
+				<td class="fun-left"></td>
+				<td>
+					<x-checkbox v-model="accessAllow" :disabled="disable_allow">{{ lang_t('wifi.allow_access') }}</x-checkbox>
+				</td>
+			</tr>
+		<tr>
+		  <td class="fun-left">&nbsp;</td>
+		  <td>
+			<button type="button" id="applyBtn" class="btn" @click="applyFun">{{ lang_t('common.apply') }}</button>
+		  </td>
+		</tr>
+	    </tbody>
+	  </table>
+    </div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,wifiActive:"0",wifiOff:!1,mainWifiOff:!1,hssid:!1,wifiDualband:"0",wifiSchEnabled:"0",ssid:"",key:"",hssidclass:!1,disable_allow:!1,accessAllow:!1,disablePower:!1,ispass:!1,encryptionWay:"0",encryptionType:"",keyType:""}},computed:{passwordShow:function(){return globalConfig.wifiWepWpaSupport?"0"!=this.encryptionWay:this.ispass},passMaxLen:function(){var i=63;if(globalConfig.wifiWepWpaSupport){var e=this.keyType,t=this.encryptionType;0!=e||3!=this.encryptionWay&&4!=this.encryptionWay&&5!=this.encryptionWay?"1"==t?i="0"==e?10:5:"2"==t&&(i="0"==e?26:13):i=64}return(this.key||"").length>i&&(this.key=""),i},passTypeOp:function(){var i=["WEP-64","WEP-128","TKIP","AES","TKIP/AES"],e=[];switch(this.encryptionWay.toString()){case"1":case"2":e=[0,1];break;case"3":e=[2];break;case"4":case"5":e=[3,4]}for(var t=0;t<e.length;t++)e[t]={value:e[t]+1,name:i[e[t]]};return e},fromRule:function(){var s=this;return{ssid:function(i,e){var t=cs.ssid(i);0==t?e(s.lang_t("wifi.msg1")):4==t?e(s.lang_t("wifi.msg18")):1==t?e(s.lang_t("wifi.msg2")):2==t?e(s.lang_t("wifi.msg3")):e()},key:function(i,e){var t=cs.string(i);if(0==t)e(lang_t("wifi.pass")+lang_t("wifi.msg6"));else{if(globalConfig.wifiWepWpaSupport&&63!=s.passMaxLen)return void("1"!=s.keyType||i.length==s.passMaxLen&&99==t?"0"!=s.keyType||i.length==s.passMaxLen&&/^[\da-fA-F]+$/.test(i)?e():e(lang_t("wifi.pass_16",[s.passMaxLen])):e(lang_t("wifi.pass_ascii",[s.passMaxLen])));if(globalConfig.wifiWepWpaSupport&&"0"==s.keyType)return void(/^[\da-fA-F]+$/.test(i)&&i.length==s.passMaxLen?e():e(lang_t("wifi.pass_16",[s.passMaxLen])));s.ispass||globalConfig.wifiWepWpaSupport?1==t?e(lang_t("wifi.msg5")):i.length<8||i.length>s.passMaxLen?e(lang_t("wifi.msg4")):e():e()}}}}},beforeCreate:function(){if("Indonesia"==globalConfig.softwareType)return document.body.style.display="none",location.href="mul_guest.html?timestamp="+Date.now(),!1},created:function(){this.wifiActive=cs.local(this.wifiActive),this.wifiInit(this.wifiActive)},methods:{wifiChange:function(i){this.wifiActive=i,this.wifiInit(i)},ewChange:function(){switch(this.encryptionWay.toString()){case"1":case"2":this.encryptionType="1";break;case"3":this.encryptionType="3";break;case"4":case"5":this.encryptionType="5"}this.keyType="1"},wifiInit:function(i){var e=this,t={};t.wifiIdx=i,uiPost.getWiFiGuestCfg(t,function(i){e.mainWifiOff="0"==i.mainWifiOff,e.wifiSchEnabled=i.wifiSchEnabled,e.wifiDualband=i.wifiDualband,e.wifiOff="1"!=i.wifiOff,e.hssid="0"!=i.hssid,e.ssid=i.ssid,e.key=i.key,e.ispass=""!=i.key,e.accessAllow="1"==i.accessEnabled,"1"==i.mainWifiOff?e.disabled_main():e.disabled(e.wifiOff,i.wifiSchEnabled),"br"!=this.globalConfig.opmode&&"rpt"!=this.globalConfig.opmode||(e.disable_allow=!0),globalConfig.wifiWepWpaSupport&&(e.encryptionWay=i.encryptionWay||"0",e.encryptionType=i.encryptionType,e.keyType=i.keyType)})},wifiState:function(i){this.disabled(i)},disabled:function(i,e){i?(this.hssidclass=!1,this.disablePower=!1,"br"!=this.globalConfig.opmode&&"rpt"!=this.globalConfig.opmode&&(this.disable_allow=!1),$('input[type="text"],input[type="password"]').attr("disabled",!1),$("button#applyBtn").attr("disabled",!1),$("#wep-wpa select").attr("disabled",!1)):($('input[type="text"],input[type="password"]').attr("disabled",!0),$("#wep-wpa select").attr("disabled",!0),this.hssidclass=!0,this.disable_allow=!0),this.disablePower="1"==e},disabled_main:function(){$('input[type="text"],input[type="password"]').attr("disabled",!0),$("button#applyBtn").attr("disabled",!0),$("#wep-wpa select").attr("disabled",!0),this.disablePower=!0,this.hssidclass=!0,this.disable_allow=!0},applyFun:function(){var t=this,e={};Cstool.Verify(this.fromRule,function(i){!i&&t.wifiOff||(e.wifiOff=t.wifiOff?"0":"1",e.hssid=t.hssid?"1":"0",e.ssid=t.ssid,globalConfig.wifiWepWpaSupport?(e.encryptionWay=t.encryptionWay,e.encryptionType=t.encryptionType,e.keyType=t.keyType,"0"!=t.encryptionWay&&(e.key=t.key)):e.key=t.ispass?t.key:"",e.wifiIdx=t.wifiActive,e.accessEnabled=t.accessAllow?"1":"0",uiPost.setWiFiGuestCfg(e,function(i){var e=30;i.wtime&&"0"!=i.wtime?(e=i.wtime,Cstool.Count(e,"js",function(){cs.local(t.wifiActive,"href")})):cs.local(t.wifiActive,"href")}))})}}}</script><script src="/static/js/main.js"></script></body></html>

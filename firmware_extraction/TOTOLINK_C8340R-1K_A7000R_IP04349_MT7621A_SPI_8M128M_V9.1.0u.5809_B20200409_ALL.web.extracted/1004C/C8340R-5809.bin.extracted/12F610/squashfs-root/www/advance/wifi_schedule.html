@@ -1,0 +1,126 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <!--子菜单-->
+  <adv-child-menu childType="wifi"></adv-child-menu>   
+  <div class="advance-box">
+    <x-help :text="lang_t('schedule.help_wifi')"></x-help>
+    <br><br>
+	<div class="fun-box">
+		<table class="table" style="margin-bottom: 15px;" v-if="globalConfig.guestWifiSchSupport">
+			<tr>
+				<td class="btn-tab-m">
+				    <a @click="modeChange('0')" :class="['btn-tab',wifiActive == '0' ? 'btn-tab-active' : '']">{{ lang_t('wifi.main_wifi') }}</a>
+				    <a @click="modeChange('1')" :class="['btn-tab',wifiActive == '1' ? 'btn-tab-active' : '']">{{ lang_t('menu.guest') }}</a>
+				</td>
+			</tr>       
+		</table>
+		<div style="display: flex;line-height: 23px;">
+			<span class="fun-title">{{ lang_t('schedule.state') }}</span>
+			&nbsp;&nbsp;
+			<x-switch v-model="state" @change="scheduleSate"></x-switch>
+		</div>
+		<table v-show="state">
+			<tr>
+				<td align="right">
+					<x-icon type="add" cursor="pointer" @click="addRuleVal">{{ lang_t('common.add') }}</x-icon>
+					<x-icon type="del" cursor="pointer" @click="trashFun('all')">{{ lang_t('common.delete') }}</x-icon>
+				</td>
+			</tr>
+			<tr><td height="5"></td></tr>
+			<tr>
+				<td><table class="t_table3 table-bordered table-striped">
+					<thead>
+					<tr>
+						<th>{{ lang_t('rule.description') }}</th>
+						<th>{{ lang_t('rule.time') }}</th>
+						<th>{{ lang_t('rule.operate') }}</th>
+						<th>{{ lang_t('common.select') }}<x-checkbox v-model="selectall" @change="selectAll"></x-checkbox></th>
+					</tr>
+					</thead>
+					<tr v-show="addShow">
+						<td><input type="text" class="desc" v-model="desc" v-verify="formRules" data-name="desc" maxlength="20"></td>
+						<td>
+							<select v-model="addWeek" class="time-select2">
+								<option value="1">{{ lang_t('rule.mon') }}</option>
+								<option value="2">{{ lang_t('rule.tue') }}</option>
+								<option value="3">{{ lang_t('rule.wed') }}</option>
+								<option value="4">{{ lang_t('rule.thu') }}</option>
+								<option value="5">{{ lang_t('rule.fri') }}</option>
+								<option value="6">{{ lang_t('rule.sat') }}</option>
+								<option value="7">{{ lang_t('rule.sun') }}</option>
+								<option value="0">{{ lang_t('rule.every') }}</option>
+							</select>
+							<select v-model="sHour" class="time-select3">
+								<option v-for="(i,v) in 24" :key="i" :value="v">{{ stringConver(v) }}</option>
+							</select>
+							:
+							<select v-model="sMin" class="time-select3">
+								<option v-for="(i,v) in 60" :key="i" :value="v">{{ stringConver(v) }}</option>
+							</select>
+							-
+							<select v-model="eHour" class="time-select3">
+								<option v-for="(i,v) in 24" :key="i" :value="v">{{ stringConver(v) }}</option>
+							</select>
+							:
+							<select v-model="eMin" class="time-select3">
+								<option v-for="(i,v) in 60" :key="i" :value="v">{{ stringConver(v) }}</option>
+							</select>
+						</td>
+						<td><button :disabled="disable_addBtn" @click="addRule"><img src="/static/images/added.png" class="cursor" ></button></td>
+						<td></td>
+					</tr>
+					<tbody>
+					<tr v-for="(rule,v) in ruleList">
+						<td>
+							<input type="text" class="desc" v-model="editDesc[rule.idx-1]" v-verify="formRules" :data-name="'desc'+Number(rule.idx-1)" maxlength="20" v-if="edit[rule.idx-1]" @input="watchValue(rule.idx-1)">
+							<span v-else>{{ rule.desc }}</span>
+						</td>
+						<td>
+							<div v-if="edit[rule.idx-1]">
+								<select v-model="listWeek[rule.idx-1]" class="time-select2" @change="watchValue(rule.idx-1,'time')">
+									<option value="1">{{ lang_t('rule.mon') }}</option>
+									<option value="2">{{ lang_t('rule.tue') }}</option>
+									<option value="3">{{ lang_t('rule.wed') }}</option>
+									<option value="4">{{ lang_t('rule.thu') }}</option>
+									<option value="5">{{ lang_t('rule.fri') }}</option>
+									<option value="6">{{ lang_t('rule.sat') }}</option>
+									<option value="7">{{ lang_t('rule.sun') }}</option>
+									<option value="0">{{ lang_t('rule.every') }}</option>
+								</select>
+								<select v-model="editsHour[rule.idx-1]" class="time-select3" @change="watchValue(rule.idx-1,'time')">
+									<option v-for="(i,v) in 24" :key="i" :value="v">{{ stringConver(v) }}</option>
+								</select>
+								:
+								<select v-model="editsMin[rule.idx-1]" class="time-select3" @change="watchValue(rule.idx-1,'time')">
+									<option v-for="(i,v) in 60" :key="i" :value="v">{{ stringConver(v) }}</option>
+								</select>
+								-
+								<select v-model="editeHour[rule.idx-1]" class="time-select3" @change="watchValue(rule.idx-1,'time')">
+									<option v-for="(i,v) in 24" :key="i" :value="v">{{ stringConver(v) }}</option>
+								</select>
+								:
+								<select v-model="editeMin[rule.idx-1]" class="time-select3" @change="watchValue(rule.idx-1,'time')">
+									<option v-for="(i,v) in 60" :key="i" :value="v">{{ stringConver(v) }}</option>
+								</select>
+							</div>
+							<span v-else>{{ timeConver(rule) }}</span>
+						</td>
+						<td>
+							<img :src="operate[rule.idx-1]" class="cursor" @click="editFun(rule.idx-1)">
+							&nbsp;&nbsp;
+							<img src="/static/images/trash.png" class="cursor" @click="trashFun(rule.idx-1)">
+						</td>
+						<td>
+							<x-checkbox v-model="select[rule.idx-1]"></x-checkbox>
+						</td>
+					</tr>
+					<tr v-show="dataTotal==0">
+						<td colspan="12">{{ lang_t('common.no_data') }}</td>
+					</tr>
+					</tbody>
+				</table></td>
+			</tr>
+			<tr><td><x-page :total="dataTotal" @on-page="pageChange" :data="data"></x-page></td></tr>
+		</table>
+    </div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,mode:"0",selectall:!1,addShow:!1,dataTotal:0,select:[],data:[],edit:[],ruleList:[],operate:[],selectDate:[],addWeek:"1",listWeek:{},editsWeekDate:[],orgEditsWeekDate:[],editsHour:[],editsMin:[],editeWeek:[],editeHour:[],editeMin:[],desc:"",editDesc:[],editMac:[],state:!1,week:"0",sHour:"0",sMin:"0",eHour:"0",eMin:"0",wifiDualband:"0",disable_addBtn:!1,wifiActive:"0",masterRuleList:[],masterEnabled:!1}},watch:{select:function(){var e=0;for(var t in this.select)this.select[t]&&e++;e==this.select.length?this.selectall=!0:this.selectall=!1}},computed:{formRules:function(){var s=this;return{desc:function(e,t){var i=cs.commentstr(e);1==i||2==i?t(s.lang_t("rule.msg4")):0!=i&&99!=i||t()},mac:function(e,t){if(e){var i=cs.mac(e);1==i?t(s.lang_t("rule.msg17")):2==i?t(s.lang_t("rule.msg18")):3==i?t(s.lang_t("rule.msg19")):t()}else t(s.lang_t("rule.mac")+s.lang_t("rule.msg12"))}}}},created:function(){if(globalConfig.guestWifiSchSupport){var e=location.hash;this.wifiActive=""!=e?e.slice(e.length-1):cs.local(this.wifiActive)}this.wifiInit(this.wifiActive)},methods:{modeChange:function(e){this.wifiActive=e,cs.local(this.wifiActive,"href")},pageChange:function(e,t){this.ruleList=t},addRuleVal:function(){this.addShow=!0},selectAll:function(e){var t=!1;e&&(t=!0);var i=this.select.length;this.select=[];for(var s=0;s<i;s++)this.select[s]=t},changeselectDate:function(){var e=0;for(var t in this.selectDate)this.selectDate[t]&&e++;7==e?(this.selectdateall=!0,this.addWeekCss="box-on-dis"):(this.selectdateall=!1,this.addWeekCss="box")},selectDateAllBtn:function(e){if(1==this.selectdateall){this.addWeekCss="box";for(var t=0;t<7;t++)this.selectDate[t]=!1}else{this.addWeekCss="box-on-dis";for(t=0;t<7;t++)this.selectDate[t]=!0}},addRule:function(){var c=this;if(c.disable_addBtn=!0,c.dataTotal&&10<=c.dataTotal)return Cstool.Msg({content:this.lang_t("rule.msg30",[10])}),c.disable_addBtn=!1;if(Number(c.sHour)>Number(c.eHour))return Cstool.Msg({content:this.lang_t("rule.msg28"),title:""}),c.disable_addBtn=!1;if(Number(c.sHour)==Number(c.eHour)&&Number(c.sMin)>=Number(c.eMin))return Cstool.Msg({content:this.lang_t("rule.msg28"),title:""}),c.disable_addBtn=!1;var e=c.data,t=cs.time_to_sec(c.sHour,c.sMin),i=cs.time_to_sec(c.eHour,c.eMin);for(var s in e)if("0"==e[s].week||"0"==c.addWeek||c.addWeek==e[s].week){var n=cs.time_to_sec(e[s].sHour,e[s].sMinute);if(cs.time_to_sec(e[s].eHour,e[s].eMinute)<t||i<n){c.disable_addBtn=!1;continue}return Cstool.Msg({content:this.lang_t("rule.msg31"),title:""}),c.disable_addBtn=!1}Cstool.Verify(this.formRules,function(e){if(e||(c.disable_addBtn=!1),e){var t={};if(t.isGuest=c.wifiActive,t.enable=1==c.state?"1":"0",t.desc=c.desc,t.week=c.addWeek,t.sHour=String(c.sHour),t.sMinute=String(c.sMin),t.eHour=String(c.eHour),t.eMinute=String(c.eMin),(t.addEffect="1")==c.wifiActive){var i=t.week,s=60*t.sHour*60+60*t.sMinute,n=60*t.eHour*60+60*t.eMinute,r=!1;if(0<c.masterRuleList.length&&c.masterEnabled){for(var l in c.masterRuleList){var a=c.masterRuleList[l].week;if(0==a||i==a){var u=60*c.masterRuleList[l].sHour*60+60*c.masterRuleList[l].sMinute,o=60*c.masterRuleList[l].eHour*60+60*c.masterRuleList[l].eMinute;if(u<=s&&n<=o){r=!0;break}}}if(!r)return Cstool.Msg({content:c.lang_t("schedule.msg6"),title:""}),c.disable_addBtn=!1}}uiPost.setWiFiScheduleCfg(t,function(e){var t=15;e.wtime&&"0"!=e.wtime?(t=e.wtime,Cstool.Count(t,"js",function(){cs.local(c.wifiActive,"href")})):cs.local(c.wifiActive,"href")})}})},wifiInit:function(e){var i=this,t={isGuest:e};uiPost.getWiFiScheduleCfg(t,function(t){if(i.state="1"==t.enable,t.rule){if(i.ruleList=t.rule,"0"==e)i.masterEnabled="1"==t.enable,i.masterRuleList=t.rule;else{uiPost.getWiFiScheduleCfg({isGuest:"0"},function(e){t.rule&&(i.masterEnabled="1"==e.enable,i.masterRuleList=e.rule)})}i.dataTotal=i.ruleList.length,i.data=t.rule,i.tableInit(t.rule)}})},tableInit:function(e){for(var t in e)this.edit[t]=!1,this.select[t]=!1,this.operate[t]="/static/images/edit.png",this.editDesc[t]=e[t].desc,this.listWeek[t]=e[t].week,this.editsWeekDate[t]={},this.orgEditsWeekDate[t]={},this.editsHour[t]=String(Number(e[t].sHour)),this.editsMin[t]=String(Number(e[t].sMinute)),this.editeHour[t]=String(Number(e[t].eHour)),this.editeMin[t]=String(Number(e[t].eMinute))},timeConver:function(e){var t="",i=e.week;for(var s in i)"1"==i[s]?t+=this.lang_t("rule.mon")+",":"2"==i[s]?t+=this.lang_t("rule.tue")+",":"3"==i[s]?t+=this.lang_t("rule.wed")+",":"4"==i[s]?t+=this.lang_t("rule.thu")+",":"5"==i[s]?t+=this.lang_t("rule.fri")+",":"6"==i[s]?t+=this.lang_t("rule.sat")+",":"7"==i[s]?t+=this.lang_t("rule.sun")+",":"0"==i[s]&&(t+=this.lang_t("rule.every")+",");return t+=" "+(Number(e.sHour)<10?"0"+e.sHour:e.sHour)+":"+(Number(e.sMinute)<10?"0"+e.sMinute:e.sMinute)+"   --   "+(Number(e.eHour)<10?"0"+e.eHour:e.eHour)+":"+(Number(e.eMinute)<10?"0"+e.eMinute:e.eMinute)},editFun:function(e){"/static/images/edit.png"==this.operate[e]?this.edit[e]?(this.edit.splice(e,1),this.edit.splice(e,0,!1)):(this.edit.splice(e,1),this.edit.splice(e,0,!0)):this.modefyFun(e)},modefyFun:function(o){var c={},d=this;if(Number(d.editsHour[o])>Number(d.editeHour[o]))return Cstool.Msg({content:this.lang_t("rule.msg28"),title:""}),!1;if(Number(d.editsHour[o])==Number(d.editeHour[o])&&Number(d.editsMin[o])>=Number(d.editeMin[o]))return Cstool.Msg({content:this.lang_t("rule.msg28"),title:""}),!1;var e=d.data,t=cs.time_to_sec(d.editsHour[o],d.editsMin[o]),i=cs.time_to_sec(d.editeHour[o],d.editeMin[o]);for(var s in e){if(s==o&&s++,s==d.dataTotal)break;if(d.listWeek[o]==e[s].week){var n=cs.time_to_sec(e[s].sHour,e[s].sMinute);if(cs.time_to_sec(e[s].eHour,e[s].eMinute)<t||i<n)continue;return Cstool.Msg({content:this.lang_t("rule.msg32"),title:""}),!1}}Cstool.Verify(this.formRules,function(e){if(e){if(c.enable="1",c.idx=String(o+1),c.addEffect="2",c.isGuest=d.wifiActive,c.desc=d.editDesc[o],c.week=d.listWeek[o],c.sHour=String(d.editsHour[o]),c.sMinute=String(d.editsMin[o]),c.eHour=String(d.editeHour[o]),c.eMinute=String(d.editeMin[o]),"1"==d.wifiActive){var t=c.week,i=60*c.sHour*60+60*c.sMinute,s=60*c.eHour*60+60*c.eMinute,n=!1;if(0<d.masterRuleList.length&&d.masterEnabled){for(var r in d.masterRuleList){var l=d.masterRuleList[r].week;if(0==l||t==l){var a=60*d.masterRuleList[r].sHour*60+60*d.masterRuleList[r].sMinute,u=60*d.masterRuleList[r].eHour*60+60*d.masterRuleList[r].eMinute;if(a<=i&&s<=u){n=!0;break}}}if(!n)return Cstool.Msg({content:d.lang_t("schedule.msg6"),title:""}),!1}}uiPost.setWiFiScheduleCfg(c,function(e){var t=15;e.wtime&&"0"!=e.wtime?(t=e.wtime,Cstool.Count(t,"js",function(){cs.local(d.wifiActive,"href")})):cs.local(d.wifiActive,"href")})}},d.dataTotal,o)},trashFun:function(e){var i=this,t={};this.ruleList;if("all"!=e)t.enable="1",t[this.data[e].delRuleName]=String(e),Cstool.Msg({content:this.lang_t("rule.msg15"),type:"confirm",ok:function(){t.isGuest=i.wifiActive,uiPost.delWiFiScheduleCfg(t,function(e){var t=null;e.wtime&&"0"!=e.wtime&&(t=e.wtime),null==t?cs.local(i.wifiActive,"href"):Cstool.Count(t,"js",function(){cs.local(i.wifiActive,"href")})})}});else{var s=0;for(var n in this.select)this.select[n]&&(s++,t.enable="1",t[[this.data[n].delRuleName]]=String(n),Cstool.Msg({content:s==this.select.length?this.lang_t("rule.msg26"):this.lang_t("rule.msg15"),type:"confirm",ok:function(){t.isGuest=i.wifiActive,uiPost.delWiFiScheduleCfg(t,function(e){var t=null;e.wtime&&"0"!=e.wtime&&(t=e.wtime),null==t?cs.local(i.wifiActive,"href"):Cstool.Count(t,"js",function(){cs.local(i.wifiActive,"href")})})}}));if(0==s)return Cstool.Msg({content:this.lang_t("rule.msg14")}),!1}},watchValue:function(e,t){var i=this.data[e].sHour,s=this.data[e].sMinute,n=this.data[e].eHour,r=this.data[e].eMinute,l=this.data[e].week;this.editDesc[e]=this.editDesc[e].replace(/\s+/g,""),this.editsHour[e]!=String(Number(i))||this.editsMin[e]!=String(Number(s))||this.editeHour[e]!=String(Number(n))||this.editeMin[e]!=String(Number(r))||this.listWeek[e]!=String(Number(l))||this.editDesc[e]!=this.data[e].desc?"/static/images/edited.png"!=this.operate[e]&&(this.operate.splice(e,1),this.operate.splice(e,0,"/static/images/edited.png")):(this.operate.splice(e,1),this.operate.splice(e,0,"/static/images/edit.png"))},stringConver:function(e){return e<10?"0"+e:e},scheduleSate:function(e){var t=this,i={};i.wifiIdx=this.wifiActive,i.enable=e?"1":"0",i.isGuest=t.wifiActive,uiPost.setWiFiScheduleCfg(i,function(){cs.local(t.wifiActive,"href")})}}}</script><script src="/static/js/main.js"></script></body></html>

@@ -1,0 +1,63 @@
+{
+  "apStatus": "2303002",
+  "clientNum": "12",
+  "deviceName": "Controller-AA22",
+  "wanInfo": [{
+    "wanStatus": "2312003",
+    "wanDownloadSpeed": "798",
+    "wanUploadSpeed": "92"
+  }],
+  "wrlEn": "1",
+  "ssid": "ChinaNet-2.4G",
+  "wrlEn_5g": "1",
+  "ssid_5g": "ChinaNet-5G",
+  "doubleBand": "0",
+  "workMode": "ap",
+  "meshList": [
+    {
+      "deviceName": "Agent-67DB",
+      "sn": "in",
+      "ip": "192.168.0.100",
+      "color": "red",
+      "mac": "C8:3A:35:22:12:12",
+      "line": "0"
+    },
+    {
+      "deviceName": "Agent-34AC",
+      "sn": "consectetur et laborum Excepteur sunt",
+      "ip": "192.168.0.101",
+      "color": "yellow",
+      "mac": "C8:3A:35:22:12:13",
+      "line": "2"
+    },
+    {
+      "deviceName": "Agent-EA89",
+      "sn": "in",
+      "ip": "192.168.0.102",
+      "color": "green",
+      "mac": "C8:3A:35:22:12:54",
+      "line": "1"
+    },
+    {
+      "deviceName": "Agent-87AE",
+      "sn": "consectetur et laborum Excepteur sunt",
+      "ip": "192.168.0.103",
+      "color": "green",
+      "mac": "C8:3A:35:22:12:AD",
+      "line": "1"
+    },
+    {
+      "deviceName": "Agent-AD13",
+      "sn": "sit mollit labore",
+      "ip": "192.168.0.104",
+      "color": "red",
+      "mac": "C8:3A:35:22:12:33",
+      "line": "0"
+    }
+  ],
+  "nodeType": "controller",
+  "upperDeviceName": "controller-xxxx",
+  "upperDeviceMac": "C8:3A:35:99:11:11",
+  "upperLine": "0",
+  "deviceMac": "C8:3A:35:11:22:33"
+}

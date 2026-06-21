@@ -1,0 +1,363 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"><style>small{width:auto;margin-left:5px;position:relative;top:0;left:0;line-height:25px;display:none}.tips-box{display:flex}.tips{width:15px;height:15px;border-radius:50%;background-color:#2ea8dc;color:#fff;line-height:15px;text-align:center;font-weight:700;margin-left:5px;margin-top:5px;cursor:pointer}</style></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+        <!--子菜单-->
+        <adv-child-menu childType="vpn"></adv-child-menu>
+        <div class="advance-box">
+            <x-help :text="lang_t('net_strategy.help')"></x-help>
+            <br><br>
+            <div class="fun-box">
+				<table class="table">
+					<tr>
+						<td class="btn-tab-m">
+						    <a @click="modeChange('0')" :class="['btn-tab',modeIdx == '0' ? 'btn-tab-active' : '']">{{lang_t('menu.net_strategy')}}</a>
+						    <a @click="modeChange('1')" :class="['btn-tab',modeIdx == '1' ? 'btn-tab-active' : '']">{{lang_t('menu.node_info')}}</a>
+						</td>
+					</tr>       
+				</table>
+				<br />
+				<div v-show="modeIdx=='0'">
+					<table class="table" style="width: 100%;">
+						<tbody>
+						<tr>
+							<td class="fun-left">{{ lang_t('net_strategy.net_strategy') }}</td>
+							<td>
+								<div class="tips-box">
+									<select v-model="enabled" @change="stateChange()">
+										<option value="0">{{ lang_t('net_strategy.disabled') }}</option>
+										<option value="1">{{ lang_t('net_strategy.master_mode') }}</option>
+										<option value="2">{{ lang_t('net_strategy.slave_mode') }}</option>
+									</select>
+									<div class="tips">!</div>
+									<small>{{lang_t('net_strategy.tips1')}}</small>
+								</div>
+								<!--<x-switch v-model="enabled" @change="stateChange()"></x-switch>-->
+							</td>
+						</tr>
+						<tr v-show="'0' != enabled">
+							<td class="fun-left">{{ lang_t('node_info.device_name') }}</td>
+							<td>
+								<div class="tips-box">
+									<input type="text" v-model="deviceName" v-verify="formRules1" data-name="deviceName" maxlength="20">
+									<div class="tips">!</div>
+									<small>{{lang_t('net_strategy.tips2')}}</small>
+								</div>
+							</td>
+						</tr>
+						<tr v-show="'0' != enabled">
+							<td class="fun-left">{{ lang_t('node_info.net_id') }}</td>
+							<td>
+								<div class="tips-box">
+									<input type="text" v-model="netId" :readonly="'1' == enabled" maxlength="10" v-verify="formRules1" data-name="netid">
+									<div class="tips">!</div>
+									<small>{{lang_t('net_strategy.tips3')}}</small>
+								</div>
+							</td>
+						</tr>
+						<tr v-show="'0' != enabled">
+							<td class="fun-left">{{ lang_t('net_strategy.net_password') }}</td>
+							<td>
+								<span v-show="'2' == enabled || editPwdFlag">
+									<input type="text" v-model="password" maxlength="32" v-verify="formRules1" data-name="password">
+									<img src="/static/images/edit.png" :title="lang_t('net_strategy.modify')" class="cursor" @click="editPwd()" v-show="'2' != enabled">
+								</span>
+								<span v-show="'1' == enabled">
+									<span style="color: #2ea8dc;cursor: pointer;" @click="showPwdList()">{{ lang_t('net_strategy.show_info') }}</span>
+									<span>{{ lang_t('net_strategy.add_max_limit1') }}<span style="padding: 0 5px;color: #2EA8DC;">{{ maxLimitNum }}</span>{{ lang_t('net_strategy.add_max_limit2') }}</span>
+									<!--<span v-show="'hide' == showPwdFlag">-->
+										<!--********-->
+										<!--<img src="/static/images/eye.png" class="cursor" @click="showPwd('show')">-->
+									<!--</span>-->
+									<!--<span v-show="'show' == showPwdFlag">-->
+										 <!--{{ password }}-->
+										<!--<img  src="/static/images/ueye.png" class="cursor" @click="showPwd('hide')">-->
+									<!--</span>-->
+									<!--<img src="/static/images/edit.png" :title="lang_t('net_strategy.modify')" class="cursor" @click="editPwd()">-->
+								</span>
+							</td>
+						</tr>
+						<tr v-show="'1' == enabled">
+							<td class="fun-left">{{ lang_t('net_strategy.port_range') }}</td>
+							<td>
+								<input type="text" v-model="portStart" class="port" maxlength="5">
+								-
+								<input type="text" v-model="portEnd" class="port" maxlength="5" v-verify="formRules1" data-name="port">
+							</td>
+						</tr>
+						<tr v-show="false && '1' == enabled">
+							<td class="fun-left">{{ lang_t('net_strategy.declare_wan_subnet') }}</td>
+							<td>
+								<x-switch v-model="declareWan"></x-switch>
+							</td>
+						</tr>
+						<tr v-show="false && '1' == enabled">
+							<td class="fun-left">{{ lang_t('net_strategy.declare_lan_subnet') }}</td>
+							<td>
+								<x-switch v-model="declareLan"></x-switch>
+							</td>
+						</tr>
+						<tr v-show="false && '0' != enabled">
+							<td class="fun-left">{{ lang_t('net_strategy.receive_declare') }}</td>
+							<td>
+								<x-switch v-model="receiveDeclare"></x-switch>
+							</td>
+						</tr>
+						<tr v-show="'2' == enabled">
+							<td class="fun-left">{{ lang_t('net_strategy.net_connect_type') }}</td>
+							<td v-show="'0' != connectType">
+								{{ '1' == connectType ? "P2P" : lang_t('net_strategy.transfer') }}
+							</td>
+							<td v-show="'0' == connectType">{{ lang_t('net_strategy.unreachable') }}</td>
+						</tr>
+						<tr v-show="'2' == enabled">
+							<td class="fun-left">{{ lang_t('net_strategy.connect_status') }}</td>
+							<td>
+								<span v-show="'5' == status" :title="lang_t('net_strategy.subnet_conflict')+ warning" :style="{color:statusDesc[status].color}">{{ statusDesc[status].desc }}</span>
+								<span v-show="'5' != status" :style="{color:statusDesc[status].color}">{{ statusDesc[status].desc }}</span>
+								<span v-show="'2' == typeMode" style="color: #2EA8DC;cursor: pointer;padding: 0 10px;" @click="reConnect">{{ '4' == status || '5' == status ? lang_t('net_strategy.disconnect') : lang_t('net_strategy.reconnect') }}</span>
+							</td>
+						</tr>
+						<tr v-show="'2' == enabled && ('5' == status || '4' == status)">
+							<td class="fun-left">{{ lang_t('net_strategy.connect_time') }}</td>
+							<td>
+								{{ connectTime }}
+							</td>
+						</tr>
+						<tr v-show="'0' != enabled">
+							<td class="fun-left">
+								<span>{{ lang_t('net_strategy.advance_set') }}</span>
+							</td>
+							<td>
+								<x-switch v-model="advSetFlag"></x-switch>
+							</td>
+						</tr>
+						<tr v-show="advSetFlag && '0' != enabled">
+							<td class="fun-left">{{ lang_t('net_strategy.default_route_node') }}</td>
+							<td>
+								<div class="tips-box">
+									<input type="text" v-model="defaultRouteNode" v-verify="formRules1" data-name="defaultRouteNode" maxlength="15">
+									<div class="tips">!</div>
+									<small>{{ lang_t('net_strategy.tips5') }}</small>
+								</div>
+							</td>
+						</tr>
+						<tr v-show="'0' != enabled">
+							<td class="fun-left"></td>
+							<td>
+								<button type="button" class="btn" @click="setBasic">{{ lang_t('common.apply') }}</button>
+							</td>
+						</tr>
+						</tbody>
+					</table>
+					<div class="tips-box"  v-show="'0' != enabled">
+						<h2 style="display: inline-block;">{{ lang_t('net_strategy.custom_strategy') }}</h2>
+						<div class="tips">!</div>
+						<small>({{ lang_t('net_strategy.tips6') }})</small>
+					</div>
+					<table v-show="'0' != enabled">
+						<tr><td align="right">
+							<x-icon type="add" cursor="pointer" @click="addRuleVal">{{ lang_t('common.add') }}</x-icon>
+							<x-icon type="del" cursor="pointer" @click="trashAllFun()">{{ lang_t('common.delete') }}</x-icon>
+						</td></tr>
+						<tr><td height="5"></td></tr>
+						<tr>
+							<td><table class="t_table3 table-bordered table-striped" style="width: 800px;">
+								<thead>
+								<tr>
+									<th>{{ lang_t('net_strategy.type') }}</th>
+									<th>{{ lang_t('net_strategy.ip_network') }}</th>
+									<th>{{ lang_t('net_strategy.nexthop') }}</th>
+									<th>{{ lang_t('rule.description') }}</th>
+									<th>{{ lang_t('rule.operate') }}</th>
+									<th>{{ lang_t('common.select') }}<x-checkbox v-model="selectall" @change="selectAll"></x-checkbox></th>
+								</tr>
+								</thead>
+								<tbody>
+								<tr v-show="addShow">
+									<td>
+										<select v-model="type" style="min-width: 90px;max-width: 100px;">
+											<option value="1">{{ lang_t('net_strategy.policy_routing') }}</option>
+											<option value="2">{{ lang_t('net_strategy.initiative_declare') }}</option>
+										</select>
+									</td>
+									<td>
+										<input type="text" v-model="networkIp" v-verify="formRules" data-name="networkIp" maxlength="15" class="ip">
+										<span>/</span>
+										<input class="port" type="text" v-model="networkMask" v-verify="formRules" data-name="networkMask">
+									</td>
+									<td>
+										<div v-show="'1' == type" :style="{width: 'IP' == nexthop ? '240px;':'142px;' }" >
+											<select v-model="nexthop" data-style="btn-default" class="protocol-select">
+												<option value="WAN">WAN</option>
+												<option value="IP">IP</option>
+												<option value="P2P" v-if="false">P2P</option>
+											</select>
+											<input class="ip" v-show="'IP' == nexthop" type="text" v-model="nexthop_ip" v-verify="formRules" data-name="nexthopIp" maxlength="15" :placeholder="lang_t('net_strategy.ip_address')"/>
+										</div>
+										<span v-show="'2' == type">*</span>
+									</td>
+									<td><input type="text" class="desc" v-model="comment" v-verify="formRules" data-name="comment" maxlength="10"></td>
+									<td><button :disabled="disable_addBtn" @click="addRule"><img src="/static/images/added.png" :title="lang_t('common.add')" class="cursor"></button></td>
+									<td></td>
+								</tr>
+								<tr v-for="(item,idx) in strategyData">
+									<td>
+										<select v-if="idx == editIdx" v-model="editItemInfo.type" style="min-width: 90px;max-width: 100px;">
+											<option value="1">{{ lang_t('net_strategy.policy_routing') }}</option>
+											<option value="2">{{ lang_t('net_strategy.initiative_declare') }}</option>
+										</select>
+										<span v-else>{{ '1' ==  item.type ? lang_t('net_strategy.policy_routing') : lang_t('net_strategy.initiative_declare') }}</span>
+									</td>
+									<td>
+										<div v-if="idx == editIdx">
+											<input type="text" class="ip" v-model="editItemInfo.networkIp" v-verify="formRules2" data-name="networkIp" maxlength="15">
+											<!--<input type="text" v-model="networkIp" v-verify="formRules" data-name="networkIp" maxlength="15" class="ip">-->
+											<span>/</span>
+											<input class="port" type="text" v-model="editItemInfo.networkMask" v-verify="formRules2" data-name="networkMask">
+										</div>
+										<span v-else>{{ item.network }}</span>
+									</td>
+									<td v-if="idx == editIdx">
+										<div v-show="'1' == editItemInfo.type" :style="{width: 'IP' == editItemInfo.nexthop ? '240px;':'142px;' }" >
+											<select v-model="editItemInfo.nexthop" data-style="btn-default" class="protocol-select">
+												<option value="WAN">WAN</option>
+												<option value="IP">IP</option>
+												<option value="P2P" v-if="false">P2P</option>
+											</select>
+											<input class="ip" v-show="'IP' == editItemInfo.nexthop" type="text" v-model="editItemInfo.nexthop_ip" v-verify="formRules2" data-name="nexthopIp" maxlength="15" :placeholder="lang_t('net_strategy.ip_address')"/>
+										</div>
+										<span v-show="'2' == editItemInfo.type">*</span>
+									</td>
+									<td v-else>
+										<span>{{ item.nexthop }}</span>
+									</td>
+									<td>
+										<input v-if="idx == editIdx" type="text" class="desc" v-model="editItemInfo.comment" v-verify="formRules2" data-name="comment" maxlength="10">
+										<span v-else>{{ item.comment }}</span>
+									</td>
+									<td>
+										<img :src="idx != editIdx ? '/static/images/edit.png' : '/static/images/edited.png'" :title="lang_t('rule.edit')" class="cursor" @click="editFun(item,idx)">
+										&nbsp;&nbsp;
+										<img src="/static/images/trash.png" :title="lang_t('common.delete')" class="cursor" @click="trashFun(item,idx)">
+									</td>
+									<td>
+										<x-checkbox v-model="item.selected" @change="watchSelect"></x-checkbox>
+									</td>
+								</tr>
+								<tr v-show="strategyData.length==0">
+									<td colspan="12">{{ lang_t('common.no_data') }}</td>
+								</tr>
+								</tbody>
+							</table></td>
+						</tr>
+						<!--<tr><td><x-page :total="dataTotal" @on-page="pageChange" :data="data"></x-page></td></tr>-->
+					</table>
+				</div>
+				<div v-show="modeIdx=='1'">
+					<table class="t_table3 table-bordered table-striped">
+					    <thead>
+					    <tr>
+					        <th>ID</th>
+					        <th>{{ lang_t('node_info.device_name') }}</th>
+					        <th v-show="false">{{ lang_t('node_info.net_id') }}</th>
+					        <th>{{ lang_t('node_info.device_id') }}</th>
+					        <th>{{ lang_t('node_info.mac') }}</th>
+					        <th>{{ lang_t('node_info.ip') }}</th>
+					        <th>{{ lang_t('node_info.status') }}</th>
+					    </tr>
+					    </thead>
+					    <tbody  v-show="'1' == typeMode">
+					    <tr v-for="(item,idx) in clientData">
+					        <td>
+					           <span>{{ idx+1 }}</span>
+					        </td>
+					        <td>
+					            <span>{{ item.deviceName }}</span>
+					            <span v-if="'10.100.100.1' == item.ip" style="color: #008000;">{{ lang_t('node_info.master') }}</span>
+					        </td>
+					        <td v-show="false">
+					            <span>{{ item.netId }}</span>
+					        </td>
+					        <td>
+					            <span>{{ item.deviceId }}</span>
+					        </td>
+					        <td>
+					            <span>{{ item.mac }}</span>
+					        </td>
+					        <td>
+					            <span>{{ item.ip }}</span>
+					        </td>
+					        <td><span :style="'color:'+infoStatusDesc[item.status].color">{{infoStatusDesc[item.status].desc}}</span></td>
+					    </tr>
+					    <tr v-show="clientData.length==0">
+					        <td colspan="12">{{ lang_t('common.no_data') }}</td>
+					    </tr>
+					    </tbody>
+					    <tbody  v-show="'1' != typeMode">
+					    <tr v-for="(item,idx) in slaveClientData">
+					        <td>
+					            <span>{{ idx+1 }}</span>
+					        </td>
+					        <td>
+					            <span>{{ item.deviceName }}</span>
+					            <span v-if="'10.100.100.1' == item.ip" style="color: #008000;">{{ lang_t('node_info.master') }}</span>
+					        </td>
+					        <td v-show="false">
+					            <span>{{ item.netId }}</span>
+					        </td>
+					        <td>
+					            <span>{{ item.deviceId }}</span>
+					        </td>
+					        <td>
+					            <span>{{ item.mac }}</span>
+					        </td>
+					        <td>
+					            <span>{{ item.ip }}</span>
+					        </td>
+					        <td><span :style="'color:'+infoStatusDesc[item.status].color">{{infoStatusDesc[item.status].desc}}</span></td>
+					    </tr>
+					    <tr v-show="slaveClientData.length==0">
+					        <td colspan="12">{{ lang_t('common.no_data') }}</td>
+					    </tr>
+					    </tbody>
+					</table>
+				</div>
+            </div>
+			
+            <x-modal v-model="modelShow" :title="lang_t('net_strategy.net_pwd_list')" :ok_text="lang_t('net_strategy.add')" type="confirm" @on-ok="addPwd">
+            	<div style="background-color: #c6eeff;padding: 2px 4px;border-radius: 4px;margin-bottom: 10px;border: 1px #2ea8dc solid;">{{lang_t('net_strategy.tips4')}}</div>
+				<table class="t_table3 table-bordered table-striped">
+				    <thead>
+				        <tr>
+				            <th>ID</th>
+				            <th>{{ lang_t('net_strategy.net_password') }}</th>
+				            <th>{{ lang_t('net_strategy.device_id') }}</th>
+				            <th>{{ lang_t('net_strategy.operation') }}</th>
+				        </tr>
+				
+				    </thead>
+				    <tbody>
+				    <tr v-for="(item,idx) in pwdListData">
+				        <td>{{ idx+1 }}</td>
+				        <td>{{ item.password }}</td>
+				        <td>{{ item.devId }}</td>
+				        <td> <img src="/static/images/trash.png" :title="lang_t('common.delete')" class="cursor" @click="delPwd(item,idx)"></td>
+				    </tr>
+				    <tr v-show="pwdListData.length==0">
+				        <td colspan="4">{{ lang_t('common.no_data') }}</td>
+				    </tr>
+				    </tbody>
+				</table>
+			</x-modal>
+			<x-modal v-model="addPwdModel" :title="lang_t('net_strategy.add_net_pwd')" type="confirm" @on-ok="doAddPwd">
+				<table class="table">
+				    <tbody>
+				    <tr>
+				        <td class="fun-left">{{ lang_t('net_strategy.net_password') }}</td>
+				        <td>
+				            <input type="password" v-pass v-model="netPwd" maxlength="32" v-verify="formRules3" data-name="netPwd">
+				        </td>
+				    </tr>
+				    </tbody>
+				</table>
+			</x-modal>
+        </div>
+    </div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,enabled:"0",typeMode:"",orgNetId:"",deviceName:"",netId:"",netIdTmp:"",pwdTmp:"",editPwdFlag:!1,password:"",portStart:"",portEnd:"",declareWan:!1,declareLan:!1,receiveDeclare:!1,defaultRouteNode:"",advSetFlag:!1,lanIp:"",strategyData:[],connectType:"0",status:"0",warning:"",connectTime:"",networkIp:"",networkMask:"24",type:"1",nexthop:"WAN",nexthop_ip:"",comment:"",editIdx:"-1",editItemInfo:{networkIp:"",networkMask:"24",type:"1",nexthop:"WAN",nexthop_ip:"",comment:""},selectNum:0,disable_addBtn:!1,addShow:!1,selectall:!1,descLen:globalConfig.descLen,showPwdFlag:"hide",pwdListData:[],modelShow:!1,addPwdModel:!1,netPwd:"",maxLimitNum:"1",modeIdx:"0",clientData:[],slaveClientData:[],descLen:globalConfig.descLen,editIdx:"-1",editType:"",deviceName:"",netId:"",typeMode:"0"}},watch:{},computed:{statusDesc:function(t){var e=this;return[{desc:e.lang_t("net_strategy.offline"),color:"#ff0000"},{desc:e.lang_t("net_strategy.connecting"),color:"#008000"},{desc:e.lang_t("net_strategy.net_id_error"),color:"#ff0000"},{desc:e.lang_t("net_strategy.net_fail"),color:"#ff0000"},{desc:e.lang_t("net_strategy.connected"),color:"#008000"},{desc:e.lang_t("net_strategy.connected_waring"),color:"#FF9800"}]},infoStatusDesc:function(){return[{desc:this.lang_t("node_info.offline"),color:"#ff0000;"},{desc:this.lang_t("node_info.online"),color:"#009900;"},{desc:this.lang_t("node_info.oneself"),color:"#444;"}]},formRules:function(){var a=this;return{networkIp:function(t,e){var n=cs.ip(t);0==t.length?e(a.lang_t("net_strategy.msg6")):99!=n&&4!=n?e(a.lang_t("net_strategy.msg7")):e()},networkMask:function(t,e){var n=cs.num(t);"0"==t.length?e(a.lang_t("net_strategy.msg8")):99!=n?e(a.lang_t("net_strategy.msg9")):e()},nexthopIp:function(t,e){if("IP"==a.nexthop){var n=cs.ip(t);"0"==t.length?e(a.lang_t("net_strategy.msg10")):99!=n?e(a.lang_t("net_strategy.msg11")):e()}else e()},comment:function(t,e){var n=cs.commentstr(t);1==n||2==n?e(a.lang_t("rule.msg4")):0!=n&&99!=n||e()}}},formRules1:function(){var o=this;return{netid:function(t,e){/^[0-9a-fA-F]{10}$/.test(t)?e():e(o.lang_t("node_info.msg1"))},password:function(t,e){"2"==o.enabled?/^[0-9a-zA-Z]{4,32}$/.test(t)?e():e(o.lang_t("net_strategy.msg12")):e()},deviceName:function(t,e){var n=cs.commentstr(t);1==n||2==n?e(o.lang_t("net_strategy.msg14")):0!=n&&99!=n||e()},port:function(t,e){if("1"==o.enabled){var n=cs.num_range(o.portStart,1,65535),a=cs.num_range(o.portEnd,1,65535);99!=n||99!=a?e(o.lang_t("net_strategy.msg15")):Number(o.portStart)>Number(o.portEnd)?e(o.lang_t("net_strategy.msg16")):e()}else e()},defaultRouteNode:function(t,e){/^(?:(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))\.){3}(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))$/.test(t)?e():e(o.lang_t("net_strategy.default_route_node")+o.lang_t("network.msg2"))}}},formRules2:function(){var a=this;return{networkIp:function(t,e){var n=cs.ip(t);0==t.length?e(a.lang_t("net_strategy.msg6")):99!=n&&4!=n?e(a.lang_t("net_strategy.msg7")):e()},networkMask:function(t,e){var n=cs.num(t);"0"==t.length?e(a.lang_t("net_strategy.msg8")):99!=n?e(a.lang_t("net_strategy.msg9")):e()},nexthopIp:function(t,e){if("IP"==a.editItemInfo.nexthop){var n=cs.ip(t);"0"==t.length?e(a.lang_t("net_strategy.msg10")):99!=n?e(a.lang_t("net_strategy.msg11")):e()}else e()},comment:function(t,e){var n=cs.commentstr(t);1==n||2==n?e(a.lang_t("rule.msg4")):0!=n&&99!=n||e()}}},formRules3:function(){var n=this;return{netPwd:function(t,e){/^[0-9a-zA-Z]{4,32}$/.test(t)?e():e(n.lang_t("net_strategy.msg12"))}}}},created:function(){this.modeChange(cs.local(this.modeIdx))},mounted:function(){for(var t=$(".tips-box"),e=0;e<t.length;e++)this.addMorterTips(t[e])},methods:{addMorterTips:function(t){var e=$(t).find("small")[0],n=$(t).find(".tips")[0];$(n).on("click",function(){var t="block"==$(e).css("display")?"none":"block";$(e).css("display",t)})},strategyInit:function(){var n=this;uiPost.getNetStrategyCfg(function(t){for(var e in n.enabled=n.typeMode=t.enabled,n.orgNetId=t.orgNetId,n.netIdTmp=t.netId,n.netId="1"==t.enabled?t.orgNetId:t.netId,n.pwdTmp=n.password=t.password,n.deviceName=t.deviceName,n.declareWan="1"==t.declareWan,n.declareLan="1"==t.declareLan,n.receiveDeclare="1"==t.receiveDeclare,n.defaultRouteNode=t.defaultRouteNode,n.advSetFlag="1"==t.advSetFlag,n.lanIp=t.lanIp,n.maxLimitNum=t.maxLimitNum,n.portStart=t.portStart,n.portEnd=t.portEnd,n.strategyData=t.rule,n.strategyData)n.strategyData[e].selected=!1;"2"==t.enabled&&(n.getNetStatus(),setInterval(function(){"1"!=n.modeIdx&&"2"==t.enabled&&n.getNetStatus()},5e3))})},nodeInfoInit:function(){var n=this;uiPost.getNetStrategyCfg(function(t){n.typeMode=t.enabled}),uiPost.getClientsInfo(function(t){for(var e in n.clientData=t,n.slaveClientData=[],n.clientData)"10.100.100.1"!=n.clientData[e].ip&&"2"!=n.clientData[e].status||n.slaveClientData.push(n.clientData[e])})},modeChange:function(t){"0"==(this.modeIdx=t)?this.strategyInit():this.nodeInfoInit()},reConnect:function(){var t={};"4"==this.status||"5"==this.status?t.enabled="0":t.enabled="1",uiPost.setNetStrategyReconnect(t,function(t){var e=1;t&&(t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href}))})},delPwd:function(e,n){var a=this;Cstool.Msg({content:this.lang_t("rule.msg15"),type:"confirm",ok:function(){var t={};t[e.delRuleName]=String(n),t.password=e.password,t.devId=e.devId,a.modelShow=!1,uiPost.delNetStrategyPwdCfg(t,function(t){var e=1;t&&(t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href}))})}})},doAddPwd:function(){var a=this;Cstool.Verify(this.formRules3,function(t){if(t){if(a.pwdListData.length>=a.maxLimitNum)return Cstool.Msg({content:a.lang_t("net_strategy.msg17")}),!1;for(var e in a.pwdListData)if(a.pwdListData[e].password==a.netPwd)return Cstool.Msg({content:a.lang_t("net_strategy.msg18")}),!1;var n={};n.password=a.netPwd,uiPost.setNetStrategyPwdCfg(n,function(t){var e=1;t?(t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){a.addPwdModel=!1})):a.addPwdModel=!1})}else a.addPwdModel=!0})},addPwd:function(){this.modelShow=!1,this.netPwd="",this.addPwdModel=!0},closeFun:function(t){this[t]=!1},showPwdList:function(){var e=this;e.modelShow=!0,uiPost.getNetStrategyPwdCfg(function(t){e.pwdListData=t})},getNetStatus:function(){var e=this;uiPost.getNetStrategyStatus(function(t){t&&(e.connectType=t.type,e.status=t.status,e.warning=t.warning,e.connectTime=cs.formatDate(t.connectTime,"yyyy-MM-d hh:mm:ss"))})},editPwd:function(){this.editPwdFlag=!this.editPwdFlag},showPwd:function(t){this.showPwdFlag=t},watchSelect:function(t){var e=this;t?e.selectNum++:e.selectNum--,e.selectall=e.selectNum==e.strategyData.length},setBasic:function(){var n=this;Cstool.Verify(this.formRules1,function(t){if(t||(n.disable_addBtn=!1),t){var e={};"1"==n.enabled?n.password!=n.pwdTmp&&(e.password=n.password):(e.netId=n.netId,e.password=n.password),e.addFlag="0",e.enabled=n.enabled,e.deviceName=n.deviceName,"1"==e.enabled?(e.declareWan="1",e.declareLan="1",e.receiveDeclare="0",e.portStart=String(Number(n.portStart)),e.portEnd=String(Number(n.portEnd))):(e.declareWan="0",e.declareLan="0",e.receiveDeclare="1"),e.advSetFlag=n.advSetFlag?"1":"0","1"==e.advSetFlag&&(e.defaultRouteNode=n.defaultRouteNode),uiPost.setNetStrategyCfg(e,function(t){var e=1;t&&(t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href}))})}})},editFun:function(a,t){var o=this;if(o.editIdx==t)Cstool.Verify(this.formRules,function(t){if(t||(o.disable_addBtn=!1),t){o.editIdx="-1";var e={};for(var n in e.idx=a.idx,e.addFlag="2",e.network=o.editItemInfo.networkIp+"/"+o.editItemInfo.networkMask,e.type=o.editItemInfo.type,e.nexthop="IP"==o.editItemInfo.nexthop?o.editItemInfo.nexthop_ip:o.editItemInfo.nexthop,e.comment=o.editItemInfo.comment,o.strategyData)if(e.idx!=o.strategyData[n].idx){if(e.network==o.strategyData[n].network&&e.nexthop==o.strategyData[n].nexthop)return Cstool.Msg({content:o.lang_t("net_strategy.msg13"),title:""}),!1;if("2"==e.type&&e.network==o.strategyData[n].network)return Cstool.Msg({content:o.lang_t("net_strategy.msg13"),title:""}),!1}uiPost.setNetStrategyCfg(e,function(t){var e=1;t&&(t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href}))}),"0"==o.typeMode&&((e={addFlag:"0"}).enabled=o.enabled,uiPost.setNetStrategyCfg(e))}});else{o.editIdx=t,o.editItemInfo.networkIp=a.network.split("/")[0],o.editItemInfo.networkMask=a.network.split("/")[1];/^(?:(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))\.){3}(?:25[0-5]|2[0-4]\d|((1\d{2})|([1-9]?\d)))$/.test(a.nexthop)?(o.editItemInfo.nexthop="IP",o.editItemInfo.nexthop_ip=a.nexthop):o.editItemInfo.nexthop=a.nexthop,o.editItemInfo.type=a.type,o.editItemInfo.comment=a.comment}},trashAllFun:function(){var t=0,e={};for(var n in this.strategyData)this.strategyData[n].selected&&(t++,e[[this.strategyData[n].delRuleName]]=String(n),Cstool.Msg({content:t==this.strategyData.length?this.lang_t("rule.msg26"):this.lang_t("rule.msg15"),type:"confirm",ok:function(){uiPost.delNetStrategyCfg(e,function(t){var e=1;t&&(t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href}))})}}));if(0==t)return Cstool.Msg({content:this.lang_t("rule.msg14")}),!1},trashFun:function(t,e){var n={};n[t.delRuleName]=String(e),Cstool.Msg({content:this.lang_t("rule.msg15"),type:"confirm",ok:function(){uiPost.delNetStrategyCfg(n,function(t){var e=1;t&&(t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href}))})}})},addRule:function(){var a=this;Cstool.Verify(this.formRules,function(t){if(t||(a.disable_addBtn=!1),t){a.addShow=!0;var e={addFlag:"1"};for(var n in e.network=a.networkIp+"/"+a.networkMask,e.type=a.type,e.nexthop="IP"==a.nexthop?a.nexthop_ip:a.nexthop,e.comment=a.comment,a.strategyData){if(e.network==a.strategyData[n].network&&e.nexthop==a.strategyData[n].nexthop)return Cstool.Msg({content:a.lang_t("net_strategy.msg13"),title:""}),!1;if("2"==e.type&&e.network==a.strategyData[n].network)return Cstool.Msg({content:a.lang_t("net_strategy.msg13"),title:""}),!1}uiPost.setNetStrategyCfg(e,function(t){var e=1;t&&(t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href}))}),"0"==a.typeMode&&((e={addFlag:"0"}).enabled=a.enabled,uiPost.setNetStrategyCfg(e))}})},addRuleVal:function(){this.addShow=!0},stateChange:function(){var t=this;if("1"==t.enabled?t.netId=t.orgNetId:"1"==t.typeMode?t.netId="":t.netId=t.netIdTmp,"0"==t.enabled){var e={addFlag:"0"};e.enabled=t.enabled,uiPost.setNetStrategyCfg(e,function(t){var e=1;t&&(t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.applyLoad(e,function(){location.href=location.href}))})}},selectAll:function(t){for(var e in this.selectall=t,this.selectNum=0,this.strategyData)this.strategyData[e].selected=this.selectall,this.selectall&&this.selectNum++}}}</script><script src="/static/js/main.js"></script></body></html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"><style>.disable-class{background-color:#f5f5f5}.input-group-addon{padding:6px 12px;font-weight:400;line-height:1;color:#555;text-align:center;background-color:#eee;border:1px solid #ccc;border-radius:3px},.input-group{display:inline-table;vertical-align:middle;width:auto;margin-left:5px;position:relative;z-index:2;float:left;margin-bottom:0}</style></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <!--子菜单-->
+  <adv-child-menu childType="network"></adv-child-menu>   
+  <div class="advance-box">
+  	<x-help :text="lang_t('iptv.help')"></x-help>
+  	<br><br>
+	<div class="fun-box">
+	  <table class="table">                     
+	  	<tbody>
+		  <tr>
+  		  <td class="fun-left">{{ lang_t('iptv.igmp_proxy') }}</td>
+  		  <td>
+        <x-checkbox v-model="mrEnable"></x-checkbox>
+  		  </td>
+  	  </tr>
+  	  <tr>
+  		  <td class="fun-left">{{ lang_t('iptv.igmp_snooping') }}</td>
+  		  <td>
+        <x-checkbox v-model="etherIgmp"></x-checkbox>
+  		  </td>
+	  	</tr>
+      <tr>
+        <td class="fun-left">{{ lang_t('iptv.igmp_version') }}</td>
+        <td>
+          <select class="select3 select-drop" v-model="mrQleave" >
+            <option value="0">{{ lang_t('iptv_bak.no') }}</option>
+            <option value="1" v-if="false">V1</option>
+            <option value="2">V2</option>
+			<option value="3">V3</option>
+          </select>
+        </td>
+      </tr>
+	  <tr>
+	    <td class="fun-left">{{ lang_t('iptv.state') }}</td>
+	    <td>
+	   	<x-switch v-model="iptvEnabled"></x-switch>
+	    </td>
+	  </tr>
+      <tr v-show="iptvEnabled">
+        <td class="fun-left">{{ lang_t('iptv.mode') }}</td>
+        <td>
+          <select v-model="iptvVer" @change="modeChangeFun">
+            <option v-for="(i,v) in iptvmodeOption" :value="i.value" :key="v">{{ i.option }}</option>
+          </select>
+        </td>
+      </tr>
+    </tbody>
+    <tbody id="fun-set-box" v-show="iptvEnabled">
+      <tr>
+        <td class="fun-left">{{ lang_t('iptv_bak.wan_stb') }}</td>
+        <td>
+          <select class="select3 select-drop" v-model="wanStrategy" >
+            <option v-for="(o,v) in strategyOption" :value="v">{{o}}</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td class="fun-left">{{ lang_t('iptv_bak.vlan_enable') }}</td>
+        <td>
+        <x-switch v-model="vlanEnabled"></x-switch>
+        </td>
+      </tr>
+      <tr v-show="vlanEnabled">
+        <td class="fun-left">VLAN Internet</td>
+        <td>
+          <span class="input-group-addon">VID</span>
+          <input type="text" class="form-control" style ="width: 100px;" v-model="vlanVidCpu"/>
+        </td>
+        <td>
+          <span class="input-group-addon">PRIO</span>
+          <input type="text" class="form-control" style ="width: 100px;" v-model="vlanPriCpu"/>
+        </td>
+      </tr>
+     <!--  <tr v-show="vlanEnabled">
+        <td class="fun-left" >VLAN CPU (IPTV)</td>
+        <td >
+          <span class="input-group-addon">VID</span>
+          <input type="text" class="form-control" style ="width: 100px;" v-model="vlanVidIptv"/>
+        </td>
+        <td>
+          <span class="input-group-addon">PRIO</span>
+          <input type="text" class="form-control" style ="width: 100px;" v-model="vlanPriIptv"/>
+        </td>
+      </tr> -->
+      <tr v-show ="(wanStrategy == '1' || wanStrategy == '6'|| wanStrategy == '7') && vlanEnabled">
+        <td class="fun-left">VLAN {{iptvVer=="0"?"CPU":"IPTV"}} (LAN1)</td>
+        <td>
+          <span class="input-group-addon">VID</span>
+          <input type="text" class="form-control" style ="width: 100px;" v-model="vlanVidLan1"/>
+        </td>
+        <td>
+          <span class="input-group-addon">PRIO</span>
+          <input type="text" class="form-control" style ="width: 100px;" v-model="vlanPriLan1"/>
+        </td>
+      </tr>
+      <tr v-show ="(wanStrategy == '2' || wanStrategy == '6' || wanStrategy == '7') && vlanEnabled">
+        <td class="fun-left">VLAN {{iptvVer=="0"?"CPU":"IP-Phone"}} (LAN2)</td>
+        <td>
+          <span class="input-group-addon">VID</span>
+          <input type="text" class="form-control" style ="width: 100px;" v-model="vlanVidLan2"/>
+        </td>
+        <td>
+          <span class="input-group-addon">PRIO</span>
+          <input type="text" class="form-control" style ="width: 100px;" v-model="vlanPriLan2"/>
+        </td>
+      </tr>
+      <tr v-if ="(wanStrategy == '3' || wanStrategy == '5' || wanStrategy == '7') && vlanEnabled">
+        <td class="fun-left">VLAN CPU (LAN3)</td>
+        <td>
+          <span class="input-group-addon">VID</span>
+          <input type="text" class="form-control" style ="width: 100px;" v-model="vlanVidLan3"/>
+        </td>
+        <td>
+          <span class="input-group-addon">PRIO</span>
+          <input type="text" class="form-control" style ="width: 100px;" v-model="vlanPriLan3"/>
+        </td>
+      </tr>
+      <tr v-show ="(wanStrategy == '4' || wanStrategy == '5')  && vlanEnabled">
+        <td class="fun-left">VLAN CPU (LAN4)</td>
+        <td>
+          <span class="input-group-addon">VID</span>
+          <input type="text" class="form-control" style ="width: 100px;" v-model="vlanVidLan4"/>
+        </td>
+        <td>
+          <span class="input-group-addon">PRIO</span>
+          <input type="text" class="form-control" style ="width: 100px;" v-model="vlanPriLan4"/>
+        </td>
+      </tr>
+	  	</tbody>
+  		<tbody>
+    		<tr><td colspan="2"></td></tr>
+    		<tr>
+    		  <td class="fun-left"></td>
+    		  <td>
+    			<button type="button" class="btn" @click="handleSubmit">{{ lang_t('common.apply') }}</button>
+    		  </td>
+    		</tr>
+  		</tbody>
+	  </table>
+    </div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,mrEnable:!1,etherIgmp:!1,mrQleave:"0",wanStrategy:"1",port_num_custom:"",wanStb:"0",vlanEnabled:!1,vlanVidCpu:"",vlanPriCpu:"",vlanVidIptv:"",vlanPriIptv:"",vlanVidLan1:"",vlanPriLan1:"",vlanVidLan2:"",vlanPriLan2:"",vlanVidLan3:"",vlanPriLan3:"",vlanVidLan4:"",vlanPriLan4:"",iptvVer:"",iptvEnabled:!1}},computed:{iptvmodeOption:function(){return[{option:"Singapore-Singtel",value:"1"},{option:"Malaysia-Unifi",value:"2"},{option:"Malaysia-Maxis",value:"3"},{option:"VTV",value:"4"},{option:"Taiwan",value:"5"},{option:"Vietnam-Viettel",value:"6"},{option:"Vietnam-FPT",value:"7"},{option:"User Define",value:"0"}]},wanSrcOption:function(){var n=[],a=this.wanStrategy;return"1"==a?n=[{option:"WAN",value:"0"},{option:"LAN1",value:"1"}]:"2"==a?n=[{option:"WAN",value:"0"},{option:"LAN2",value:"2"}]:"3"==a?n=[{option:"WAN",value:"0"},{option:"LAN3",value:"3"}]:"4"==a?n=[{option:"WAN",value:"0"},{option:"LAN4",value:"4"}]:"5"==a?n=[{option:"WAN",value:"0"},{option:"LAN3",value:"5"},{option:"LAN4",value:"4"}]:"6"==a?n=[{option:"WAN",value:"0"},{option:"LAN1",value:"1"},{option:"LAN2",value:"2"}]:"7"==a&&(n=[{option:"WAN",value:"0"},{option:"LAN1",value:"1"},{option:"LAN2",value:"2"},{option:"LAN3",value:"3"}]),n},strategyOption:function(){var n=[this.lang_t("iptv_bak.no"),"LAN1","LAN2"];return"5"==this.port_num_custom&&n.push("LAN3","LAN4","LAN3 & LAN4","LAN1 & LAN2","LAN1 & LAN2 & LAN3"),n},formRules:function(){}},created:function(){var a=this;uiPost.getIptvCfg(function(n){a.iptvEnabled="1"==n.iptvEnabled,a.mrEnable="1"==n.mrEnable,a.etherIgmp="1"==n.etherIgmp,a.iptvVer=n.iptvVer,a.mrQleave=n.mrQleave,a.port_num_custom=n.port_num_custom,a.defindCfg={},null!=n.vlanEnabled&&(a.defindCfg={vlanEnabled:"1"==n.vlanEnabled,wanStrategy:n.wanStrategy,vlanVidCpu:n.vlanVidCpu,vlanPriCpu:n.vlanPriCpu,vlanVidIptv:n.vlanVidIptv,vlanPriIptv:n.vlanPriIptv,vlanVidLan1:n.vlanVidLan1,vlanPriLan1:n.vlanPriLan1},a.defindCfg.vlanVidLan2=n.vlanVidLan2,a.defindCfg.vlanPriLan2=n.vlanPriLan2,a.defindCfg.vlanVidLan3=n.vlanVidLan3,a.defindCfg.vlanPriLan3=n.vlanPriLan3,a.defindCfg.vlanVidLan4=n.vlanVidLan4,a.defindCfg.vlanPriLan4=n.vlanPriLan4),a.modeChangeFun(n.iptvVer),a.modeFun(n.iptvVer)})},methods:{modeFun:function(n){0==n?$("#fun-set-box select, #fun-set-box input").attr("disabled",!1):$("#fun-set-box select, #fun-set-box input").attr("disabled",!0)},modeChangeFun:function(n){n=this.iptvVer,this.modeFun(n);var a={singapore:{wanStrategy:"1",vlanEnabled:!0,vlanVidCpu:"10",vlanPriCpu:"0",vlanVidLan1:"20",vlanPriLan1:"4"},unifi:{wanStrategy:"1",vlanEnabled:!0,vlanVidCpu:"500",vlanPriCpu:"0",vlanVidLan1:"600",vlanPriLan1:"0"},maxis:{wanStrategy:"1",vlanEnabled:!0,vlanVidCpu:"621",vlanPriCpu:"5",vlanVidLan1:"823",vlanPriLan1:"5"},vtv:{wanStrategy:"1",vlanEnabled:!0,vlanVidCpu:"35",vlanPriCpu:"0",vlanVidLan1:"36",vlanPriLan1:"4"},taiwan:{wanStrategy:"1",vlanEnabled:!1},viettel:{wanStrategy:"1",vlanEnabled:!0,vlanVidCpu:"35",vlanPriCpu:"0",vlanVidLan1:"2502",vlanPriLan1:"0"},fpt:{wanStrategy:"1",vlanEnabled:!1},defind:{wanStrategy:"0",vlanEnabled:!1,vlanVidCpu:"0",vlanPriCpu:"0",vlanVidLan1:"0",vlanPriLan1:"0",vlanVidLan2:"0",vlanPriLan2:"0"}};for(var i in a.defind=this.defindCfg,5==this.port_num_custom&&(a.maxis={wanStrategy:"6",vlanEnabled:!0,vlanVidCpu:"621",vlanPriCpu:"5",vlanVidLan1:"823",vlanPriLan1:"5",vlanVidLan2:"822",vlanPriLan2:"5"},a.vtv={wanStrategy:"6",vlanEnabled:!0,vlanVidCpu:"35",vlanPriCpu:"0",vlanVidLan1:"36",vlanPriLan1:"4",vlanVidLan2:"37",vlanPriLan2:"5"}),a.defind)this[i]="vlanEnabled"!==i&&"";$.extend(this,a[["defind","singapore","unifi","maxis","vtv","taiwan","viettel","fpt"][n]])},handleSubmit:function(){var n=this,a={};a.iptvEnabled=n.iptvEnabled?"1":"0",a.mrEnable=n.mrEnable?"1":"0",a.etherIgmp=n.etherIgmp?"1":"0",a.vlanEnabled=n.vlanEnabled?"1":"0",a.iptvVer=n.iptvVer,a.mrQleave=n.mrQleave,a.wanStrategy=n.wanStrategy,a.vlanVidCpu=n.vlanVidCpu,a.vlanPriCpu=n.vlanPriCpu,a.vlanVidIptv=n.vlanVidIptv,a.vlanPriIptv=n.vlanPriIptv,a.vlanVidLan1=n.vlanVidLan1,a.vlanPriLan1=n.vlanPriLan1,a.vlanVidLan2=n.vlanVidLan2,a.vlanPriLan2=n.vlanPriLan2,a.vlanVidLan3=n.vlanVidLan3,a.vlanPriLan3=n.vlanPriLan3,a.vlanVidLan4=n.vlanVidLan4,a.vlanPriLan4=n.vlanPriLan4,Cstool.Verify(this.formRules,function(n){n&&(console.log(a),uiPost.setIptvCfg(a,function(n){var a=0;a=n.wtime||"0"==n.wtime?n.wtime:70,Cstool.Count(a,"js",function(){location.href=location.href})}))})}}}</script><script src="/static/js/main.js"></script></body></html>

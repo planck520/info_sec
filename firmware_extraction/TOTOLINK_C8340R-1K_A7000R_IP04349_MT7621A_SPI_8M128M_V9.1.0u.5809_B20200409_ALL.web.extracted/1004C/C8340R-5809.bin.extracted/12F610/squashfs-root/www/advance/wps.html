@@ -1,0 +1,65 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <!--子菜单-->
+  <adv-child-menu childType="wifi"></adv-child-menu>  
+  <div class="advance-box">
+    <x-help :text="lang_t('wifi.help_wps')"></x-help>
+	<br><br>
+	<div class="fun-box">
+	  <table class="table" v-show="wifiDualband != '0'">
+	    <tr>
+		  <td class="btn-tab-m">
+			  <a @click="wifiChange('0')" :class="['btn-tab',wifiActive == '0' ? 'btn-tab-active' : '']">2.4GHz</a>
+			  <a v-show="wifiDualband == '1'" @click="wifiChange('1')" :class="['btn-tab',wifiActive == '1' ? 'btn-tab-active' : '']">5GHz</a>
+			  <a v-show="wifiDualband == '2'" @click="wifiChange('1')" :class="['btn-tab',wifiActive == '1' ? 'btn-tab-active' : '']">5GHz(1)</a>
+			  <a v-show="wifiDualband == '2'" @click="wifiChange('2')" :class="['btn-tab',wifiActive == '2' ? 'btn-tab-active' : '']">5GHz(2)</a>
+		  </td>
+	    </tr>       
+	  </table>
+	  <br v-show="wifiDualband != '0'">
+	  <table class="table">
+	  	<tbody>
+		<tr>
+		  <td class="fun-left">{{ lang_t('wifi.wps_state') }}</td>
+		  <td>
+			<x-switch v-model="wpsstate" @change="wpsState" :disabled="dis_on"></x-switch>
+		  </td>
+		</tr>
+        <tr v-show="wpsstate">
+		  <td class="fun-left">{{ lang_t('wifi.current_pin') }}</td>
+		  <td>
+			<span style="margin-right: 6px;">{{ pinText }}</span>
+			<button class="btn" style="width: auto;padding: 2px 5px" @click="repinFun">{{ lang_t('wifi.repin') }}</button>
+		  </td>
+		</tr>
+	  	</tbody>
+	  </table>
+      <br>
+      <table class="table" v-show="wpsstate">  
+        <tbody>
+		<tr>
+		  <td class="fun-left">{{ lang_t('wifi.mode') }}</td>
+		  <td>
+		  	<x-radio v-model="mode" :name="['PBC','PIN']" pos="col"></x-radio>
+		  </td>
+		</tr>
+        <tr v-show="mode == '1'">
+          <td class="fun-left">{{ lang_t('wifi.pin_code') }}</td>
+		  <td>
+			<input type="text" v-model="pin" maxlength="8" v-verify="wpsRule" data-name="pin">
+          </td>
+        </tr>
+        <tr v-show="(wpsIdx == '2' && wifiActive == '0' && result != '') || (wpsIdx == '5' && wifiActive != '0' && result != '')">
+		  <td class="fun-left"></td>
+		  <td>{{ result }}</td>
+        </tr>
+		<tr>
+          <td class="fun-left"></td>
+		  <td>
+			<button type="button" class="btn" @click="startFun" :disabled="dis_on">{{ lang_t('common.start') }}</button>
+          </td>
+        </tr>
+        </tbody> 
+      </table>
+    </div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,wifiActive:"0",wifiDualband:"0",pinText:"",pin:"",mode:"0",wpstime:null,wpsstate:!1,wifiOff:!1,result:"",dis_on:!1,wpsIdx:""}},computed:{wpsRule:function(){var e=this;return{pin:function(i,t){var s=e.pinverify(i);0==s?t("PIN"+e.lang_t("wifi.msg6")):1==s?t(e.lang_t("wifi.msg12")):2==s?t(e.lang_t("wifi.msg13")):t()}}}},created:function(){this.wifiActive=cs.local(this.wifiActive),this.wpsInit(this.wifiActive)},methods:{wpsInit:function(i){var t=this,s={};s.wifiIdx=i,uiPost.getWiFiWpsCfg(s,function(i){t.wifiOff="1"!=i.wifiOff,t.wifiOff&&"1"!=i.aceControlMode?($("input").attr("disabled",!1),$("button").attr("disabled",!1)):($("input").attr("disabled",!0),$("button").attr("disabled",!0)),t.pinText=i.wscPin,t.wpsstate="1"!=i.wscDisabled,t.wifiDualband=i.wifiDualband,t.mode=i.wscMode,"1"==i.aceControlMode?t.dis_on=!0:t.dis_on=!1})},wpsState:function(i){var t=this,s={};s.wifiIdx=this.wifiActive,s.wscDisabled=i?"0":"1",uiPost.setWiFiWpsCfg(s,function(){cs.local(t.wifiActive,"href")})},wifiChange:function(i){this.wifiActive=i,this.wpsInit(i)},resultHide:function(){var i=this;setTimeout(function(){i.result="",i.wpsIdx=""},1e4)},getWpsStatus:function(){var n=this,i={};i.wifiIdx=this.wifiActive,uiPost.getWiFiWpsStatus(i,function(i){var t=i.wscStatus,s=!0,e="";return"0"==i.wscResult?("Start WSC Process"==t?(s=!1,e=n.lang_t("wifi.wpsing")):"Not used"==t?e=n.lang_t("wifi.wps_nouse"):"PBC Overlapping"==t?e=n.lang_t("wifi.wpsing"):"WSC Timtout"==t?e=n.lang_t("wifi.wps_timeout"):"WSC Success"==t?e=n.lang_t("wifi.wps_success"):"WSC Fail"==t?e=n.lang_t("wifi.wps_fail"):"Idle"==t&&(e=n.lang_t("wifi.wps_idle")),s&&(n.result=e,clearInterval(n.wpstime),$("button").attr("disabled",!1)),s):("-1"==i.wscResult?e=n.lang_t("wifi.wps_fail"):"1"==i.wscResult&&(e=n.lang_t("wifi.wps_success")),n.result=e,!0)})},repinFun:function(){var t=this,i={};i.wifiIdx=this.wifiActive,uiPost.getGenerateWiFiWpsPin(i,function(i){t.pinText=i.wscPin})},startFun:function(){var i=this,t={},s=0;if("2"==this.wifiActive||"1"==this.wifiActive?this.wpsIdx="5":"0"==this.wifiActive&&(this.wpsIdx="2"),t.wifiIdx=this.wifiActive,t.wscMode=this.mode,"1"==this.mode){var e=!0;if(Cstool.Verify(this.wpsRule,function(i){e=i}),!e)return;t.pin=i.pin}t.wscDisabled=this.wpsstate?"0":"1",$("button").attr("disabled",!0),this.result=i.lang_t("wifi.wpsing"),uiPost.setWiFiWpsStart(t,function(){i.wpstime=setInterval(function(){i.getWpsStatus(),40<=s&&(i.result=i.lang_t("wifi.wps_timeout"),clearInterval(i.wpstime),$("button").attr("disabled",!1)),s++},3e3)})},pinverify:function(i){var t=0;if(!i)return 0;var s=i.replace("-","").replace(" ","");return 8!=s.length?1:(t+=parseInt(s/1e7)%10*3,t+=parseInt(s/1e6)%10*1,t+=parseInt(s/1e5)%10*3,t+=parseInt(s/1e4)%10*1,t+=parseInt(s/1e3)%10*3,t+=parseInt(s/100)%10*1,t+=parseInt(s/10)%10*3,(t+=parseInt(s/1)%10*1)%10!=0?2:void 0)}}}</script><script src="/static/js/main.js"></script></body></html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"><style>input[type=password],input[type=text]{width:240px;height:25px;padding:0 5px;outline:0}</style></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <!--子菜单-->
+  <adv-child-menu childType="wifi"></adv-child-menu>
+  <div class="advance-box">
+  	<x-help :text="lang_t('wifi.help_guest')"></x-help>
+	<br><br>
+	<div class="fun-box">
+	  <table class="table" v-show="wifiDualband != '0'">
+	    <tr>
+			<td class="btn-tab-m">
+				<a @click="wifiChange('0')" :class="['btn-tab',wifiActive == '0' ? 'btn-tab-active' : '']">2.4GHz</a>
+				<a v-show="wifiDualband == '1'" @click="wifiChange('1')" :class="['btn-tab',wifiActive == '1' ? 'btn-tab-active' : '']">5GHz</a>
+				<a v-show="wifiDualband == '2'" @click="wifiChange('1')" :class="['btn-tab',wifiActive == '1' ? 'btn-tab-active' : '']">5GHz(1)</a>
+				<a v-show="wifiDualband == '2'" @click="wifiChange('2')" :class="['btn-tab',wifiActive == '2' ? 'btn-tab-active' : '']">5GHz(2)</a>
+			</td>
+	    </tr>       
+	  </table>
+	  <br  v-show="wifiDualband != '0'">
+	  <table class="table">
+	    <tbody>
+		<tr>
+		  <td class="fun-left">{{ lang_t('wifi.state') }}</td>
+		  <td>
+			<x-switch v-model="wifiOff" :disabled="disablePower" @change="wifiState"></x-switch>
+		  </td>
+		</tr>
+	    </tbody>
+		<tr><td colspan="2">&nbsp;</td></tr>
+	    <tbody class="table">
+		<tr>
+		  <td class="fun-left">{{ lang_t('wifi.ssid') }}</td>
+		  <td>
+			<input type="text" v-model="ssid" maxlength="32" v-verify="fromRule" data-name="ssid"/>
+			<x-checkbox v-model="hssid" :disabled="hssidclass">{{ lang_t('wifi.hide') }}</x-checkbox>
+		  </td>
+		</tr>
+		<tr>
+		  <td class="fun-left">{{ lang_t('wifi.pass_state') }}</td>
+		  <td>
+			<x-switch v-model="ispass" :disabled="hssidclass"></x-switch>
+		  </td>
+		</tr>
+		<tr v-show="ispass">
+		  <td class="fun-left">{{ lang_t('wifi.pass') }}</td>
+		  <td>
+			<input type="password" class="input input-err" v-model="key" maxlength="63" v-pass v-verify="fromRule" data-name="key">
+		  </td>
+		</tr>
+		<tr>
+		  <td class="fun-left"></td>
+		  <td>
+		  	<x-checkbox v-model="accessAllow" :disabled="disable_allow">{{ lang_t('wifi.allow_access') }}</x-checkbox>
+		  </td>
+	  	</tr>
+	    </tbody> 
+		<tbody>
+		<tr>
+		  <td class="fun-left"></td>
+		  <td>
+			<button type="button" id="applyBtn" class="btn" @click="applyFun">{{ lang_t('common.apply') }}</button>
+		  </td>
+		</tr>
+	    </tbody>
+	  </table>
+    </div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,wifiActive:"0",wifiOff:!1,mainWifiOff:!1,hssid:!1,wifiDualband:"0",wifiSchEnabled:"0",ssid:"",key:"",hssidclass:!1,disable_allow:!1,accessAllow:!1,disablePower:!1,ispass:!1}},computed:{fromRule:function(){var a=this;return{ssid:function(i,s){var t=cs.ssid(i);0==t?s(a.lang_t("wifi.msg1")):4==t?s(a.lang_t("wifi.msg18")):1==t?s(a.lang_t("wifi.msg2")):2==t?s(a.lang_t("wifi.msg3")):s()},key:function(i,s){var t=cs.string(i);a.ispass?(""==i&&s(a.lang_t("wifi.pass")+a.lang_t("wifi.msg6")),1==t?s(a.lang_t("wifi.msg5")):i.length<8||63<i.length?s(a.lang_t("wifi.msg4")):s()):s()}}}},created:function(){this.wifiActive=cs.local(this.wifiActive),this.wifiInit(this.wifiActive)},methods:{wifiChange:function(i){this.wifiActive=i,this.wifiInit(i)},wifiInit:function(i){var s=this,t={};t.wifiIdx=i,uiPost.getWiFiGuestCfg(t,function(i){s.mainWifiOff="0"==i.mainWifiOff,s.wifiSchEnabled=i.wifiSchEnabled,s.wifiDualband=i.wifiDualband,s.wifiOff="1"!=i.wifiOff,s.hssid="0"!=i.hssid,s.ssid=i.ssid,s.key=i.key,s.ispass=""!=i.key,s.accessAllow="1"==i.accessEnabled,"1"==i.mainWifiOff?s.disabled_main():s.disabled(s.wifiOff,i.wifiSchEnabled),"br"!=this.globalConfig.opmode&&"rpt"!=this.globalConfig.opmode||(s.disable_allow=!0)})},wifiState:function(i){this.disabled(i)},disabled:function(i,s){i?(this.hssidclass=!1,this.disablePower=!1,"br"!=this.globalConfig.opmode&&"rpt"!=this.globalConfig.opmode&&(this.disable_allow=!1),$('input[type="text"],input[type="password"]').attr("disabled",!1),$("button#applyBtn").attr("disabled",!1)):($('input[type="text"],input[type="password"]').attr("disabled",!0),this.hssidclass=!0,this.disable_allow=!0),this.disablePower="1"==s},disabled_main:function(){$('input[type="text"],input[type="password"]').attr("disabled",!0),$("button#applyBtn").attr("disabled",!0),this.disablePower=!0,this.hssidclass=!0,this.disable_allow=!0},applyFun:function(){var t=this,s={};Cstool.Verify(this.fromRule,function(i){!i&&t.wifiOff||(s.wifiOff=t.wifiOff?"0":"1",s.hssid=t.hssid?"1":"0",s.ssid=t.ssid,t.ispass?s.key=t.key:s.key="",s.wifiIdx=t.wifiActive,s.accessEnabled=t.accessAllow?"1":"0",uiPost.setWiFiGuestCfg(s,function(i){var s=30;i.wtime&&"0"!=i.wtime?(s=i.wtime,Cstool.Count(s,"js",function(){cs.local(t.wifiActive,"href")})):cs.local(t.wifiActive,"href")}))})}}}</script><script src="/static/js/main.js"></script></body></html>

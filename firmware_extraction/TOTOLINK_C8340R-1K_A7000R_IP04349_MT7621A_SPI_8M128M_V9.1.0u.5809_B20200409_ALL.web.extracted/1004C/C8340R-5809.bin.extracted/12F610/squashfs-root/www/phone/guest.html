@@ -1,0 +1,137 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title>TOTOLINK</title><meta content="width=device-width,initial-scale=1,user-scalable=no" name="viewport"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><link rel="stylesheet" href="/static/css/phone/main.css"><link rel="stylesheet" href="/static/css/phone/common.css"></head><style>::-webkit-scrollbar{display:none}</style><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <phone-back url="/phone/home.html"></phone-back>
+  <white-header imgSrc="/static/images/phone/guest.png" :title="lang_t('menu.guest')">
+  </white-header>
+  <div class="row-content">
+  	<div class="row-group" v-if="wifiDualband != '0'">
+	  <div class="row-right" style="width: auto;">
+		<x-switch v-model="merge" @change="abledFun"></x-switch>
+	  </div>
+	  <div class="row-left">
+	  	<p style="padding-top:12px;" >{{ lang_t('wifi.merge') }}:</p>
+	  </div>
+	</div>
+	<!-- <div class="row-group">
+	  <span style="float:right;">
+		<x-switch v-model="accessState" :disabled="!wifi2g && !wifi5g && !wifi5g2"></x-switch>
+	  </span>
+	  <p style="padding-top:12px;width:70%;" >{{ lang_t('wifi.allow_access') }}:</p>
+	</div> -->
+	<div class="row-group">
+	  <div class="switch-right">
+		<x-switch v-model="wifi2g" :disabled="wifiSchEnabled2g" @change="abledFun"></x-switch>
+	  </div>
+	  <div class="row-left">
+		<p style="padding-top:12px;">{{ lang_t('wifi.state') }} <span v-show="!merge">2.4GHz</span>:</p>
+	  </div>
+	</div>
+	<div class="row-group">
+	  <div class="row-right">
+		<input class="right" v-model="ssid2g" :maxlength="32" id="ssid_2">
+	  </div>
+	  <div class="row-left">
+		<p>{{ lang_t('wifi.ssid') }}:</p>
+	  </div>
+	</div>
+	<div class="row-group">
+	  <div class="row-right">
+		<input class="right" v-model="password2g" type="text" v-pass :maxlength="63" id="pass_2">
+	  </div>
+	  <div class="row-left">
+		<p>{{ lang_t('wifi.pass') }}:</p>
+	  </div>
+	</div>
+	<div class="row-group">
+	  <div class="switch-right">
+		<x-switch v-model="hide2g" :disabled="hidedis"></x-switch>
+	  </div>
+	  <div class="row-left">
+		<p style="padding-top:12px;">{{ lang_t('wifi.hide_ssid') }}:</p>
+	  </div>
+	</div>
+	<div class="row-group">
+	  <span class="switch-right">
+		<x-switch v-model="accessState2g" :disabled="!wifi2g || disable_allow"></x-switch>
+	  </span>
+	  <p style="padding-top:12px;width:70%;" >{{ lang_t('wifi.allow_access') }}:</p>
+	</div>
+	<div v-show="!merge && wifiDualband != '0'">
+	  <div class="row-group">
+		<div class="switch-right">
+		  <x-switch v-model="wifi5g" :disabled="wifiSchEnabled5g" @change="abledFun"></x-switch>
+		</div>
+		<div class="row-left">
+		  <p style="padding-top:12px;" v-if="wifiDualband == '1'">{{ lang_t('wifi.state') }} 5GHz:</p>
+		  <p style="padding-top:12px;" v-if="wifiDualband == '2'">{{ lang_t('wifi.state') }} 5GHz (1):</p>
+		</div>
+	  </div>
+	  <div class="row-group">
+	    <div class="row-right">
+		  <input class="right" v-model="ssid5g" :maxlength="32" id="ssid_5">
+	    </div>
+	    <div class="row-left">
+		  <p>{{ lang_t('wifi.ssid') }}:</p>
+	    </div>
+	  </div>
+	  <div class="row-group">
+	    <div class="row-right">
+		  <input class="right" v-model="password5g" type="text" v-pass :maxlength="63" id="pass_5">
+	    </div>
+	    <div class="row-left">
+	 	  <p>{{ lang_t('wifi.pass') }}:</p>
+	    </div>
+	  </div>
+	  <div class="row-group">
+		<div class="switch-right">
+		  <x-switch v-model="hide5g" :disabled="hide5gdis"></x-switch>
+		</div>
+		<div class="row-left">
+		  <p style="padding-top:12px;">{{ lang_t('wifi.hide_ssid') }}:</p>
+		</div>
+	  </div>
+	  <div class="row-group">
+		  <span class="switch-right">
+			<x-switch v-model="accessState5g" :disabled="!wifi5g || disable_allow5g"></x-switch>
+		  </span>
+		  <p style="padding-top:12px;width:70%;" >{{ lang_t('wifi.allow_access') }}:</p>
+	  </div>
+	</div>
+	<div v-show="!merge && wifiDualband == '2'">
+	  <div class="row-group">
+		<div class="switch-right">
+		  <x-switch v-model="wifi5g2" @change="abledFun" :disabled="wifiSchEnabled5g2"></x-switch>
+		</div>
+		<div class="row-left">
+		  <p style="padding-top:12px;">5GHz (2) {{ lang_t('wifi.state') }}:</p>
+		</div>
+	  </div>
+	  <div class="row-group">
+	    <div class="row-right">
+		  <input class="right" v-model="ssid5g2" :maxlength="32" id="ssid_52">
+	    </div>
+	    <div class="row-left">
+		  <p>{{ lang_t('wifi.ssid') }}:</p>
+	    </div>
+	  </div>
+	  <div class="row-group">
+	    <div class="row-right">
+		  <input class="right" v-model="password5g2" type="text" v-pass :maxlength="63" id="pass_52">
+	    </div>
+	    <div class="row-left">
+	 	  <p>{{ lang_t('wifi.pass') }}:</p>
+	    </div>
+	  </div>
+	  <div class="row-group">
+		<div class="switch-right">
+		  <x-switch v-model="hide5g2" :disabled="hide5g2dis"></x-switch>
+		</div>
+		<div class="row-left">
+		  <p style="padding-top:12px;">{{ lang_t('wifi.hide_ssid') }}:</p>
+		</div>
+	  </div>
+	</div>
+  </div>
+  <div class="login-bottom">
+	<button class="login-btn" @click="applyFun">{{ lang_t('common.apply') }}</button>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/phone_layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,data:[],merge:!0,accessState2g:!1,accessState5g:!1,wifi2g:!1,wifi5g:!1,wifi5g2:!1,ssid2g:"",ssid5g:"",ssid5g2:"",password2g:"",password5g:"",password5g2:"",wifiDualband:"0",wifiSchEnabled2g:!1,wifiSchEnabled5g:!1,wifiSchEnabled5g2:!1,hide2g:!1,hide5g:!1,hide5g2:!1,hidedis:!1,hide5gdis:!1,disable_allow:!1,disable_allow5g:!1,hide5g2dis:!1}},created:function(){var t=this;uiPost.getWiFiEasyGuestCfg(function(i){"1"==i.wifiSchEnabled2g||"1"==i.mainWifiOff?t.wifiSchEnabled2g=!0:t.wifiSchEnabled2g=!1,"1"==i.wifiSchEnabled5g||"1"==i.mainWifiOff5g?t.wifiSchEnabled5g=!0:t.wifiSchEnabled5g=!1,t.wifiSchEnabled5g2="1"==i.wifiSchEnabled5g2,t.merge="0"!=i.merge,t.accessState2g="1"==i.accessEnabled2g,t.accessState5g="1"==i.accessEnabled5g,t.wifi2g="1"!=i.wifiOff,t.ssid2g=i.ssid,t.password2g=i.key,t.wifiDualband=i.wifiDualband,t.hide2g="0"!=i.hssid,"0"!=i.wifiDualband&&(t.wifi5g="1"!=i.wifiOff5g,t.hide5g="0"!=i.hssid5g,t.ssid5g=i.ssid5g,t.password5g=i.key5g),"2"==i.wifiDualband&&(t.wifi5g2="1"!=i.wifiOff5g2,t.hide5g2="0"!=i.hssid5g2,t.ssid5g2=i.ssid5g2,t.password5g2=i.key5g2),t.abledFun(),"br"!=this.globalConfig.opmode&&"rpt"!=this.globalConfig.opmode||(t.disable_allow=!0,t.disable_allow5g=!0)})},methods:{errorFun:function(i){Cstool.Mark({content:i,l_text:this.lang_t("common.back")})},verifyData:function(){var i,t,s=this,n=this.errorFun;if(i=cs.ssid(this.ssid2g),s.wifi2g){if(0==i)return n(s.lang_t("wifi.msg1")),!1;if(4==i)return n(s.lang_t("wifi.msg18")),!1;if(1==i)return n(s.lang_t("wifi.msg2")),!1;if(2==i)return n(s.lang_t("wifi.msg3")),!1}if("0"!=s.wifiDualband&&!s.merge&&(t="2"==s.wifiDualband?"5GHz(1)":"5GHz",s.wifi5g)){if(0==(i=cs.ssid(this.ssid5g)))return n(t+s.lang_t("wifi.msg1")),!1;if(4==i)return n(t+s.lang_t("wifi.msg18")),!1;if(1==i)return n(t+s.lang_t("wifi.msg2")),!1;if(2==i)return n(t+s.lang_t("wifi.msg3")),!1}if("2"==s.wifiDualband&&!s.merge&&s.wifi5g2){if(0==(i=cs.ssid(this.ssid5g2)))return n("5GHz(2)"+s.lang_t("wifi.msg1")),!1;if(4==i)return n("5GHz(2)"+s.lang_t("wifi.msg18")),!1;if(1==i)return n("5GHz(2)"+s.lang_t("wifi.msg2")),!1;if(2==i)return n("5GHz(2)"+s.lang_t("wifi.msg3")),!1}},applyFun:function(){var s=this,i={};if(0!=this.verifyData()){if(i.merge=s.merge?"1":"0",i.wifiOff=s.wifi2g?"0":"1",i.accessEnabled2g=s.accessState2g?"1":"0",i.hssid=s.hide2g?"1":"0",i.ssid=s.ssid2g,i.key=s.password2g,"0"==i.wifiOff){var t=s.password2g,n=cs.string(t);if(""!=t){if(1==n)return Cstool.Mark({content:s.lang_t("wifi.msg5"),l_text:s.lang_t("common.back")}),!1;if(t.length<8||63<t.length)return Cstool.Mark({content:s.lang_t("wifi.msg4"),l_text:s.lang_t("common.back")}),!1}if(""==s.password2g&&"0"==s.wifiDualband)return Cstool.Mark({content:s.lang_t("wifi.msg14"),cancel:function(){uiPost.setWiFiEasyGuestCfg(i,function(i){var t=30;i.wtime&&"0"!=i.wtime&&(t=Number(i.wtime)),Cstool.Mark({type:"load",time:t,content:s.lang_t("common.effective"),success:function(){Cstool.Flag({content:s.lang_t("common.success_relink"),btnText:s.lang_t("common.back"),ok:function(){location.href=location.href}})}})})}}),!1}if("0"!=s.wifiDualband)if(s.merge){if(i.wifiOff5g=s.wifi2g?"0":"1",i.hssid5g=s.hide2g?"1":"0",i.ssid5g=s.ssid2g,i.key5g=s.password2g,i.accessEnabled5g=s.accessState2g?"1":"0","2"==s.wifiDualband&&(i.wifiOff5g2=s.wifi2g?"0":"1",i.hssid5g2=s.hide2g?"1":"0",i.ssid5g2_a=s.ssid2g,i.key5g2_a=s.password2g),""==s.password2g)return Cstool.Mark({content:s.lang_t("wifi.msg14"),cancel:function(){uiPost.setWiFiEasyGuestCfg(i,function(i){var t=30;i.wtime&&"0"!=i.wtime&&(t=Number(i.wtime)),Cstool.Mark({type:"load",time:t,content:s.lang_t("common.effective"),success:function(){Cstool.Flag({content:s.lang_t("common.success_relink"),btnText:s.lang_t("common.back"),ok:function(){location.href=location.href}})}})})}}),!1}else{i.wifiOff5g=s.wifi5g?"0":"1",i.hssid5g=s.hide5g?"1":"0",i.ssid5g=s.ssid5g,i.key5g=s.password5g,i.accessEnabled5g=s.accessState5g?"1":"0";var a="5GHz "+s.lang_t("wifi.msg5"),e="5GHz "+s.lang_t("wifi.msg4");if("2"==s.wifiDualband&&(a="5GHz (1) "+s.lang_t("wifi.msg5"),e="5GHz (1) "+s.lang_t("wifi.msg4")),"0"==i.wifiOff5g){t=s.password5g,n=cs.string(t);if(""!=t){if(1==n)return Cstool.Mark({content:a,l_text:s.lang_t("common.back")}),!1;if(t.length<8||63<t.length)return Cstool.Mark({content:e,l_text:s.lang_t("common.back")}),!1}if(""==s.password5g||""==s.password2g)return Cstool.Mark({content:s.lang_t("wifi.msg14"),cancel:function(){uiPost.setWiFiEasyGuestCfg(i,function(i){var t=30;i.wtime&&"0"!=i.wtime&&(t=Number(i.wtime)),Cstool.Mark({type:"load",time:t,content:s.lang_t("common.effective"),success:function(){Cstool.Flag({content:s.lang_t("common.success_relink"),btnText:s.lang_t("common.back"),ok:function(){location.href=location.href}})}})})}}),!1}if("2"==s.wifiDualband&&(i.wifiOff5g2=s.wifi5g2?"0":"1",i.hssid5g2=s.hide5g2?"1":"0",i.ssid5g2_a=s.ssid5g2,i.key5g2_a=s.password5g2,"0"==i.wifiOff5g2)){t=s.password5g2,n=cs.string(t);if(""!=t){if(1==n)return Cstool.Mark({content:"5GHz (2) "+s.lang_t("wifi.msg5"),l_text:s.lang_t("common.back")}),!1;if(t.length<8||63<t.length)return Cstool.Mark({content:"5GHz (2) "+s.lang_t("wifi.msg4"),l_text:s.lang_t("common.back")}),!1}if(""==s.password5g||""==s.password5g2||""==s.password2g)return Cstool.Mark({content:s.lang_t("wifi.msg14"),cancel:function(){uiPost.setWiFiEasyGuestCfg(i,function(i){var t=30;i.wtime&&"0"!=i.wtime&&(t=Number(i.wtime)),Cstool.Mark({type:"load",time:t,content:s.lang_t("common.effective"),success:function(){Cstool.Flag({content:s.lang_t("common.success_relink"),btnText:s.lang_t("common.back"),ok:function(){location.href=location.href}})}})})}}),!1}}uiPost.setWiFiEasyGuestCfg(i,function(i){var t=30;i.wtime&&"0"!=i.wtime&&(t=Number(i.wtime)),Cstool.Mark({type:"load",time:t,content:s.lang_t("common.effective"),success:function(){Cstool.Flag({content:s.lang_t("common.success_relink"),btnText:s.lang_t("common.back"),ok:function(){location.href=location.href}})}})})}},abledFun:function(){this.wifi2g?($("#ssid_2,#pass_2").attr("disabled",!1),this.hidedis=!1):($("#ssid_2,#pass_2").attr("disabled",!0),this.hidedis=!0),"0"==this.wifiDualband||this.merge||(this.wifi5g?($("#ssid_5,#pass_5").attr("disabled",!1),this.hide5gdis=!1):($("#ssid_5,#pass_5").attr("disabled",!0),this.hide5gdis=!0)),"2"!=this.wifiDualband||this.merge||(this.wifi5g2?($("#ssid_52,#pass_52").attr("disabled",!1),this.hide5g2dis=!1):($("#ssid_52,#pass_52").attr("disabled",!0),this.hide5g2dis=!0))}}}</script><script src="/static/js/main.js"></script></body></html>

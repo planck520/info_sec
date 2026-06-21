@@ -1,0 +1,167 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"></head><style>.info{background:#d3e9f2;color:#666;cursor:default}.info:hover{background:#d3e9f2;color:#666}.sms-text{color:#2ea8dc}</style><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <!--子菜单-->
+  <adv-child-menu childType="network"></adv-child-menu>   
+  <div class="advance-box">
+    <x-help :text="lang_t('message.help')"></x-help>
+  	<br><br>
+	<div class="fun-box">
+	<table class="table">
+	  	<tbody>
+	  		<tr>
+			  <td class="fun-left">{{lang_t('message.recipient') }}</td>
+			  <td>
+				<input type="text" id="recinum" v-model="reci_num" v-verify="smsRules" data-name="reci_num">
+			  </td>
+			</tr> 
+			<tr>
+				<td class="fun-left">{{lang_t('message.sms_edit') }}</td>
+				<td>
+					<textarea  style="width:300px; height:100px;" v-model="text" v-verify="smsRules" data-name="text" maxlength="160"></textarea>
+				</td>
+			</tr>
+			<tr>
+				<td class="fun-left"></td>
+				<td>
+					<button type="button" class="btn" @click="handleSubmit" :disabled="isCard">{{lang_t('message.send')}}</button>
+				</td>
+			</tr>
+	    </tbody>
+	</table>
+	    <br>
+	<table class="table">
+	    	<tbody>
+			<tr>
+				<td>{{lang_t('message.inbox') }}</td>
+				<td>
+					<button type="button" class="btn info">{{ lang_t('message.maxnum') + ' '+recimaximum}}</button>
+					<button type="button" class="btn info">{{ lang_t('message.usenum') + ' '+reciused}}</button>
+				</td>
+				<td align="right" style="width: 53%;">
+					<x-icon type="del" cursor="pointer" @click="deleteData('in','all')">{{ lang_t('common.delete') }}</x-icon>
+				</td>
+			</tr>
+			</tbody>
+	</table>
+	<table class="table">
+			<tbody>
+			<tr>
+				<td><table class="t_table3 table-bordered table-striped">
+				<thead>
+					<tr>
+						<th>{{ lang_t('message.idx') }}</th>
+						<th>{{ lang_t('message.sender') }}</th>
+						<th>{{ lang_t('message.data') }}</th>
+						<th>{{ lang_t('message.time') }}</th>
+						<th>{{ lang_t('message.text') }}</th>
+						<th>{{ lang_t('rule.operate') }}</th>
+						<th>{{ lang_t('common.select') }}<x-checkbox v-model="selectall_reci" @change="select_reci_All"></x-checkbox></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr v-for="(rule,v) in recidata">
+						<td>
+							<span >{{ v+1 }}</span>
+						</td>
+						<td>
+							<span >{{ rule.number }}</span>
+						</td>
+						<td>
+							<span >{{ rule.date }}</span>
+						</td>
+						<td>
+							<span >{{ rule.time }}</span>
+						</td>
+						<td>
+							<span ><a class="sms-text" @click="showTextFun('in',rule)">{{ rule.text.length > 10 ?rule.text.substring(0,10) + '...':rule.text }}</a></span>
+						</td>
+						<td>
+							<img src="/static/images/reply.png" :title="lang_t('message.reply')" class="cursor" @click="smsreply(rule.number)">&nbsp;&nbsp;
+							<img src="/static/images/trash.png" :title="lang_t('message.delete')" class="cursor" @click="deleteData(rule,'in')">
+						</td>
+						<td>
+							<x-checkbox v-model="select_reci[v]"></x-checkbox>
+						</td>
+					</tr>
+					<tr v-show="recidata.length==0">
+						<td colspan="12">{{ lang_t('common.no_data') }}</td>
+					</tr>
+					</tbody>
+				</table></td>
+			</tr>
+		</tbody>
+	 </table>
+	      <br>
+	<!-- sendbox -->
+	<table class="table">
+    	<tbody>
+		<tr>
+			<td>{{lang_t('message.outbox') }}</td>
+			<td>
+				<button type="button" class="btn info">{{ lang_t('message.maxnum') + ' '+maximum}}</button>
+				<button type="button" class="btn info">{{ lang_t('message.usenum') + ' '+used}}</button>
+			</td>
+			<td align="right" style="width: 53%;">
+				<x-icon type="del" cursor="pointer" @click="deleteData('out','all')">{{ lang_t('common.delete') }}</x-icon>
+			</td>
+		</tr>
+		</tbody>
+	</table>
+	<table class="table">
+		<tbody>
+			<tr>
+				<td><table class="t_table3 table-bordered table-striped">
+				<thead>
+					<tr>
+						<th>{{ lang_t('message.idx') }}</th>
+						<th>{{ lang_t('message.recipient') }}</th>
+						<th>{{ lang_t('message.data') }}</th>
+						<th>{{ lang_t('message.time') }}</th>
+						<th>{{ lang_t('message.text') }}</th>
+						<th>{{ lang_t('rule.operate') }}</th>
+						<th>{{ lang_t('common.select') }}<x-checkbox v-model="selectall_sms" @change="select_sms_All"></x-checkbox></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr v-for="(rule,v) in smsData">
+						<td>
+							<span >{{ v+1 }}</span>
+						</td>
+						<td>
+							<span >{{ rule.number }}</span>
+						</td>
+						<td>
+							<span >{{ rule.date }}</span>
+						</td>
+						<td>
+							<span >{{ rule.time }}</span>
+						</td>
+						<td>
+							<span><a class="sms-text" @click="showTextFun('out',rule)">{{ rule.text.length > 10 ?rule.text.substring(0,10) + '...':rule.text }}</a></span>
+						</td>
+						<td>
+							<img src="/static/images/reply.png" :title="lang_t('message.reply')" class="cursor" @click="smsreply(rule.number)">&nbsp;&nbsp;
+							<img src="/static/images/trash.png" :title="lang_t('message.delete')" class="cursor" @click="deleteData(rule,'out')">
+						</td>
+						<td>
+							<x-checkbox v-model="select_sms[v]"></x-checkbox>
+						</td>
+					</tr>
+					<tr v-show="smsData.length==0">
+						<td colspan="12">{{ lang_t('common.no_data') }}</td>
+					</tr>
+					</tbody>
+				</table></td>
+			</tr>
+		</tbody>
+	  </table>
+    </div>
+  </div>
+  <x-modal v-model="textShow" :title="lang_t('message.text')" :ok_text="lang_t('message.reply')" @on-ok="smsreply('list')" type="confirm">
+	<div style="word-wrap: break-word; word-break: normal;word-break:break-all; ">
+        <p><b>{{ lang_t('message.data') }}: </b>{{ tempSms.date }}</p>
+        <p><b>{{ lang_t('message.time') }}: </b>{{ tempSms.time }}</p>
+        <p><b>{{ smstype ? lang_t('message.sender') : lang_t('message.recipient')}}: </b>{{ tempSms.number }}</p>
+        <p><b>{{ lang_t('message.text') }}: </b>{{ tempSms.text }}</p>
+    </div>
+  </x-modal>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>function getLocalTime(e,t){"number"==typeof e&&(t=e,e=null);var s=new Date;t&&s.setTime(t);var i=function(e){return e<10?"0"+e:e},n=i(s.getFullYear()),a=i(s.getMonth()+1),r=i(s.getDate()),l=i(s.getHours()),c=i(s.getMinutes()),m=i(s.getSeconds());return e?e.replace("yy",n).replace("MM",a).replace("dd",r).replace("hh",l).replace("mm",c).replace("ss",m):n+"-"+a+"-"+r+" "+l+":"+c+":"+m}var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,smsData:[],selectValue:[],operate:[],select:[],reciselectValue:[],reci_num:"",text:"",maximum:"",used:"",recimaximum:"",reciused:"",tempSms:{},ruleList:[],recidata:[],selectall_reci:!1,selectall_sms:!1,select_reci:[],select_sms:[],isCard:!0,dataTotal:"",selectall:!1,smstype:!0,textShow:!1}},computed:{smsRules:function(){var s=this;return{reci_num:function(e,t){(e=e.replace("+",""))?e.length<3||20<e.length||99!=cs.num(e)?t(s.lang_t("message.recipient")+s.lang_t("message.msg6",[3,20])):t():t(s.lang_t("message.recipient")+s.lang_t("message.msg5"))},text:function(e,t){e?/[^\x00-\xff]|[\x22\x5C\x60]|[\n]/.test(e)?t(s.lang_t("message.text")+s.lang_t("message.msg4")):t():t(s.lang_t("message.text")+s.lang_t("message.msg5"))}}}},created:function(){var _=this;uiPost.getSmsCfg(function(e){if(_.isCard="0"!=e.noSIM,"1"!=e.noSIM){_.maximum=e.send.maximum,_.used=e.send.used,_.smsData=e.send.smsText,_.recimaximum=e.receive.maximum;var t=e.receive.smsText,s=[],i=[],n=[],a=0;for(var r in t)if("FFFFFFFFFF"!=t[r].msg_id){if(!cs.isInArray(n,r)){i[a]=[],i[a].push(t[r]);for(var l=0;l<t.length&&(l==r&&l++,l!=t.length);l++)t[r].msg_id==t[l].msg_id&&(i[a].push(t[l]),n.push(String(l)))}a++}else s.push(t[r]);var c,m,o="",u="",h=[];for(var g in i){for(var f in u=o="",h=(h=i[g]).sort(function(e,t){return c=Number(e.fragment_num),(m=Number(t.fragment_num))<c?1:c<m?-1:void 0}))o+=h[f].text,u+=h[f].delidx+",";h[0].text=o,h[0].textid=u,s.push(h[0])}_.recidata=s,_.reciused=s.length,_.selectInit()}})},methods:{handleSubmit:function(e){var s=this,i={};Cstool.Verify(this.smsRules,function(e){if(e){var t=getLocalTime("yy/MM/dd hh:mm:ss").split(" ");i.outboxDate=t[0],i.outboxTime=t[1],i.phoneNumber=s.reci_num,i.text=encodeURIComponent(s.text),uiPost.setSmsCfg(i,function(){Cstool.applyLoad(1,function(){location.href="http://"+location.host+"/advance/message.html"})})}})},smsreply:function(e){$("#recinum").focus(),"list"==e&&(e=this.tempSms.number),this.reci_num=e,location.href="#"},showTextFun:function(e,t){this.smstype="out"!=e,this.tempSms=t,this.textShow=!0},deleteData:function(e,t){var s={},i=0,n=[],a=function(e){e.textid?n=n.concat(e.textid.split(",")):n.push(String(e.delidx))};if("all"!=t)s.box="in"==t?"rec":"send",a(e);else{var r=select=tempArr=[];"in"==e?(select=this.select_reci,tempArr=this.recidata,s.box="rec"):(select=this.select_sms,tempArr=this.smsData,s.box="send");var l=!1;for(var c in select)1==select[c]&&(l=!0,r.push(tempArr[c]));if(!l)return Cstool.Msg({content:this.lang_t("message.msg3")}),!1;for(var m in r)a(r[m])}n.sort(function(e,t){return Number(e||0)-Number(t||0)}).forEach(function(e){e&&(s["delRule"+i++]=e)}),Cstool.Msg({content:this.lang_t("rule.msg15"),type:"confirm",ok:function(){uiPost.delSmsCfg(s,function(){Cstool.applyLoad(1,function(){location.href="http://"+location.host+"/advance/message.html"})})}})},selectInit:function(){for(var e in this.smsData)this.select_sms[e]=!1;for(var t in this.recidata)this.select_reci[t]=!1},select_reci_All:function(e){var t=!1;e&&(t=!0);var s=this.select_reci.length;this.select_reci=[];for(var i=0;i<s;i++)this.select_reci[i]=t},select_sms_All:function(e){var t=!1;e&&(t=!0);var s=this.select_sms.length;this.select_sms=[];for(var i=0;i<s;i++)this.select_sms[i]=t}},watch:{select_reci:function(){var e=0;for(var t in this.select_reci)this.select_reci[t]&&e++;e==this.select_reci.length?this.selectall_reci=!0:this.selectall_reci=!1},select_sms:function(){var e=0;for(var t in this.select_sms)this.select_sms[t]&&e++;e==this.select_sms.length?this.selectall_sms=!0:this.selectall_sms=!1}}}</script><script src="/static/js/main.js"></script></body></html>

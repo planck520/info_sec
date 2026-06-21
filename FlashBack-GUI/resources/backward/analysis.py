@@ -891,10 +891,15 @@ def analyze_arg_xrefs(
                     if not found:
                         continue
                     set_call_expr, _ = found
-                    if set_arg_idx >= set_call_expr.a.size():
+                    try:
+                        set_arg_idx = int(ph.get("input_idx", 1))
+                    except Exception:
+                        set_arg_idx = 1
+                    if set_arg_idx < 0 or set_arg_idx >= set_call_expr.a.size():
                         continue
 
                     # Host call-site label
+                    host_tag = _cond_tag(host_cfunc, set_call_expr)
 
                     # Collect SetValue-site context
                     site_ctx = {

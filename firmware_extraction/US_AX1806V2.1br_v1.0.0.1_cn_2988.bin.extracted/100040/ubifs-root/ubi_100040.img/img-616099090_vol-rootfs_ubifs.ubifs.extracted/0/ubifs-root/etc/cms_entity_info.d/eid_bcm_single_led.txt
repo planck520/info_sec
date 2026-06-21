@@ -1,0 +1,5 @@
+BEGIN
+  eid         = EID_SINGLE_LED
+  name        = single_led
+  flags       = EIF_MDM|EIF_MESSAGING_CAPABLE|EIF_LAUNCH_ON_BOOT|EIF_AUTO_RELAUNCH
+END

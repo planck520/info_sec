@@ -1,0 +1,91 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <!--子菜单-->
+  <adv-child-menu childType="vpn"></adv-child-menu>
+  <div class="advance-box">
+  	<x-help :text="lang_t('vpn.help_sss')"></x-help>
+	<br><br>
+	<div class="fun-box">
+	  <table class="table">  
+	  	<tbody>
+	  	<tr>
+	  	  <td class="fun-left">{{ lang_t('common.state') }}</td>
+	  	  <td>
+	  	  	<x-switch v-model="status"  @change="switchChange"></x-switch>
+	  	  </td>
+		</tr>
+  		</tbody> 
+		<tbody v-show="status">
+			<tr>
+			  <td class="fun-left">{{ lang_t('vpn.server') }}</td>
+			  <td>
+				  <!-- <input type="text" v-model="server" v-verify="formRules" data-name="server" maxlength="15"> -->
+				  <span>{{server}}</span>
+			  </td>
+			</tr>
+			<tr>
+			  <td class="fun-left">{{ lang_t('openvpn.port') }}</td>
+			  <td>
+				<input type="text" v-model="port" v-verify="formRules" data-name="port" maxlength="5">
+				&nbsp;&nbsp;
+				<small>({{ lang_t('vpn.range') }}:100~65535)</small>
+			  </td>
+			</tr>
+			<tr>
+			  <td class="fun-left">{{ lang_t('vpn.time') }}</td>
+			  <td>
+				<input type="text" v-model="timeout" v-verify="formRules" data-name="timeout" maxlength="3">
+				&nbsp;&nbsp;
+				<small>({{ lang_t('vpn.range') }}:1~180)s</small>
+			  </td>
+			</tr>
+		<tr>
+		  <td class="fun-left">{{ lang_t('rule.pass') }}</td>
+		  <td>
+			<input type="text" v-model="pass" v-verify="formRules" data-name="pass">
+		  </td>
+		</tr>
+		<tr>
+		  <td class="fun-left">{{ lang_t('wifi.encryption') }}</td>
+		  <td>
+			<select v-model="encryption">
+				<option value="aes-128-cfb">AES-128-CFB</option>
+				<option value="aes-192-cfb">AES-192-CFB</option>
+				<option value="aes-256-cfb">AES-256-CFB</option>
+				<option value="aes-128-ctr">AES-128-CTR</option>
+				<option value="aes-192-ctr">AES-192-CTR</option>
+				<option value="aes-256-ctr">AES-256-CTR</option>
+				<option value="aes-128-gcm">AES-128-GCM</option>
+				<option value="aes-192-gcm">AES-192-GCM</option>
+				<option value="aes-256-gcm">AES-256-GCM</option>
+				<option value="bf-cfb">BF-CFB</option>
+				<option value="chacha20">CHACHA20</option>
+				<option value="chacha20-ietf">CHACHA20-IETF</option>
+				<option value="chacha20-ietf-poly1305">CHACHA20-IETF-POLY1305</option>
+				<option value="xchacha20-ietf-poly1305">XCHACHA20-IETF-POLY1305</option>
+				<option value="rc4-md5">RC4-MD5</option>
+				<option value="salsa20">SALSA20</option>
+			</select>
+		  </td>
+		</tr>
+		<tr>
+		  <td class="fun-left">{{ lang_t('vpn.udp_forward') }}</td>
+		  <td>
+			<select v-model="udpFlag">
+				<option value="0">{{lang_t('common.off')}}</option>
+				<option value="1">{{lang_t('common.on')}}</option>
+			</select>
+		  </td>
+		</tr>
+		
+		<tr><td colspan="2"></td></tr>
+		<tr>
+		  <td class="fun-left"></td>
+		  <td>
+			<button type="button" class="btn" @click="handleSubmit">{{ lang_t('common.apply') }}</button>
+		  </td>
+		</tr>
+	  	</tbody>
+	  </table>
+  	</div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,status:!1,port:"",timeout:"",pass:"",server:"",encryption:"",udpFlag:"0"}},computed:{formRules:function(){var o=this;return{port:function(t,n){var a=cs.num_range(t,100,65535);0==a?n(o.lang_t("openvpn.port")+o.lang_t("rule.msg12")):1==a?n(o.lang_t("openvpn.port")+o.lang_t("rule.msg5")):2==a?n(o.lang_t("openvpn.port")+o.lang_t("rule.msg56",[100,65535])):n()},timeout:function(t,n){var a=cs.num_range(t,1,180);0==a?n(o.lang_t("shadowsocks.time")+o.lang_t("rule.msg12")):1==a?n(o.lang_t("shadowsocks.time")+o.lang_t("rule.msg5")):2==a?n(o.lang_t("shadowsocks.time")+o.lang_t("rule.msg56",[1,180])):n()},pass:function(t,n){var a=cs.string(t);0==a?n(o.lang_t("rule.msg12")):1==a?n(o.lang_t("rule.msg22")):n()}}}},created:function(){var n=this;uiPost.getSSServer(function(t){n.status=1==t.enable,n.InitialStatusVal=n.status,n.port=t.port,n.timeout=t.timeout,n.pass=t.password,n.encryption=t.encryption,n.server=t.server,n.udpFlag=t.udpFlag})},methods:{switchChange:function(t){var n={};this.InitialStatusVal&&!t&&(n.enable="0",uiPost.setSSServer(n,function(t){var n=1;t&&t.wtime&&"0"!=t.wtime&&(n=t.wtime),Cstool.applyLoad(n,function(){location.href=location.href})}))},handleSubmit:function(){var n=this,a={};Cstool.Verify(this.formRules,function(t){t&&(a.enable=n.status?"1":"0",a.port=n.port,a.timeout=n.timeout,a.password=n.pass,a.encryption=n.encryption,a.udpFlag=n.udpFlag,uiPost.setSSServer(a,function(t){var n=1;t&&t.wtime&&"0"!=t.wtime&&(n=t.wtime),Cstool.applyLoad(n,function(){location.href=location.href})}))})}}}</script><script src="/static/js/main.js"></script></body></html>

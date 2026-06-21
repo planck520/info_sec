@@ -1,0 +1,58 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><link rel="stylesheet" href="/static/css/main.css"><link rel="stylesheet" href="/static/css/common.css"><link rel="stylesheet" href="/static/css/advance_menu.css"></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <!--子菜单-->
+  <adv-child-menu childType="service"></adv-child-menu>   
+  <div class="advance-box">
+    <x-help :text="lang_t('dos.help')"></x-help>
+	<br><br>
+	<div class="fun-box">
+	  <div>
+	  	<span class="fun-title">{{lang_t('dos.state')}}</span>
+	  	&nbsp;&nbsp;
+	  	<x-switch v-model="enable"></x-switch>
+	  </div>
+      <table>
+        <tr><td height="5">&nbsp;</td></tr>
+        <tr>
+          <td><table class="t_table3 table-bordered table-striped">
+        	<thead>
+			       <tr>
+              <th>{{ lang_t('common.select') }}<x-checkbox v-model="selectall" @change="selectAll" :disabled="!enable"></x-checkbox></th>
+              <th></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(v,i) in ruleList" :key="i">
+              <td>
+                	<x-checkbox v-model="mgEnable[v.enable]" :disabled="!enable"></x-checkbox>
+              </td>
+              <td>{{ v.name }}</td>
+              <td>
+                <div v-if="v.val && i!=8">
+                  <input type="text" v-model="mgVal[v.val]" v-verify="formRules" :data-name="'mgNum'+i" :disabled="!mgEnable[v.enable] || !enable">
+                  <span v-show="i<9">Packets/Second</span>
+                  <span v-show="i>9">Block time (sec)</span>
+                </div>
+                <div v-if="v.val && i==8">
+                  <select v-model="mgVal[v.val]" :disabled="!enable">
+                    <option value="0">Low</option>
+                    <option value="1">High</option>
+                  </select>
+                  <span>Sensitivity&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+          </table></td>
+        </tr>
+        <tr>
+          <td colspan="12">
+            <div style="padding-left: 30px;">
+              <button class="btn" @click="handleSubmit">{{ lang_t('common.apply') }}</button>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,selectall:!1,enable:!1,ruleList:[],mgVal:{},mgEnable:{}}},watch:{mgEnable:{deep:!0,handler:function(o){var l=0;for(var e in o)o[e]&&l++;l==this.ruleList.length?this.selectall=!0:this.selectall=!1}}},computed:{formRules:function(){var e=this;return{mgNum:function(o,l){99!=cs.num(o)?l(e.lang_t("rule.msg5")):l()}}}},created:function(){var e=this;this.tableInit(),uiPost.getDosCfg(function(o){for(var l in e.enable="1"==o.dosEnabled,e.mgEnable)e.mgEnable[l]="1"==o[l];for(var l in e.mgVal)e.mgVal[l]=o[l]})},methods:{selectAll:function(o){for(var l in this.mgEnable)this.mgEnable[l]=o},handleSubmit:function(){var l={};for(var o in this.mgEnable)l[o]=this.mgEnable[o]?"1":"0";for(o in this.mgVal)l[o]=this.mgVal[o];l.dosEnabled=this.enable?"1":"0",Cstool.Verify(this.formRules,function(o){o&&uiPost.setDosCfg(l,function(){location.href=location.href})})},tableInit:function(o){for(var l=["Whole System Flood: SYN&sysfloodSyn","Whole System Flood: FIN&sysfloodFin","Whole System Flood: UDP&sysfloodUdp","Whole System Flood: ICMP&sysfloodIcmp","Per-Source IP Flood: SYN&ipfloodSyn","Per-Source IP Flood: FIN&ipfloodFin","Per-Source IP Flood: UDP&ipfloodUdp","Per-Source IP Flood: ICMP&ipfloodIcmp","TCP/UDP PortScan&tcpUdpPortScan","ICMP Smurf&icmpSmurf","IP Land&ipLand","IP Spoof&ipSpoof","IP TearDrop&ipTearDrop","PingOfDeath&pingOfDeath","TCP Scan&tcpScan","TCP SynWithData&tcpSynWithData","UDP Bomb&udpBomb","UDP EchoChargen&udpEchoChargen","Enable Source IP Blocking&ipblockTime"],e=0,n=l.length;e<n;e++){var t=l[e].split("&"),a={name:t[0],enable:t[1]+"Enabled"};(e<=8||e==n-1)&&(a.val=t[1]),this.ruleList.push(a),this.$set(this.mgEnable,a.enable,!1),a.val&&this.$set(this.mgVal,a.val,"")}}}}</script><script src="/static/js/main.js"></script></body></html>

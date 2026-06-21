@@ -1,0 +1,57 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta content="width=device-width,initial-scale=1,user-scalable=no" name="viewport"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><link rel="stylesheet" href="/static/css/phone/main.css"><link rel="stylesheet" href="/static/css/phone/common.css"><style>::-webkit-scrollbar{display:none}.main-pad{padding:1% 3% 1% 3%;height:70vh}.row-group{margin-top:6%}input{color:#777}</style></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <phone-back :title="phoneTitle" type="custom" @on-click="backFun"></phone-back>
+  <div v-show="homepage">
+	<white-header imgSrc="/static/images/phone/urlfilter.png" :title="lang_t('menu.urlfilter')" >
+	  <div class="right-btn-img right-btn-top">
+		<x-switch v-model="urlState" @change="applyBtn('switch')"></x-switch>
+	  </div>
+	</white-header>
+	<br>
+  </div>
+  <div class="white-layout" v-show="urlState">
+	<div class="main-pad">
+	  <div v-show="homepage" class="list-main">
+		<div class="row list2" style="padding-bottom:0" v-for="(data,v) in data"  @click="showBtn(data,v)">
+		  <div class="left-img" style="padding-top: 10px;">
+			<img src="/static/images/phone/url.png">
+		  </div>
+		  <div class="msg">
+			<br>
+			<p>{{ data.url }}</p>
+		  </div>
+		  <div class="right-img" style="padding-top: 20px;">
+			<img src="/static/images/phone/sign_right.png">
+		  </div>
+		</div>
+		<br>
+		<div style="text-align:center;padding-bottom:1%;">
+		  <x-icon type="add" size="2" color="#69A7DA" @click="addBtn"></x-icon>
+		</div>
+	  </div>
+	  <br>
+	  <div v-show="!homepage" class="whitelist-main">
+		<div class="row-group">
+		  <div class="row-right">
+			<input class="right" v-model="url" :maxlength="32" style="margin-right:10%;">
+		  </div>
+		  <div class="row-left">
+			<p>{{ lang_t('rule.url') }}:</p>
+		  </div>
+		  </div>
+		  <div class="row-group" style="margin-top: 1%;">
+			  <div class="row-right">
+				<span>{{ lang_t('rule.url')+', '+lang_t('rule.eg') }}: {{globalConfig.urlfEgText}}</span>
+			  </div>
+			  <div class="row-left">
+				&nbsp;
+			  </div>
+		  </div>
+		  <div class="login-bottom">
+			<button class="login-btn-blue" @click="applyBtn">{{ lang_t('common.apply') }}</button>
+			<br><br>
+			<button v-show="this.tempIdx !== ''" class="login-btn-red" @click="deleteBtn">{{ lang_t('common.delete') }}</button>
+		  </div>
+	  </div>
+    </div>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/phone_layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,data:[],homepage:!0,urlState:!1,url:"",editState:"add",tempIdx:0}},computed:{phoneTitle:function(){return this.homepage?"":this.lang_t("menu.urlfilter")}},created:function(){var e=this;uiPost.getUrlFilterRules(function(t){e.urlState="1"==t.enable,t.rule&&(e.data=t.rule)})},mounted:function(){this.autoFun()},methods:{backFun:function(){this.homepage?location.href="/phone/home.html":this.homepage=!0},addBtn:function(){this.homepage&&(this.editState="add",this.homepage=!1,this.tempIdx="",this.url="")},showBtn:function(t,e){this.homepage&&(this.tempIdx=e,this.editState="edit",this.homepage=!1,this.url=t.url)},applyBtn:function(t){var e=this,n={};if("switch"==t)this.urlState?n.enable="1":n.enable="0",n.addEffect="0";else{if(!e.url)return Cstool.Mark({content:e.lang_t("rule.url")+e.lang_t("rule.msg12"),l_text:e.lang_t("common.back")}),!1;if(1==cs.string(e.url))return Cstool.Mark({content:e.lang_t("rule.msg21"),l_text:e.lang_t("common.back")}),!1;if("add"==this.editState){if(16<=this.data.length)return Cstool.Mark({content:this.lang_t("rule.msg30",[16]),l_text:this.lang_t("common.back")}),!1;for(i=0;i<this.data.length;i++)if(this.url==this.data[i].url)return Cstool.Mark({content:this.lang_t("rule.msg58"),l_text:this.lang_t("common.back")}),!1;n.addEffect="1"}else n.idx=String(this.tempIdx+1),n.enable="1",n.addEffect="2";n.url=this.url}uiPost.setUrlFilterRules(n,function(t){Cstool.Mark({type:"load",time:2,content:e.lang_t("common.effective"),success:function(){Cstool.Flag({content:e.lang_t("common.set_success"),btnText:e.lang_t("common.back"),ok:function(){location.href=location.href}})}})})},deleteBtn:function(){var n=this,t={};t["delRule"+this.tempIdx]=String(this.tempIdx),Cstool.Mark({content:n.lang_t("vpn.msg8"),ok:function(){uiPost.delUrlFilterRules(t,function(t){var e=2;t&&t.wtime&&"0"!=t.wtime&&(e=t.wtime),Cstool.Mark({type:"load",time:e,content:n.lang_t("common.deletion"),success:function(){location.href=location.href}})})}})},autoFun:function(){}}}</script><script src="/static/js/main.js"></script></body></html>

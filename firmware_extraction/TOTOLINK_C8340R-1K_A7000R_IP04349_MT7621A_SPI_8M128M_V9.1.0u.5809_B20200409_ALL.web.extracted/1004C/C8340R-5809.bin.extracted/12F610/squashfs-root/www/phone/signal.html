@@ -1,0 +1,61 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title>TOTOLINK</title><meta content="width=device-width,initial-scale=1,user-scalable=no" name="viewport"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><link rel="stylesheet" href="/static/css/phone/main.css"><link rel="stylesheet" href="/static/css/phone/common.css"><style>.center{display:flex;align-items:center;height:60px}</style></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <phone-back :title="lang_t('menu.signal')" url="/phone/tools.html"></phone-back>
+	<br>
+	<div class="white-layout" >
+		<div class="main-pad">
+			<div class="list-main" style="height: auto;">
+				<div class="row list2 center">
+					<div class="row-left" style="padding-top: 32px;">
+						<p>{{ lang_t('signal.band_select') }}:</p>
+					</div>
+					<div class="row-right select_input_header" style="padding-right: 10px;">
+						<span class="right">
+						  <select v-model="wifiIdx" @change="wifiIdxChange">
+							<option value="0">2.4GHz</option>
+							<option value="1" v-if="wifiDualband == '1'">5GHz</option>
+							<option value="2" v-if="wifiDualband == '2'">5GHz (1)</option>
+							<option value="3" v-if="wifiDualband == '2'">5GHz (2)</option>
+						  </select>
+						</span>
+					</div>
+				</div>
+				<div class="row list2 center" @click="changeBtn(3)">
+					<div class="left-img">
+						<img src="/static/images/signal_good.png">
+						<p>{{ lang_t('signal.level3') }}</p>
+					</div>
+					<div class="msg" style="width:60%;padding-right: 10px;">
+						<p>{{ lang_t('signal.msg3') }}</p>
+					</div>
+					<div class="right-img" style="padding-top:2%;" >
+						<x-icon v-show="checked3"></x-icon>
+					</div>
+				</div>
+				<div class="row list2 center" @click="changeBtn(2)">
+					<div class="left-img">
+						<img src="/static/images/signal_medium.png">
+						<p>{{ lang_t('signal.level2') }}</p>
+					</div>
+					<div class="msg" style="width:60%;padding-right: 10px">
+						<p>{{ lang_t('signal.msg2') }}</p>
+					</div>
+					<div class="right-img" style="padding-top:1%" v-show="checked2">
+						<x-icon></x-icon>
+					</div>
+				</div>
+				<div class="row list2 center" @click="changeBtn(1)">
+					<div class="left-img">
+						<img src="/static/images/signal_weak.png">
+						<p>{{ lang_t('signal.level1') }}</p>
+					</div>
+					<div class="msg" style="width:60%;padding-right: 10px">
+						<p>{{ lang_t('signal.msg1') }}</p>
+					</div>
+					<div class="right-img" style="padding-top:1%" v-show="checked1">
+						<x-icon></x-icon>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/phone_layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,checked1:!1,checked2:!1,checked3:!1,signalLevel:"",wifiDualband:"0",wifiIdx:"0"}},created:function(){var i=this,e={};e.wifiIdx=i.wifiIdx,uiPost.getWiFiSignalCfg(e,function(e){"1"==e.signalLevel?i.checked1=!0:"2"==e.signalLevel?i.checked2=!0:"3"==e.signalLevel&&(i.checked3=!0),i.signalLevel=e.signalLevel,i.wifiDualband=e.wifiDualband})},methods:{changeBtn:function(e){1==e?(this.checked1=!0,this.checked2=!1,this.checked3=!1):2==e?(this.checked1=!1,this.checked2=!0,this.checked3=!1):3==e&&(this.checked1=!1,this.checked2=!1,this.checked3=!0),this.signalLevel!=e&&(this.signalLevel=e,this.applyFun())},wifiIdxChange:function(){var i=this,e={};e.wifiIdx=i.wifiIdx,uiPost.getWiFiSignalCfg(e,function(e){"1"==e.signalLevel?(i.checked1=!0,i.checked2=!1,i.checked3=!1):"2"==e.signalLevel?(i.checked1=!1,i.checked2=!0,i.checked3=!1):"3"==e.signalLevel&&(i.checked1=!1,i.checked2=!1,i.checked3=!0),i.signalLevel=e.signalLevel,i.wifiDualband=e.wifiDualband})},applyFun:function(){var c=this,e={};e.wifiIdx=c.wifiIdx,e.signalLevel=c.signalLevel,uiPost.setWiFiSignalCfg(e,function(e){var i=40;e&&(e.wtime&&"0"!=e.wtime&&(i=Number(e.wtime)),Cstool.Mark({type:"load",time:i,content:c.lang_t("common.effective"),success:function(){Cstool.Flag({content:c.lang_t("common.success_relink"),btnText:c.lang_t("common.back"),ok:function(){location.href=location.href}})}}))})}}}</script><script src="/static/js/main.js"></script></body></html>

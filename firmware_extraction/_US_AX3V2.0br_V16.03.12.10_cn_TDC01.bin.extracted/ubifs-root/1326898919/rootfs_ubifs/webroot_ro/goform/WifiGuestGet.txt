@@ -1,0 +1,13 @@
+{
+"guestEn": "0",
+"guestSsid": "pwm",
+"guestWrlPwd":"12345678",
+"guestEn_5g": "1",
+"guestSsid_5g": "Tenda_guest_5g",
+"guestWrlPwd_5g":"12345678",
+"wl_mode": "ap",
+"shareSpeed": "1024",
+"wl_en": "1",
+"ssid_5g":"pwm",
+"ssid":"pwmm"
+}

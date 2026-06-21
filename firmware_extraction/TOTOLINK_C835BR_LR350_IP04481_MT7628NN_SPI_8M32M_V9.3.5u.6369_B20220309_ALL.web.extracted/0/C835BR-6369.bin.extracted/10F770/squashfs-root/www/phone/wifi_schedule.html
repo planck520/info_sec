@@ -1,0 +1,102 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title></title><meta content="width=device-width,initial-scale=1,user-scalable=no" name="viewport"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><link rel="stylesheet" href="/static/css/phone/main.css"><link rel="stylesheet" href="/static/css/phone/common.css"><style>::-webkit-scrollbar{display:none}.radio-content{margin:0;position:relative;padding-top:10%;width:100%}.radio-content .dot{position:absolute;top:3%;left:2%;width:18px;height:18px;line-height:18px;border-radius:18px;border:3px solid #fff}.radio-content .double{left:37%}.radio-content .double2{left:72%}.radio-content .active{position:absolute;top:3px;left:3px;width:12px;height:12px;background:#fff;border-radius:12px}.radio-content .text{position:absolute;left:28px;white-space:nowrap}.btn-fun button{min-width:80px;background-color:#f0f7fa;padding:8px;border-radius:5px;color:#66a2d4}.btn-fun .btn-active{background-color:#66a2d4;color:#fff}</style></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+		<phone-back type="custom" @on-click="backFun"></phone-back>
+		<white-header imgSrc="/static/images/phone/wifi_schedule.png" :title="lang_t('menu.wifi_schedule')">
+			<div class="right-btn-img right-btn-top">
+				<x-switch v-model="state" @change="abledFun"></x-switch>
+			</div>
+		</white-header>
+		<br>
+		<div class="row-content">
+			<div v-show="state">
+				<div class="list" :style="{height: listHeight,'overflow-y':'auto'}" v-if="!modefy">
+					<div class="row content" v-for="(data,v) in ruleList" @click="modefyFun(data,v)">
+						<div class="left-img">
+							<img src="/static/images/phone/phone.png" v-if="data.deviceType == 'mobile'">
+							<img src="/static/images/phone/pc.png" v-else>
+							<p>{{ data.desc }}</p>
+						</div>
+						<div class="msg" style="width: auto;">
+							<p>&nbsp;</p>
+							<p>{{ lang_t('rule.time') }}: {{ timeConver(data) }}</p>
+							<p>&nbsp;</p>
+							<p>{{ Number(data.sHour)<10?'0'+data.sHour:data.sHour }}:{{ Number(data.sMinute)<10?'0'+data.sMinute:data.sMinute }}   --    {{ Number(data.eHour)<10?'0'+data.eHour:data.eHour }}:{{ Number(data.eMinute)<10?'0'+data.eMinute:data.eMinute }}</p>
+						</div>
+						<div class="right-img">
+							<img src="/static/images/phone/select_off.png">
+						</div>
+					</div>
+				</div>
+				<div v-else>
+					<div class="row-group">
+						<div class="row-right" style="margin-right:9%">
+							<input class="right" v-model="desc" :maxlength="20">
+						</div>
+						<div class="row-left" style="width: 29%;">
+							<p>{{ lang_t('rule.description') }}:</p>
+						</div>
+					</div>
+					<div class="row-group">
+						<div class="row-right select_input" style="margin-right:9%">
+							<span>
+							<select v-model="week" class="long-select">
+								<option value="0">{{ lang_t('schedule.every') }}</option>
+								<option value="1">{{ lang_t('schedule.mon') }}</option>
+								<option value="2">{{ lang_t('schedule.tue') }}</option>
+								<option value="3">{{ lang_t('schedule.wed') }}</option>
+								<option value="4">{{ lang_t('schedule.thu') }}</option>
+								<option value="5">{{ lang_t('schedule.fri') }}</option>
+								<option value="6">{{ lang_t('schedule.sat') }}</option>
+								<option value="7">{{ lang_t('schedule.sun') }}</option>
+							</select>
+							</span>
+						</div>
+						<div class="row-left" style="width: 29%;">
+							<p>{{ lang_t('schedule.week') }}:</p>
+						</div>
+					</div>
+					<div class="row-group">
+						<div class="row-right select_input time-select" style="margin-right:9%;width: 55%;">
+							<select class="right" v-model="sMin" style="width: 40%">
+								<option v-for="(v,min) in 60" :value="min">{{ min < 10 ? ('0'+min) : min }}&nbsp;{{ lang_t('schedule.mins') }}</option>
+							</select>
+							<span class="right">&nbsp; : &nbsp;</span>
+							<select class="right" v-model="sHour" style="width: 40%">
+								<option v-for="(v,hour) in 24" :value="hour">{{ hour < 10 ? ('0'+hour) : hour }}&nbsp;{{ lang_t('schedule.times') }}</option>
+							</select>
+						</div>
+						<div class="row-left" style="width: 29%;">
+							<p>{{ lang_t('schedule.start_time') }}:</p>
+						</div>
+					</div>
+					<div class="row-group">
+						<div class="row-right select_input time-select" style="margin-right:9%;width: 55%;">
+							<select class="right" v-model="eMin" style="width: 40%">
+								<option v-for="(v,min) in 60" :value="min">{{ min < 10 ? ('0'+min) : min }}&nbsp;{{ lang_t('schedule.mins') }}</option>
+							</select>
+							<span class="right">&nbsp; : &nbsp;</span>
+							<select class="right" v-model="eHour" style="width: 40%">
+								<option v-for="(v,hour) in 24" :value="hour">{{ hour < 10 ? ('0'+hour) : hour }}&nbsp;{{ lang_t('schedule.times') }}</option>
+							</select>
+						</div>
+						<div class="row-left" style="width: 29%;">
+							<p>{{ lang_t('schedule.end_time') }}:</p>
+						</div>
+					</div>
+					<div class="login-bottom">
+						<button class="login-btn" @click="applyFun" :disabled="applyAbled">{{ lang_t('common.apply') }}</button>
+						<br><br>
+						<button v-show="this.flag != 'add'" class="login-btn-red" @click="deleteBtn">{{ lang_t('common.delete') }}</button>
+					</div>
+				</div>
+				<div style="text-align:center;padding-bottom:5%;" v-show="!modefy">
+					<x-icon type="add" size="2" color="#69A7DA" @click="addFun"></x-icon>
+				</div>
+			</div>
+			<div style="position: fixed;bottom: 3%;width: 85%;" v-if="!modefy && globalConfig.guestWifiSchSupport">
+				<div style="text-align: center;" class="btn-fun">
+					<button :class="[funIdx=='0'?'btn-active':'']" @click="funModeChange('0')" style="margin-right: 38%;">{{lang_t('wifi.main_wifi')}}</button>
+					<button :class="[funIdx=='1'?'btn-active':'']" @click="funModeChange('1')">{{lang_t('menu.guest')}}</button>
+				</div>
+			</div>
+		</div>
+	</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/phone_layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,wifiDualband:"0",wifiActive:"0",data:[],state:!1,week:"0",sHour:"0",sMin:"0",eHour:"0",eMin:"0",dotActive:"0",ruleList:[],listHeight:"300px",modefy:!1,flag:"add",desc:"",applyAbled:!1,funIdx:"0"}},created:function(){this.listHeight=.65*window.innerHeight+"px",this.funIdx=cs.local(this.funIdx),this.wifiInit(this.funIdx)},methods:{funModeChange:function(t){this.funIdx=t,this.wifiInit(t)},wifiInit:function(t){var e=this,i={isGuest:t};uiPost.getWiFiScheduleCfg(i,function(t){e.state="1"==t.enable,t.rule&&(e.ruleList=t.rule,e.dataTotal=e.ruleList.length,e.data=t.rule)})},timeConver:function(t){var e="",i=t.week;for(var n in i)"1"==i[n]?e+=this.lang_t("rule.mon")+"":"2"==i[n]?e+=this.lang_t("rule.tue")+"":"3"==i[n]?e+=this.lang_t("rule.wed")+"":"4"==i[n]?e+=this.lang_t("rule.thu")+"":"5"==i[n]?e+=this.lang_t("rule.fri")+"":"6"==i[n]?e+=this.lang_t("rule.sat")+"":"7"==i[n]?e+=this.lang_t("rule.sun")+"":"0"==i[n]&&(e+=this.lang_t("rule.every")+"");return e},applyFun:function(){var e=this;if(e.desc){var t=cs.commentstr(e.desc);if(1==t||2==t)return this.errorData(this.lang_t("rule.msg4")),!1}if(Number(e.sHour)>Number(e.eHour))return this.errorData(this.lang_t("rule.msg28")),!1;if(Number(e.sHour)==Number(e.eHour)&&Number(e.sMin)>=Number(e.eMin))return this.errorData(this.lang_t("rule.msg28")),!1;var i=cs.time_to_sec(e.sHour,e.sMin),n=cs.time_to_sec(e.eHour,e.eMin),s=e.data;if("add"==this.flag){if(10<=this.ruleList.length)return Cstool.Mark({content:this.lang_t("rule.msg30",[10]),l_text:this.lang_t("common.back")}),!1;for(var o in s)if("0"==s[o].week||"0"==e.week||s[o].week==e.week){var a=cs.time_to_sec(s[o].sHour,s[o].sMinute);if(cs.time_to_sec(s[o].eHour,s[o].eMinute)<i||n<a)continue;return this.errorData(this.lang_t("rule.msg31")),!1}}else for(var o in s)if(o!=this.flag&&s[o].week==e.week){a=cs.time_to_sec(s[o].sHour,s[o].sMinute);if(cs.time_to_sec(s[o].eHour,s[o].eMinute)<i||n<a)continue;return this.errorData(this.lang_t("rule.msg32")),!1}var u={};u.enable=this.state?"1":"0","add"==this.flag?u.addEffect="1":(u.idx=String(this.flag+1),u.addEffect="2"),u.isGuest=this.funIdx,u.desc=this.desc,u.week=this.week,u.sHour=String(this.sHour),u.sMinute=String(this.sMin),u.eHour=String(this.eHour),u.eMinute=String(this.eMin),Cstool.Mark({content:e.lang_t("rule.msg64"),ok:function(){uiPost.setWiFiScheduleCfg(u,function(t){Cstool.Mark({type:"load",time:2,content:e.lang_t("common.effective"),success:function(){e.applyAbled=!1,Cstool.Flag({content:e.lang_t("common.set_success"),btnText:e.lang_t("common.back"),ok:function(){cs.local(e.funIdx,"href")}})}})})}})},deleteBtn:function(){var e=this,t={};t.enable=e.enable,t.isGuest=this.funIdx,t[this.ruleList[this.flag].delRuleName]=String(this.flag),uiPost.delWiFiScheduleCfg(t,function(t){Cstool.Mark({type:"load",time:2,content:e.lang_t("common.effective"),success:function(){Cstool.Flag({content:e.lang_t("common.set_success"),btnText:e.lang_t("common.back"),ok:function(){cs.local(e.funIdx,"href")}})}})})},backFun:function(){this.modefy?this.modefy=!1:location.href="/phone/home.html"},modefyFun:function(t,e){this.desc=t.desc,this.week=t.week,this.sHour=t.sHour,this.sMin=t.sMinute,this.eHour=t.eHour,this.eMin=t.eMinute,this.flag=e,this.modefy=!0},addFun:function(){this.desc="",this.week="1",this.sHour="0",this.sMin="0",this.eHour="0",this.eMin="0",this.flag="add",this.modefy=!0},errorData:function(t){Cstool.Mark({content:t,l_text:this.lang_t("common.back")})},abledFun:function(){var t=this;"on"==this.state?$("select").attr("disabled",!1):$("select").attr("disabled",!0);var e={};e.enable=this.state?"1":"0",e.isGuest=this.funIdx,Cstool.Mark({type:"load",time:2,content:t.lang_t("common.effective"),success:function(){Cstool.Flag({content:t.lang_t("common.set_success"),btnText:t.lang_t("common.back"),ok:function(){cs.local(t.funIdx,"href")}})}}),uiPost.setWiFiScheduleCfg(e,function(t){})}}}</script><script src="/static/js/main.js"></script></body></html>

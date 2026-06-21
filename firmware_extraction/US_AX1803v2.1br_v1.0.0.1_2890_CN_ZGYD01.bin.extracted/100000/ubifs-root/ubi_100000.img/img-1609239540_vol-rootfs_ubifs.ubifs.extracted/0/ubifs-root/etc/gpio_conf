@@ -1,0 +1,13 @@
+#! /bin/sh
+#LED1 低电平有效
+echo 1 > /proc/led0/val
+echo 1 > /proc/led1/val
+##配置GPIO id 【注意gpio id为16进制数】
+echo 11 > /proc/led0/gpio_id
+echo 12 > /proc/led1/gpio_id
+
+#默认为红灯慢闪
+echo 3 > /proc/led0/state
+echo 1 > /proc/led1/state
+
+#single_led &

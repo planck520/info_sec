@@ -1,0 +1,20 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta http-equiv="proma" content="no-cache"><meta http-equiv="cache-control" content="no cache"><meta http-equiv="expires" content="0"><title>TOTOLINK</title><meta content="width=device-width,initial-scale=1,user-scalable=no" name="viewport"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><link rel="stylesheet" href="/static/css/phone/main.css"><link rel="stylesheet" href="/static/css/phone/common.css"></head><body><div id="app"></div><script type="text/x-template" id="main"><div>
+  <phone-back url="/phone/tools.html"></phone-back>
+  <div class="changepwd-top">
+    <img src="/static/images/phone/administrator.png">
+    <br><br>
+    <span>{{ lang_t('changepwd.change_admin_pass') }}</span>
+  </div>
+  <div class="changepwd-middle">
+  <input v-model="origPass" type="text" :maxlength="32" :placeholder="lang_t('changepwd.orig_pass')" v-pass>
+  </div>
+  <div class="changepwd-middle">
+	<input v-model="newPass" type="text" :maxlength="32" :placeholder="lang_t('changepwd.new_pass')" v-pass>
+  </div>
+  <div class="changepwd-middle">
+	<input v-model="confirmPass" type="text" :maxlength="32" :placeholder="lang_t('changepwd.confirm_pass')" v-pass>
+  </div>
+  <div class="changepwd-bottom">
+	<button class="login-btn" @click="applyFun">{{ lang_t('common.apply') }}</button>
+  </div>
+</div></script><script src="/plugin/vue.js"></script><script src="/plugin/jquery-3.2.1.min.js"></script><script src="/static/js/config.js"></script><script src="/static/js/phone_layout.js"></script><script src="/static/js/common.js"></script><script src="/static/js/topicurl.js"></script><script>var cs_main={template:"#main",data:function(){return{globalConfig:globalConfig,lang:$.lang,lang_t:lang_t,newPass:"",confirmPass:"",origPass:"",user:""}},created:function(){var s=this;uiPost.getPasswordCfg(function(t){s.user=t.admuser})},methods:{applyFun:function(){if(""==this.origPass)return Cstool.Mark({content:this.lang_t("changepwd.msg1"),l_text:this.lang_t("common.back")}),!1;if(1==cs.string(this.origPass))return Cstool.Mark({content:this.lang_t("changepwd.msg3"),l_text:this.lang_t("common.back")}),!1;if(""==this.newPass)return Cstool.Mark({content:this.lang_t("changepwd.msg4"),l_text:this.lang_t("common.back")}),!1;if(1==cs.string(this.newPass))return Cstool.Mark({content:this.lang_t("changepwd.msg5"),l_text:this.lang_t("common.back")}),!1;if(this.newPass!=this.confirmPass)return Cstool.Mark({content:this.lang_t("changepwd.msg6"),l_text:this.lang_t("common.back")}),!1;var s=this,t={};t.admuser=this.user,t.admpass=this.newPass,t.origPass=this.origPass,uiPost.setPasswordCfg(t,function(t){0==t.success?Cstool.Mark({content:s.lang_t("changepwd.msg2"),l_text:s.lang_t("common.back")}):Cstool.Mark({type:"load",time:2,content:s.lang_t("common.effective"),success:function(){Cstool.Flag({content:s.lang_t("common.set_success"),btnText:s.lang_t("common.back"),ok:function(){parent.location.href="http://"+location.host+"/formLogoutAll.htm"}})}})})}}}</script><script src="/static/js/main.js"></script></body></html>

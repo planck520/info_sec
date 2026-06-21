@@ -1,0 +1,14 @@
+{
+    "schedWifiEn":"0",
+    "wispEn": "1",
+    "wpsEn": "1",
+    "namePwd": "1",
+    "beamforming": "0",
+    "ofdmaEn": "1",
+    "signal": "02",
+    "apMode":"1",
+    "WebofdmaEn": "0",
+    "wrlAccess": "white",
+    "WifiAntijamEn": "true",
+    "meshRole": "2"
+}
