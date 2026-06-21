@@ -165,6 +165,8 @@ async def start_llm_review(body: dict, request: Request):
         raise HTTPException(status_code=422, detail="mode must be 'direct' or 'reasoning'")
 
     config = get_config()
+    if not config.get("llm_enabled", True):
+        raise HTTPException(status_code=400, detail="LLM analysis is disabled. Enable it in Settings.")
     api_key = config.get("llm_api_key")
     if not api_key:
         raise HTTPException(status_code=400, detail="LLM API key not configured. Set it in Settings.")

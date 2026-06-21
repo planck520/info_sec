@@ -77,6 +77,16 @@
         if (p) tagEl.textContent = p.tag;
       }
       _updateIDAStatus();
+
+      // LLM toggle state
+      var toggleEl = document.getElementById('settings-llm-enabled');
+      if (toggleEl) {
+        if (settings.llm_enabled !== false) {
+          toggleEl.classList.add('on');
+        } else {
+          toggleEl.classList.remove('on');
+        }
+      }
     } catch (e) {
       console.error('Failed to load settings:', e);
     }
@@ -89,6 +99,7 @@
       llm_base_url: _settingsField('settings-llm-url'),
       llm_model:    _settingsField('settings-llm-model'),
       ida_path:     _settingsField('settings-ida-path'),
+      llm_enabled:  _isLLMEnabled(),
     };
     // Only send api_key if user typed a new value (not the masked placeholder)
     if (keyEl && keyEl.value && keyEl.value.indexOf('****') === -1) {
@@ -203,6 +214,22 @@
     }
   }
 
+  function _isLLMEnabled() {
+    var el = document.getElementById('settings-llm-enabled');
+    return el ? el.classList.contains('on') : true;
+  }
+
+  // ── LLM toggle ────────────────────────────────────────────
+
+  function initLLMToggle() {
+    var toggleEl = document.getElementById('settings-llm-enabled');
+    if (!toggleEl) return;
+    toggleEl.addEventListener('click', function () {
+      this.classList.toggle('on');
+      saveSettings();
+    });
+  }
+
   // ── page lifecycle ─────────────────────────────────────────
 
   AppState.registerPage('settings', {
@@ -210,6 +237,7 @@
       initLLMProviderSwitch();
       initSettingsSaveButton();
       initIDAPathButtons();
+      initLLMToggle();
       loadSettings();
     },
     destroy: function () {},
