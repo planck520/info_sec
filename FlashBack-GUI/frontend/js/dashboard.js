@@ -136,6 +136,11 @@ var Dashboard = (function () {
   }
 
   function _startUptime() {
+    _startTime = Date.now();
+    _setText('dash-uptime', '0m 0s');
+    var trend = document.getElementById('dash-uptime-trend');
+    if (trend) { trend.textContent = 'running'; trend.className = 'stat-card-trend up'; }
+
     function tick() {
       var elapsed = Math.floor((Date.now() - _startTime) / 1000);
       var h = Math.floor(elapsed / 3600);
@@ -147,23 +152,22 @@ var Dashboard = (function () {
     _uptimeInterval = setInterval(tick, 1000);
   }
 
-  // ── quick actions ─────────────────────────────────────
-
-  function _wireQuickActions() {
-    var actions = {
-      'dash-btn-scan':     'analysis',
-      'dash-btn-results':  'results',
-      'dash-btn-settings': 'settings',
-    };
-    Object.keys(actions).forEach(function (btnId) {
-      var el = document.getElementById(btnId);
-      if (el) {
-        el.addEventListener('click', function () {
-          AppState.navigateTo(actions[btnId]);
-        });
-      }
-    });
+  function _stopUptime() {
+    if (_uptimeInterval) {
+      clearInterval(_uptimeInterval);
+      _uptimeInterval = null;
+    }
+    // Keep showing elapsed time, just mark as completed
+    var trend = document.getElementById('dash-uptime-trend');
+    if (trend) { trend.textContent = 'done'; trend.className = 'stat-card-trend'; }
   }
+
+  // ── public API (exposed for cross-page use) ───────────
+
+  function startUptime() { _startUptime(); }
+  function stopUptime()  { _stopUptime(); }
+
+  // ── helpers ───────────────────────────────────────────
 
   function _esc(s) {
     var div = document.createElement('div');
@@ -175,18 +179,17 @@ var Dashboard = (function () {
 
   function init() {
     _renderAll();
-    _startUptime();
-    _wireQuickActions();
+    // uptime 不再自动启动——用户点击 START SCAN 才触发
+    _setText('dash-uptime', '--');
+    var trend = document.getElementById('dash-uptime-trend');
+    if (trend) { trend.textContent = 'idle'; trend.className = 'stat-card-trend idle'; }
   }
 
   function destroy() {
-    if (_uptimeInterval) {
-      clearInterval(_uptimeInterval);
-      _uptimeInterval = null;
-    }
+    _stopUptime();
   }
 
-  return { init: init, destroy: destroy };
+  return { init: init, destroy: destroy, startUptime: startUptime, stopUptime: stopUptime };
 })();
 
 AppState.registerPage('dashboard', {
