@@ -81,9 +81,17 @@ var LLMReview = (function () {
     _updateUI();
 
     try {
+      var outputDir = window.__lastOutputDir || '';
+      if (!outputDir) {
+        showToast('No scan output directory found. Run a scan first.', 'error');
+        _state.running = false;
+        _updateUI();
+        return;
+      }
       var resp = await api.post('/api/llm-review', {
         result_ids: ids,
         mode: mode,
+        output_dir: outputDir,
       });
 
       _state.reviewId = resp.review_id;

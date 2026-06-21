@@ -422,6 +422,9 @@
     if (msg.result_files && msg.result_files.length) addLog('INFO', '结果文件：' + msg.result_files.join(', '));
     showToast(isOk ? '分析完成' : ('任务结束：' + status), isOk ? 'success' : (isStopped ? 'warn' : 'error'));
     setRunning(false);
+    // Expose for Results page and LLM review
+    window.__lastTaskId = state.taskId;
+    window.__lastOutputDir = state.outputDir;
     state.taskId = null;
   }
 

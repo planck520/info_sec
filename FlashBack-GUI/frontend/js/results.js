@@ -1,61 +1,161 @@
-/* 结果页逻辑 — 成员 B 实现
-   注意: result_id 格式为 {device}/{firmware}/{path_index} (1-based)
-   API 字段名: vuln_type, sink_func, source_func, device, firmware, path_length
+/* ============================================================
+   结果页逻辑 — 从扫描输出目录加载真实结果
+   result_id 格式: {device}/{firmware}/{path_index} (1-based)
 
    LLM 审查功能由 LLMReview 模块提供，在页面 init/destroy 中挂载。
-   当前使用 mock 数据演示 LLM 审查 UI（成员 B 完成后删除）。
-*/
+   ============================================================ */
 
-// ── mock data (remove when Member B delivers real API) ──
-var _MOCK_RESULTS = [
-  { id:'Tenda_AX-1806/tdhttpd/1',   cwe:'CWE-78',  sink:'system',   source:'websGetVar',  device:'Tenda AX-1806',   firmware:'tdhttpd',  sev:'critical' },
-  { id:'Tenda_AX-1806/tdhttpd/2',   cwe:'CWE-120', sink:'strcpy',   source:'recv',         device:'Tenda AX-1806',   firmware:'tdhttpd',  sev:'high' },
-  { id:'Tenda_AX-1806/tdhttpd/3',   cwe:'CWE-78',  sink:'popen',    source:'getenv',       device:'Tenda AX-1806',   firmware:'tdhttpd',  sev:'critical' },
-  { id:'TOTOLINK_A7000/cgibin/1',   cwe:'CWE-120', sink:'sprintf',  source:'nvram_get',    device:'TOTOLINK A7000',  firmware:'cgibin',   sev:'high' },
-  { id:'TOTOLINK_A7000/cgibin/2',   cwe:'CWE-134', sink:'printf',   source:'websGetVar',   device:'TOTOLINK A7000',  firmware:'cgibin',   sev:'medium' },
-  { id:'Tenda_AX-3/httpd/1',        cwe:'CWE-78',  sink:'system',   source:'cgi_get',      device:'Tenda AX-3',      firmware:'httpd',    sev:'critical' },
-  { id:'Tenda_AX-3/httpd/2',        cwe:'CWE-22',  sink:'fopen',    source:'websGetVar',   device:'Tenda AX-3',      firmware:'httpd',    sev:'medium' },
-  { id:'Netgear_RAX-30/uhttpd/1',   cwe:'CWE-120', sink:'memcpy',   source:'recv',         device:'Netgear RAX-30',  firmware:'uhttpd',   sev:'high' },
-];
+(function () {
+  'use strict';
 
-function _renderMockResults() {
-  var container = document.getElementById('results-list');
-  if (!container) return;
-  container.innerHTML = _MOCK_RESULTS.map(function (r) {
-    return (
-      '<div class="result-card ' + r.sev + '" data-result-id="' + r.id + '" style="cursor:pointer;">' +
-        '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
-          '<div class="flex-col gap-xs">' +
-            '<div class="flex-row gap-sm" style="align-items:center;">' +
-              '<span class="code-label" style="font-size:10px;">' + r.device + '</span>' +
-              '<span class="text-xs text-muted">' + r.firmware + '</span>' +
+  var _results = [];
+  var _outputDir = '';
+  var _taskId = '';
+
+  function _renderResults(list) {
+    var container = document.getElementById('results-list');
+    if (!container) return;
+
+    if (!list.length) {
+      container.innerHTML = '<div class="text-muted" style="padding:40px;text-align:center;">No results. Run a scan first.</div>';
+      return;
+    }
+
+    container.innerHTML = list.map(function (r) {
+      var sevStyle = '';
+      if (r.sev === 'critical') {
+        sevStyle = 'background:rgba(248,113,113,0.18);color:var(--danger);';
+      } else if (r.sev === 'high') {
+        sevStyle = 'background:rgba(251,191,36,0.18);color:var(--warning);';
+      } else {
+        sevStyle = 'background:rgba(59,130,246,0.15);color:var(--accent);';
+      }
+      return (
+        '<div class="result-card ' + r.sev + '" data-result-id="' + r.id + '" style="cursor:pointer;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
+            '<div class="flex-col gap-xs">' +
+              '<div class="flex-row gap-sm" style="align-items:center;">' +
+                '<span class="code-label" style="font-size:10px;">' + r.device + '</span>' +
+                '<span class="text-xs text-muted">' + r.firmware + '</span>' +
+                '<span class="text-xs text-muted">· ' + r.path_length + ' hops</span>' +
+              '</div>' +
+              '<span class="code-value" style="font-size:14px;">' + r.cwe + ' — ' + r.sink + '()</span>' +
+              '<span class="text-xs text-muted">source: ' + r.source + '()  ·  path #' + r.id.split('/')[2] + '</span>' +
             '</div>' +
-            '<span class="code-value" style="font-size:14px;">' + r.cwe + ' — ' + r.sink + '()</span>' +
-            '<span class="text-xs text-muted">source: ' + r.source + '()  ·  path #' + r.id.split('/')[2] + '</span>' +
+            '<span class="severity-badge" style="font-size:10px;padding:3px 8px;border-radius:4px;font-weight:600;' + sevStyle + '">' +
+              r.sev.toUpperCase() +
+            '</span>' +
           '</div>' +
-          '<span class="severity-badge" style="font-size:10px;padding:3px 8px;border-radius:4px;font-weight:600;' +
-            (r.sev === 'critical' ? 'background:rgba(248,113,113,0.18);color:var(--danger);' :
-             r.sev === 'high'     ? 'background:rgba(251,191,36,0.18);color:var(--warning);' :
-                                    'background:rgba(59,130,246,0.15);color:var(--accent);') +
-            '">' + r.sev.toUpperCase() + '</span>' +
-        '</div>' +
-      '</div>'
-    );
-  }).join('');
-}
+        '</div>'
+      );
+    }).join('');
+  }
 
-AppState.registerPage('results', {
-  init: function () {
-    // TODO: 成员 B — 替换为真实 API 加载
-    _renderMockResults();
-    if (typeof LLMReview !== 'undefined') {
-      LLMReview.init();
+  function _populateFilters(list) {
+    // Device filter
+    var devFilter = document.getElementById('results-device-filter');
+    if (devFilter) {
+      var devices = [];
+      list.forEach(function (r) { if (devices.indexOf(r.device) === -1) devices.push(r.device); });
+      devices.sort();
+      devFilter.innerHTML = '<option>All Devices</option>' +
+        devices.map(function (d) { return '<option>' + d + '</option>'; }).join('');
     }
-  },
-  destroy: function () {
-    // TODO: 成员 B — 清理详情面板 DOM
-    if (typeof LLMReview !== 'undefined') {
-      LLMReview.destroy();
+
+    // CWE filter
+    var cweFilter = document.getElementById('results-cwe-filter');
+    if (cweFilter) {
+      var cwes = [];
+      list.forEach(function (r) { if (cwes.indexOf(r.cwe) === -1) cwes.push(r.cwe); });
+      cwes.sort();
+      cweFilter.innerHTML = '<option>All CWE Types</option>' +
+        cwes.map(function (c) { return '<option>' + c + '</option>'; }).join('');
     }
-  },
-});
+  }
+
+  function _applyFilters() {
+    var devFilter = document.getElementById('results-device-filter');
+    var cweFilter = document.getElementById('results-cwe-filter');
+    var searchInput = document.getElementById('results-search');
+
+    var devVal = devFilter ? devFilter.value : 'All Devices';
+    var cweVal = cweFilter ? cweFilter.value : 'All CWE Types';
+    var searchVal = (searchInput ? searchInput.value : '').toLowerCase();
+
+    var filtered = _results.filter(function (r) {
+      if (devVal !== 'All Devices' && r.device !== devVal) return false;
+      if (cweVal !== 'All CWE Types' && r.cwe !== cweVal) return false;
+      if (searchVal) {
+        var hay = (r.cwe + ' ' + r.sink + ' ' + r.source + ' ' + r.device + ' ' + r.firmware).toLowerCase();
+        if (hay.indexOf(searchVal) === -1) return false;
+      }
+      return true;
+    });
+
+    _renderResults(filtered);
+  }
+
+  function _initFilters() {
+    var devFilter = document.getElementById('results-device-filter');
+    var cweFilter = document.getElementById('results-cwe-filter');
+    var searchInput = document.getElementById('results-search');
+
+    if (devFilter) devFilter.addEventListener('change', _applyFilters);
+    if (cweFilter) cweFilter.addEventListener('change', _applyFilters);
+    if (searchInput) searchInput.addEventListener('input', _applyFilters);
+  }
+
+  async function loadResults(taskId) {
+    if (!taskId) return;
+
+    var container = document.getElementById('results-list');
+    if (container) container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);">Loading results...</div>';
+
+    try {
+      var resp = await api.get('/api/results', { task_id: taskId });
+      _results = resp.results || [];
+      _outputDir = resp.output_dir || '';
+      _taskId = resp.task_id || taskId;
+
+      // Expose for LLMReview
+      window.__lastOutputDir = _outputDir;
+      window.__lastTaskId = _taskId;
+
+      _populateFilters(_results);
+      _renderResults(_results);
+    } catch (e) {
+      if (container) container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--danger);">Failed to load results: ' + e.message + '</div>';
+      console.error('loadResults error:', e);
+    }
+  }
+
+  AppState.registerPage('results', {
+    init: function () {
+      _initFilters();
+
+      // Try to load from last completed scan
+      var taskId = window.__lastTaskId;
+      if (taskId) {
+        loadResults(taskId);
+      } else {
+        // Show guidance if no scan has been run
+        var container = document.getElementById('results-list');
+        if (container) {
+          container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);">' +
+            'No scan data loaded.<br><br>Run a scan in the <b>Analysis</b> tab first, then return here.' +
+            '</div>';
+        }
+      }
+
+      if (typeof LLMReview !== 'undefined') {
+        LLMReview.init();
+      }
+    },
+    destroy: function () {
+      if (typeof LLMReview !== 'undefined') {
+        LLMReview.destroy();
+      }
+    },
+  });
+
+})();
