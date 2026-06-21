@@ -288,13 +288,29 @@ async def start_scan(request: Request, body: ScanStartRequest):
 async def list_tasks(request: Request):
     """Return all tasks (for results page to find completed scans)."""
     tasks = request.app.state.tasks
-    return {
-        "tasks": [
-            {"task_id": tid, "status": t.status, "output_dir": t.output_dir,
-             "completed": t.completed, "total": t.total, "created_at": t.created_at}
-            for tid, t in tasks.items()
-        ]
-    }
+    now = datetime.now().isoformat(timespec="seconds")
+    result = []
+    for tid, t in tasks.items():
+        entry = {
+            "task_id": tid, "status": t.status, "output_dir": t.output_dir,
+            "completed": t.completed, "total": t.total, "created_at": t.created_at,
+            "started_at": t.started_at, "finished_at": t.finished_at,
+            "elapsed_seconds": 0,
+        }
+        if t.started_at:
+            try:
+                start_dt = datetime.fromisoformat(t.started_at)
+                if t.finished_at:
+                    end_dt = datetime.fromisoformat(t.finished_at)
+                elif t.status == "running":
+                    end_dt = datetime.now()
+                else:
+                    end_dt = start_dt
+                entry["elapsed_seconds"] = max(0, (end_dt - start_dt).total_seconds())
+            except (ValueError, TypeError):
+                pass
+        result.append(entry)
+    return {"tasks": result}
 
 
 @router.get("/scan/progress/{task_id}")

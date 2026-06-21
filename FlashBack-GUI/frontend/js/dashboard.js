@@ -10,7 +10,7 @@ var Dashboard = (function () {
   'use strict';
 
   var _uptimeInterval = null;
-  var _startTime = Date.now();
+  var _totalScanSeconds = 0;
 
   // ── mock data ─────────────────────────────────────────
 
@@ -135,16 +135,49 @@ var Dashboard = (function () {
     _renderActivity();
   }
 
-  function _startUptime() {
-    function tick() {
-      var elapsed = Math.floor((Date.now() - _startTime) / 1000);
-      var h = Math.floor(elapsed / 3600);
-      var m = Math.floor((elapsed % 3600) / 60);
-      var s = elapsed % 60;
-      _setText('dash-uptime', (h > 0 ? h + 'h ' : '') + m + 'm ' + s + 's');
+  function _formatDuration(totalSeconds) {
+    var h = Math.floor(totalSeconds / 3600);
+    var m = Math.floor((totalSeconds % 3600) / 60);
+    var s = Math.floor(totalSeconds % 60);
+    if (h > 0) return h + 'h ' + m + 'm ' + s + 's';
+    if (m > 0) return m + 'm ' + s + 's';
+    return s + 's';
+  }
+
+  async function _refreshUptime() {
+    try {
+      var resp = await api.get('/api/scan/tasks');
+      var tasks = resp.tasks || [];
+      var hasRunning = tasks.some(function (t) { return t.status === 'running'; });
+
+      // Sum elapsed time from all tasks (done + running)
+      var total = 0;
+      tasks.forEach(function (t) {
+        total += (t.elapsed_seconds || 0);
+      });
+
+      _totalScanSeconds = total;
+      _setText('dash-uptime', total > 0 ? _formatDuration(total) : '--');
+
+      var trendEl = document.getElementById('dash-uptime-trend');
+      if (trendEl) {
+        if (hasRunning) {
+          trendEl.textContent = 'live';
+          trendEl.className = 'stat-card-trend up';
+        } else {
+          trendEl.textContent = 'idle';
+          trendEl.className = 'stat-card-trend idle';
+        }
+      }
+    } catch (e) {
+      console.error('Failed to refresh uptime:', e);
     }
-    tick();
-    _uptimeInterval = setInterval(tick, 1000);
+  }
+
+  function _startUptime() {
+    _refreshUptime();
+    // Poll every 2s — frequent enough for live feel, cheap enough for API
+    _uptimeInterval = setInterval(_refreshUptime, 2000);
   }
 
   // ── quick actions ─────────────────────────────────────

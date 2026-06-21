@@ -27,9 +27,9 @@
   min-width: 126px;
 }
 
-/* 终端日志限制高度并始终显示垂直滚动条 */
+/* 终端始终填满右栏，与左栏组件总高度一致 */
 #page-analysis .terminal {
-  max-height: calc(100vh - 220px);
+  height: 100%;
 }
 
 #terminal-body {
