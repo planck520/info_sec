@@ -4,7 +4,7 @@
    三栏布局：系统状态 | 配置表单 | 配置指南
    ============================================================ */
 
-/* ── 三栏网格布局 ──────────────────────────────── */
+/* ── 三栏网格布局 — stretch 自动等高 ────────────── */
 .settings-grid {
   flex: 1;
   display: grid;
@@ -13,20 +13,36 @@
   min-height: 0;
 }
 
-/* ── 侧栏面板间距 ──────────────────────────────── */
+/* ── 侧栏：flex列 + 面板撑满 ────────────────────── */
 .settings-sidebar {
   display: flex;
   flex-direction: column;
   gap: 20px;
   min-width: 0;
 }
+.settings-sidebar .panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.settings-sidebar .panel .panel-body {
+  flex: 1;
+}
 
-/* ── 中栏主配置区 ──────────────────────────────── */
+/* ── 中栏：flex列 + 面板撑满 ────────────────────── */
 .settings-main {
   display: flex;
   flex-direction: column;
   gap: 24px;
   min-width: 0;
+}
+.settings-main .panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.settings-main .panel .panel-body {
+  flex: 1;
 }
 
 /* ── LLM 参数单行排列 ──────────────────────────── */
@@ -54,6 +70,18 @@
 #page-settings .flex-between:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ── 帮助页双栏布局 ────────────────────────────── */
+.help-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  min-height: 0;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 /* ── 响应式：窄屏时侧栏隐藏 ────────────────────── */
