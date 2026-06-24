@@ -1,0 +1,30 @@
+﻿[
+  {
+    "vuln_type": "CWE-22",
+    "sink_func": "fopen",
+    "source_func": "cgi_get",
+    "param_idx": 0,
+    "len_idx": null,
+    "cve": "CVE-SAMPLE-0101",
+    "vuln_name": "Path Traversal Candidate",
+    "path": [
+      {"func": "cgi_get", "arg_index": 0, "call_ea": "source", "func_ea": "source", "label": "source"},
+      {"func": "downloadConfig", "arg_index": 0, "call_ea": "0x501000", "func_ea": "0x500d00", "label": "needs_check"},
+      {"func": "fopen", "arg_index": 0, "call_ea": "0x501180", "func_ea": "sink", "label": "sink"}
+    ]
+  },
+  {
+    "vuln_type": "CWE-134",
+    "sink_func": "printf",
+    "source_func": "cgi_get",
+    "param_idx": 0,
+    "len_idx": null,
+    "cve": "",
+    "vuln_name": "Format String Candidate",
+    "path": [
+      {"func": "cgi_get", "arg_index": 0, "call_ea": "source", "func_ea": "source", "label": "source"},
+      {"func": "logUserMessage", "arg_index": 0, "call_ea": "0x502000", "func_ea": "0x501e00", "label": "needs_check"},
+      {"func": "printf", "arg_index": 0, "call_ea": "0x502090", "func_ea": "sink", "label": "sink"}
+    ]
+  }
+]

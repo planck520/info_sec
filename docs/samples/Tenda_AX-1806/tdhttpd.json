@@ -1,0 +1,44 @@
+﻿[
+  {
+    "vuln_type": "CWE-78",
+    "sink_func": "system",
+    "source_func": "websGetVar",
+    "param_idx": 0,
+    "len_idx": null,
+    "cve": "CVE-SAMPLE-0001",
+    "vuln_name": "Command Injection Candidate",
+    "path": [
+      {"func": "websGetVar", "arg_index": 0, "call_ea": "source", "func_ea": "source", "label": "source"},
+      {"func": "setDiagnosisCfg", "arg_index": 1, "call_ea": "0x401050", "func_ea": "0x400f00", "label": "needs_check"},
+      {"func": "system", "arg_index": 0, "call_ea": "0x4012a0", "func_ea": "sink", "label": "sink"}
+    ]
+  },
+  {
+    "vuln_type": "CWE-78",
+    "sink_func": "popen",
+    "source_func": "websGetVar",
+    "param_idx": 0,
+    "len_idx": null,
+    "cve": "CVE-SAMPLE-0002",
+    "vuln_name": "Diagnostic Command Execution",
+    "path": [
+      {"func": "websGetVar", "arg_index": 0, "call_ea": "source", "func_ea": "source", "label": "source"},
+      {"func": "formPing", "arg_index": 0, "call_ea": "0x402010", "func_ea": "0x401f00", "label": "needs_check"},
+      {"func": "popen", "arg_index": 0, "call_ea": "0x402210", "func_ea": "sink", "label": "sink"}
+    ]
+  },
+  {
+    "vuln_type": "CWE-120",
+    "sink_func": "strcpy",
+    "source_func": "recv",
+    "param_idx": 1,
+    "len_idx": null,
+    "cve": "",
+    "vuln_name": "Stack Buffer Copy Candidate",
+    "path": [
+      {"func": "recv", "arg_index": 1, "call_ea": "source", "func_ea": "source", "label": "source"},
+      {"func": "httpReadRequest", "arg_index": 0, "call_ea": "0x403110", "func_ea": "0x403000", "label": "certain"},
+      {"func": "strcpy", "arg_index": 1, "call_ea": "0x4032b0", "func_ea": "sink", "label": "sink"}
+    ]
+  }
+]
