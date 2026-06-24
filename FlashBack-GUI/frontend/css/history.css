@@ -1,12 +1,14 @@
 /* ============================================================
    历史记录页样式
-   记录卡片 / 展开详情 / LLM 标记
+   记录卡片 / 展开详情 / 路径树 / 路径表 / 代码块 / LLM 标记
    ============================================================ */
 
 #page-history {
   max-height: 100%;
   overflow: hidden;
 }
+
+/* ── 记录卡片 ───────────────────────────────────────────── */
 
 .history-card {
   background: rgba(255, 255, 255, 0.04);
@@ -37,6 +39,8 @@
   user-select: none;
 }
 
+/* ── 详情面板 ───────────────────────────────────────────── */
+
 .history-detail {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding: 12px 18px 16px;
@@ -44,7 +48,7 @@
 
 .history-entry {
   padding: 10px 12px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   background: rgba(0, 0, 0, 0.18);
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -54,22 +58,244 @@
   margin-bottom: 0;
 }
 
-.history-code {
-  margin-top: 8px;
-  padding: 10px 12px;
-  background: rgba(0, 0, 0, 0.30);
-  border-radius: 8px;
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  line-height: 1.5;
-  color: rgba(255, 255, 255, 0.72);
-  overflow-x: auto;
-  white-space: pre;
-  max-height: 300px;
-  overflow-y: auto;
+/* ── 严重等级徽章 ────────────────────────────────────────── */
+
+.severity-badge {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 700;
 }
 
-/* Verdict badge — match results page style */
+.severity-badge.critical {
+  background: rgba(248, 113, 113, 0.18);
+  color: var(--danger);
+}
+
+.severity-badge.high {
+  background: rgba(251, 191, 36, 0.18);
+  color: var(--warning);
+}
+
+.severity-badge.medium,
+.severity-badge.low {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent);
+}
+
+.severity-badge.safe {
+  background: rgba(52, 211, 153, 0.15);
+  color: #34d399;
+}
+
+/* ── 4 列详情网格 ───────────────────────────────────────── */
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.detail-grid > div {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.detail-grid strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+/* ── 路径树 ──────────────────────────────────────────────── */
+
+.path-tree-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.path-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.path-tree-node {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  min-height: 72px;
+}
+
+.path-tree-rail {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.path-tree-rail::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(148, 163, 184, 0.28);
+}
+
+.path-tree-node:first-child .path-tree-rail::before { top: 18px; }
+.path-tree-node:last-child .path-tree-rail::before { bottom: calc(100% - 18px); }
+
+.path-tree-rail span {
+  position: relative;
+  z-index: 1;
+  width: 26px;
+  height: 26px;
+  margin-top: 5px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: rgba(16, 16, 16, 0.92);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.path-tree-node.source .path-tree-rail span {
+  border-color: rgba(34, 197, 94, 0.55);
+  color: #22c55e;
+}
+
+.path-tree-node.sink .path-tree-rail span {
+  border-color: rgba(248, 113, 113, 0.6);
+  color: var(--danger);
+}
+
+.path-tree-node.needs-check .path-tree-rail span {
+  border-color: rgba(251, 191, 36, 0.58);
+  color: var(--warning);
+}
+
+.path-tree-card {
+  min-width: 0;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.path-tree-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.path-tree-title strong {
+  min-width: 0;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.path-tree-title span {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.path-tree-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.path-tree-meta span {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 6px;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.path-tree-empty {
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-bottom: 14px;
+}
+
+/* ── 路径表格 ────────────────────────────────────────────── */
+
+.result-path-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 14px;
+}
+
+.result-path-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.result-path-table th,
+.result-path-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  color: var(--text-secondary);
+}
+
+.result-path-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ── 代码块 ──────────────────────────────────────────────── */
+
+.code-block-title {
+  color: var(--text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.result-code-block {
+  max-height: 360px;
+  overflow: auto;
+  margin: 0 0 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+/* ── LLM 徽章 ────────────────────────────────────────────── */
+
 .llm-badge.vulnerable {
   background: rgba(248, 113, 113, 0.18);
   color: #f87171;
@@ -78,4 +304,17 @@
 .llm-badge.safe {
   background: rgba(52, 211, 153, 0.15);
   color: #34d399;
+}
+
+/* ── 响应式 ──────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .history-card-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
