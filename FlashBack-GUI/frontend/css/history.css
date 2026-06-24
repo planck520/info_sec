@@ -171,15 +171,23 @@
 
 /* ── 详情面板 ────────────────────────────────────────────── */
 
-.result-detail-panel { margin-top: 4px; }
-.result-detail-body { display: flex; flex-direction: column; gap: 14px; }
+#history-list .result-detail-panel {
+  background: rgba(0,0,0,0.18);
+}
+#history-list .result-detail-panel .section-hd {
+  background: rgba(0,0,0,0.08);
+}
+#history-list .result-detail-body {
+  display: flex; flex-direction: column; gap: 14px;
+  background: rgba(0,0,0,0.12);
+}
 
 .detail-grid {
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;
 }
 .detail-grid > div {
   min-width: 0; border: 1px solid var(--border); border-radius: 6px;
-  padding: 10px; background: rgba(255,255,255,0.03);
+  padding: 10px; background: rgba(0,0,0,0.22);
 }
 .detail-grid strong {
   display: block; margin-top: 5px; font-size: 12px;

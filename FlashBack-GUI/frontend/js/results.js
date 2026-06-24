@@ -14,6 +14,50 @@
   var _firmwareName = '';
   var _initialized = false;
 
+  // ── detail panel (simple: no path tree, just info + code) ──
+
+  async function _showResultDetail(resultId) {
+    if (!_taskId || !resultId) return;
+    var sel = '.result-detail-panel[data-detail-for="' + resultId + '"]';
+    var panel = document.querySelector(sel);
+    if (!panel) return;
+    if (panel.style.display !== 'none' && panel.dataset.loaded === 'true') {
+      panel.style.display = 'none';
+      return;
+    }
+    panel.style.display = 'block';
+    panel.innerHTML = '<div class="panel-body"><p class="code-label">DETAIL</p><p class="text-muted text-sm mt-sm">Loading...</p></div>';
+    try {
+      var resp = await api.get('/api/results/detail', { result_id: resultId, task_id: _taskId });
+      var v = resp.vuln_info || {};
+      var path = Array.isArray(v.path) ? v.path : [];
+      var rows = path.map(function (node, idx) {
+        return '<tr><td>' + (idx + 1) + '</td><td>' + _esc(node.func || '') + '</td><td>' + _esc(node.arg_index == null ? '' : node.arg_index) + '</td><td>' + _esc(node.call_ea || '') + '</td><td>' + _esc(node.func_ea || '') + '</td><td>' + _esc(node.label || '') + '</td></tr>';
+      }).join('');
+      var code = resp.code_content || '';
+      panel.innerHTML =
+        '<div class="section-hd"><span class="dot amber"></span> RESULT DETAIL</div>' +
+        '<div class="panel-body result-detail-body">' +
+          '<div class="detail-grid">' +
+            '<div><span class="code-label">RESULT ID</span><strong>' + _esc(resultId) + '</strong></div>' +
+            '<div><span class="code-label">CWE</span><strong>' + _esc(v.vuln_type || 'N/A') + '</strong></div>' +
+            '<div><span class="code-label">SINK</span><strong>' + _esc(v.sink_func || 'N/A') + '()</strong></div>' +
+            '<div><span class="code-label">SOURCE</span><strong>' + _esc(v.source_func || 'N/A') + '()</strong></div>' +
+          '</div>' +
+          '<div class="code-block-title">path hops</div>' +
+          '<div class="result-path-table-wrap">' +
+            '<table class="result-path-table"><thead><tr><th>#</th><th>func</th><th>arg</th><th>call_ea</th><th>func_ea</th><th>label</th></tr></thead>' +
+            '<tbody>' + (rows || '<tr><td colspan="6">No path data</td></tr>') + '</tbody></table>' +
+          '</div>' +
+          '<div class="code-block-title">decompiled code</div>' +
+          '<pre class="result-code-block">' + _esc(code || 'No decompiled code available.') + '</pre>' +
+        '</div>';
+      panel.dataset.loaded = 'true';
+    } catch (e) {
+      panel.innerHTML = '<div class="panel-body"><p class="code-label">DETAIL FAILED</p><p class="text-muted text-sm mt-sm">' + _esc(e.message) + '</p></div>';
+    }
+  }
+
   // ── history save helpers ────────────────────────────────
 
   function _removeResults(idsToRemove) {
@@ -203,9 +247,10 @@
         sevStyle = 'background:rgba(59,130,246,0.15);color:var(--accent);';
       }
       return (
+        '<div class="result-vuln-wrap">' +
         '<div class="result-card ' + r.sev + '" data-result-id="' + r.id + '" style="cursor:pointer;">' +
           '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
-            '<div class="flex-col gap-xs">' +
+            '<div class="flex-col gap-xs" style="flex:1;min-width:0;">' +
               '<div class="flex-row gap-sm" style="align-items:center;">' +
                 '<span class="code-label" style="font-size:10px;">' + r.device + '</span>' +
                 '<span class="text-xs text-muted">' + r.firmware + '</span>' +
@@ -214,10 +259,15 @@
               '<span class="code-value" style="font-size:14px;">' + r.cwe + ' — ' + r.sink + '()</span>' +
               '<span class="text-xs text-muted">source: ' + r.source + '()  ·  path #' + r.id.split('/')[2] + '</span>' +
             '</div>' +
-            '<span class="severity-badge" style="font-size:10px;padding:3px 8px;border-radius:4px;font-weight:600;' + sevStyle + '">' +
-              r.sev.toUpperCase() +
-            '</span>' +
+            '<div class="flex-row gap-sm" style="flex-shrink:0;align-items:center;">' +
+              '<span class="severity-badge" style="font-size:10px;padding:3px 8px;border-radius:4px;font-weight:600;' + sevStyle + '">' +
+                r.sev.toUpperCase() +
+              '</span>' +
+              '<button class="btn btn-secondary btn-sm result-detail-btn" data-result-id="' + r.id + '">Detail</button>' +
+            '</div>' +
           '</div>' +
+        '</div>' +
+        '<div class="panel result-detail-panel" data-detail-for="' + r.id + '" style="display:none;"></div>' +
         '</div>'
       );
     }).join('');
@@ -335,6 +385,18 @@
         var delBtn = document.getElementById('btn-delete-selected');
         if (saveBtn) saveBtn.addEventListener('click', saveSelected);
         if (delBtn) delBtn.addEventListener('click', deleteSelected);
+
+        // Detail button handler (stopPropagation to not toggle LLM selection)
+        var list = document.getElementById('results-list');
+        if (list) {
+          list.addEventListener('click', function (e) {
+            var detailBtn = e.target.closest('.result-detail-btn');
+            if (detailBtn) {
+              e.stopPropagation();
+              _showResultDetail(detailBtn.dataset.resultId);
+            }
+          });
+        }
       }
 
       var taskId = window.__lastTaskId;
