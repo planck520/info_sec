@@ -34,20 +34,119 @@
       showToast('Select at least one result', 'warning');
       return;
     }
-    // Save first, only remove on success
+    _showSaveDialog(selected);
+  }
+
+  function _showSaveDialog(selected) {
+    // Fetch existing records for the dialog
+    api.get('/api/history').then(function (resp) {
+      _renderSaveDialog(selected, resp.records || []);
+    }).catch(function () {
+      _renderSaveDialog(selected, []);
+    });
+  }
+
+  function _renderSaveDialog(selected, records) {
+    // Remove old dialog if exists
+    var old = document.getElementById('save-history-dialog');
+    if (old) old.remove();
+
+    var backdrop = document.createElement('div');
+    backdrop.id = 'save-history-dialog';
+    backdrop.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;';
+
+    var recordOptions = records.map(function (r) {
+      return '<div class="save-dialog-record" data-record-id="' + r.record_id + '" style="padding:10px 14px;border:1px solid rgba(255,255,255,0.12);border-radius:8px;cursor:pointer;margin-bottom:6px;transition:all 0.15s;">' +
+        '<span style="font-weight:600;color:#fff;">' + _esc(r.device || '?') + '</span>' +
+        '<span style="color:var(--text-muted);margin-left:8px;font-size:12px;">' + _esc(r.firmware || '?') + '</span>' +
+        '<span style="color:var(--text-muted);margin-left:8px;font-size:11px;">' + r.entry_count + ' vulns</span>' +
+        (r.llm_reviewed ? '<span style="color:var(--accent-cyan);margin-left:6px;font-size:10px;">LLM ✓</span>' : '') +
+      '</div>';
+    }).join('');
+
+    backdrop.innerHTML = '<div style="background:#1a1a2e;border:1px solid rgba(255,255,255,0.2);border-radius:16px;padding:24px;width:480px;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.5);">' +
+      '<div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:4px;">Save to History</div>' +
+      '<div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">' + selected.length + ' result(s) selected</div>' +
+
+      '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">Existing Records — click to append</div>' +
+      '<div id="save-dialog-records" style="max-height:200px;overflow-y:auto;margin-bottom:16px;">' +
+        (records.length ? recordOptions : '<div style="color:var(--text-muted);font-size:12px;padding:8px;">No existing records</div>') +
+      '</div>' +
+
+      '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">Or create new record</div>' +
+      '<div style="display:flex;gap:8px;margin-bottom:6px;">' +
+        '<input id="save-dialog-device" class="input" placeholder="Device name (e.g. TOTOLINK)" style="flex:1;">' +
+        '<input id="save-dialog-firmware" class="input" placeholder="Firmware name (e.g. cstecgi.cgi)" style="flex:1;">' +
+      '</div>' +
+
+      '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">' +
+        '<button class="btn btn-secondary btn-sm" id="save-dialog-cancel">Cancel</button>' +
+        '<button class="btn btn-primary btn-sm" id="save-dialog-new">Create New</button>' +
+      '</div>' +
+    '</div>';
+
+    document.body.appendChild(backdrop);
+
+    var selectedRecordId = null;
+
+    // Click backdrop to close
+    backdrop.addEventListener('click', function (e) {
+      if (e.target === backdrop) backdrop.remove();
+    });
+
+    // Cancel
+    document.getElementById('save-dialog-cancel').addEventListener('click', function () { backdrop.remove(); });
+
+    // Select existing record
+    var recordDivs = backdrop.querySelectorAll('.save-dialog-record');
+    recordDivs.forEach(function (div) {
+      div.addEventListener('click', function () {
+        recordDivs.forEach(function (d) { d.style.borderColor = 'rgba(255,255,255,0.12)'; d.style.background = ''; });
+        div.style.borderColor = 'rgba(59,130,246,0.6)';
+        div.style.background = 'rgba(59,130,246,0.1)';
+        selectedRecordId = div.dataset.recordId;
+      });
+      div.addEventListener('mouseenter', function () {
+        if (selectedRecordId !== div.dataset.recordId) div.style.background = 'rgba(255,255,255,0.04)';
+      });
+      div.addEventListener('mouseleave', function () {
+        if (selectedRecordId !== div.dataset.recordId) div.style.background = '';
+      });
+    });
+
+    // Create new
+    document.getElementById('save-dialog-new').addEventListener('click', async function () {
+      var device = document.getElementById('save-dialog-device').value.trim();
+      var firmware = document.getElementById('save-dialog-firmware').value.trim();
+      if (!device && !firmware && !selectedRecordId) {
+        showToast('Select a record or enter device/firmware name', 'warning');
+        return;
+      }
+      backdrop.remove();
+      await _doSave(selected, selectedRecordId || null, device, firmware);
+    });
+  }
+
+  async function _doSave(selected, recordId, device, firmware) {
     var verdicts = (typeof LLMReview !== 'undefined' && LLMReview.getVerdicts)
       ? LLMReview.getVerdicts() : {};
+    var payload = { task_id: _taskId, result_ids: selected, verdicts: verdicts };
+    if (recordId) payload.record_id = recordId;
+    if (device) payload.device = device;
+    if (firmware) payload.firmware = firmware;
     try {
-      await api.post('/api/history', {
-        task_id: _taskId,
-        result_ids: selected,
-        verdicts: verdicts,
-      });
+      await api.post('/api/history', payload);
       _removeResults(selected);
       showToast('Saved ' + selected.length + ' to history', 'success');
     } catch (e) {
       showToast('Save failed: ' + e.message, 'error');
     }
+  }
+
+  function _esc(s) {
+    var d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
   }
 
   function deleteSelected() {

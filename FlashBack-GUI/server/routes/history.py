@@ -79,22 +79,27 @@ def _resolve_items(task, result_ids: list[str]) -> list[dict]:
 # ── endpoints ────────────────────────────────────────────────
 
 @router.get("/history")
-async def list_history():
-    """Return summary of all history records (no entry details)."""
+async def list_history(details: bool = False):
+    """Return all history records. Set details=true to include entries+code."""
     records = []
     for f in sorted(_history_dir().glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
         try:
             data = json.loads(f.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             continue
-        records.append({
-            "record_id": data.get("record_id", f.stem),
-            "device": data.get("device", ""),
-            "firmware": data.get("firmware", ""),
-            "created_at": data.get("created_at", ""),
-            "llm_reviewed": data.get("llm_reviewed", False),
-            "entry_count": len(data.get("entries", [])),
-        })
+        if details:
+            data.pop("output_dir", None)
+            data.pop("task_id", None)
+            records.append(data)
+        else:
+            records.append({
+                "record_id": data.get("record_id", f.stem),
+                "device": data.get("device", ""),
+                "firmware": data.get("firmware", ""),
+                "created_at": data.get("created_at", ""),
+                "llm_reviewed": data.get("llm_reviewed", False),
+                "entry_count": len(data.get("entries", [])),
+            })
     return {"records": records}
 
 
@@ -116,12 +121,18 @@ async def save_history(body: dict, request: Request):
 
     Body:
         task_id: str
-        result_ids: list[str]  — e.g. ["device/fw/1", "device/fw/2"]
-        verdicts: dict[str, dict|null]  — result_id → verdict or null
+        result_ids: list[str]
+        verdicts: dict[str, dict|null]        — result_id → verdict or null
+        record_id: str (optional)              — append to existing record
+        device: str (optional, for new record) — user-specified device name
+        firmware: str (optional, for new record) — user-specified firmware name
     """
     task_id = body.get("task_id", "")
     result_ids = body.get("result_ids", [])
     verdicts = body.get("verdicts", {})
+    record_id = body.get("record_id", "")
+    user_device = body.get("device", "")
+    user_firmware = body.get("firmware", "")
 
     if not task_id or not result_ids:
         raise HTTPException(status_code=422, detail="task_id and result_ids required")
@@ -134,44 +145,63 @@ async def save_history(body: dict, request: Request):
     if not items:
         raise HTTPException(status_code=404, detail="No valid result_ids could be resolved")
 
-    # Group by device + firmware — one record per firmware binary
-    groups: dict[str, list[dict]] = {}
-    for item in items:
-        key = f"{item['device']}/{item['firmware']}"
-        groups.setdefault(key, []).append(item)
+    # Build new entries
+    new_entries = []
+    for it in items:
+        v = verdicts.get(it["result_id"]) if verdicts else None
+        new_entries.append({
+            "result_id": it["result_id"],
+            "vuln_info": it["vuln_info"],
+            "code_content": it["code_content"],
+            "verdict": v,
+        })
 
-    saved = []
-    for key, group_items in groups.items():
-        device, firmware = key.split("/", 1)
-        record_id = str(uuid.uuid4())
-        has_verdict = False
-        entries = []
-        for it in group_items:
-            v = verdicts.get(it["result_id"]) if verdicts else None
-            if v:
-                has_verdict = True
-            entries.append({
-                "result_id": it["result_id"],
-                "vuln_info": it["vuln_info"],
-                "code_content": it["code_content"],
-                "verdict": v,
-            })
-
-        record = {
-            "record_id": record_id,
-            "device": device,
-            "firmware": firmware,
-            "task_id": task_id,
-            "output_dir": task.output_dir,
-            "created_at": datetime.now().isoformat(timespec="seconds"),
-            "llm_reviewed": has_verdict,
-            "entries": entries,
-        }
+    # ── Append to existing record ──────────────────────────
+    if record_id:
         path = _history_dir() / f"{record_id}.json"
-        path.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
-        saved.append(record_id)
+        if not path.exists():
+            raise HTTPException(status_code=404, detail="Record not found")
+        try:
+            rec = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            raise HTTPException(status_code=500, detail="Failed to read record")
 
-    return {"ok": True, "saved": len(saved), "record_ids": saved}
+        existing = rec.get("entries", [])
+        existing_ids = {e["result_id"]: i for i, e in enumerate(existing)}
+
+        for ne in new_entries:
+            if ne["result_id"] in existing_ids:
+                # Update existing entry
+                existing[existing_ids[ne["result_id"]]] = ne
+            else:
+                existing.append(ne)
+
+        rec["entries"] = existing
+        rec["llm_reviewed"] = rec.get("llm_reviewed", False) or any(
+            e.get("verdict") for e in existing
+        )
+        path.write_text(json.dumps(rec, ensure_ascii=False, indent=2), encoding="utf-8")
+        return {"ok": True, "saved": 1, "record_ids": [record_id]}
+
+    # ── New record ─────────────────────────────────────────
+    device = user_device or items[0].get("device", "Unknown")
+    firmware = user_firmware or items[0].get("firmware", "Unknown")
+    new_id = str(uuid.uuid4())
+    has_verdict = any(e.get("verdict") for e in new_entries)
+
+    record = {
+        "record_id": new_id,
+        "device": device,
+        "firmware": firmware,
+        "task_id": task_id,
+        "output_dir": task.output_dir,
+        "created_at": datetime.now().isoformat(timespec="seconds"),
+        "llm_reviewed": has_verdict,
+        "entries": new_entries,
+    }
+    path = _history_dir() / f"{new_id}.json"
+    path.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
+    return {"ok": True, "saved": 1, "record_ids": [new_id]}
 
 
 @router.delete("/history/{record_id}")
