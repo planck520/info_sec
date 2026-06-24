@@ -76,6 +76,7 @@ function waitForBackend(retries = 30, interval = 500) {
 
 // ── 创建窗口 ─────────────────────────────────────────────
 function createWindow() {
+  const iconPath = path.join(__dirname, '..', '..', 'logo.png');
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -84,6 +85,7 @@ function createWindow() {
     frame: false,                    // frameless — 自定义标题栏
     titleBarStyle: 'hidden',         // 隐藏原生标题栏
     backgroundColor: '#08080f',
+    icon: iconPath,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
