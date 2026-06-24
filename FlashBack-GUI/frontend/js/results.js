@@ -11,6 +11,7 @@
   var _results = [];
   var _outputDir = '';
   var _taskId = '';
+  var _firmwareName = '';
   var _initialized = false;
 
   // ── history save helpers ────────────────────────────────
@@ -74,14 +75,14 @@
       '</div>' +
 
       '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">Or create new record</div>' +
-      '<div style="display:flex;gap:8px;margin-bottom:6px;">' +
-        '<input id="save-dialog-device" class="input" placeholder="Device name (e.g. TOTOLINK)" style="flex:1;">' +
-        '<input id="save-dialog-firmware" class="input" placeholder="Firmware name (e.g. cstecgi.cgi)" style="flex:1;">' +
+      '<div class="flex-col gap-sm" style="margin-bottom:6px;">' +
+        '<input id="save-dialog-device" class="input" placeholder="Device name (e.g. TOTOLINK C835BR)" style="width:100%;">' +
+        '<span class="text-xs text-muted">Firmware: <b>' + _esc(_firmwareName || 'auto-detected') + '</b> (auto-detected from scan)</span>' +
       '</div>' +
 
       '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">' +
         '<button class="btn btn-secondary btn-sm" id="save-dialog-cancel">Cancel</button>' +
-        '<button class="btn btn-primary btn-sm" id="save-dialog-new">Create New</button>' +
+        '<button class="btn btn-primary btn-sm" id="save-dialog-new">Save</button>' +
       '</div>' +
     '</div>';
 
@@ -117,13 +118,12 @@
     // Create new
     document.getElementById('save-dialog-new').addEventListener('click', async function () {
       var device = document.getElementById('save-dialog-device').value.trim();
-      var firmware = document.getElementById('save-dialog-firmware').value.trim();
-      if (!device && !firmware && !selectedRecordId) {
-        showToast('Select a record or enter device/firmware name', 'warning');
+      if (!device && !selectedRecordId) {
+        showToast('Select a record or enter a device name', 'warning');
         return;
       }
       backdrop.remove();
-      await _doSave(selected, selectedRecordId || null, device, firmware);
+      await _doSave(selected, selectedRecordId || null, device, _firmwareName);
     });
   }
 
@@ -310,6 +310,7 @@
       _results = resp.results || [];
       _outputDir = resp.output_dir || '';
       _taskId = resp.task_id || taskId;
+      _firmwareName = (_results.length && _results[0].firmware) || '';
 
       // Expose for LLMReview
       window.__lastOutputDir = _outputDir;

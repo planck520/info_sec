@@ -154,9 +154,10 @@
     '</section>';
   }
 
-  // ── real tree visualization ──────────────────────────────
+  // ── SVG tree visualization ───────────────────────────────
 
   function _renderFirmwareTree(group) {
+    // Build trie
     var root = { name: group.firmware, role: 'root', children: {}, findings: [], isRoot: true };
     group.results.forEach(function (item) {
       var path = Array.isArray(item.path) ? item.path : [];
@@ -172,65 +173,151 @@
       cursor.findings.push(item);
     });
 
-    return '<div class="firmware-tree-wrap">' +
-      '<div class="code-block-title">CGI vulnerability tree</div>' +
-      '<div class="tree-root">' +
-        '<div class="tree-root-label"><span>' + _esc(group.firmware) + '</span></div>' +
-        _renderTreeChildren(root) +
-      '</div>' +
-    '</div>';
-  }
+    // Convert trie to tree array
+    function _toTreeNode(trieNode) {
+      var kids = Object.keys(trieNode.children || {}).map(function (k) { return _toTreeNode(trieNode.children[k]); });
+      return {
+        name: trieNode.name,
+        role: trieNode.role,
+        callEa: trieNode.callEa,
+        findings: trieNode.findings || [],
+        children: kids,
+        _x: 0, _y: 0, _w: 0,
+      };
+    }
+    var treeRoot = _toTreeNode(root);
 
-  function _renderTreeChildren(node) {
-    var children = Object.keys(node.children || {}).map(function (k) { return node.children[k]; });
-    var allNodes = [];
-    // Collect findings as leaf markers on the last real node
-    children.forEach(function (child) {
-      allNodes.push(child);
-      // Recursively add deeper children
-      var deeper = [];
-      Object.keys(child.children || {}).forEach(function (k) { deeper.push(child.children[k]); });
-      deeper.forEach(function (d) { allNodes.push(d); });
-    });
+    // Layout constants
+    var NODE_W = 180;
+    var NODE_H = 52;
+    var FIND_W = 130;
+    var FIND_H = 26;
+    var H_GAP = 30;
+    var V_GAP = 70;
+    var FIND_V_GAP = 8;
 
-    // Simplify: render only direct children, with nested recursion
-    if (!children.length) {
-      // Leaf: show findings
-      var findings = node.findings || [];
-      if (findings.length) {
-        return '<ul class="tree-branch">' +
-          findings.map(function (f) {
-            return '<li class="tree-leaf">' +
-              '<span class="tree-leaf-dot"></span>' +
-              '<button class="tree-finding-link" data-result-id="' + _esc(f.result_id) + '">' +
-                _esc((f.vuln_type || 'CWE') + ' / path #' + (f.path_index || '?')) +
-              '</button>' +
-            '</li>';
-          }).join('') +
-        '</ul>';
+    // Layout pass — compute subtree width and assign coordinates
+    function _layout(node, depth) {
+      var leafCount = 1; // each node is at least 1 unit wide
+      node._y = depth * (NODE_H + V_GAP);
+      if (!node.children.length && !node.findings.length) {
+        node._w = NODE_W;
+        return node._w;
       }
-      return '';
+      // Layout children
+      var totalW = 0;
+      node.children.forEach(function (c) { totalW += _layout(c, depth + 1) + H_GAP; });
+      totalW = Math.max(totalW - H_GAP, 0); // remove trailing gap
+      // Findings add width at leaf level
+      if (node.findings.length > 0 && !node.children.length) {
+        totalW = Math.max(totalW, node.findings.length * (FIND_W + H_GAP) - H_GAP);
+      }
+      node._w = Math.max(totalW, NODE_W);
+      return node._w;
+    }
+    treeRoot._w = _layout(treeRoot, 0);
+
+    // Position nodes
+    function _position(node, left, depth) {
+      var cx = left + node._w / 2;
+      node._x = cx - NODE_W / 2;
+      node._y = depth * (NODE_H + V_GAP);
+
+      var childTotal = 0;
+      node.children.forEach(function (c) { childTotal += c._w + H_GAP; });
+      childTotal = Math.max(childTotal - H_GAP, 0);
+      var childLeft = cx - childTotal / 2;
+      node.children.forEach(function (c) {
+        _position(c, childLeft, depth + 1);
+        childLeft += c._w + H_GAP;
+      });
+    }
+    _position(treeRoot, 0, 0);
+
+    // Total canvas size
+    var totalW = treeRoot._w + 40;
+    var maxDepth = 0;
+    (function _md(n, d) { maxDepth = Math.max(maxDepth, d); n.children.forEach(function (c) { _md(c, d + 1); }); })(treeRoot, 0);
+    var totalH = (maxDepth + 1) * (NODE_H + V_GAP) + FIND_H + 20;
+
+    // Collect all nodes + findings
+    var nodes = [];
+    var lines = [];  // parent -> child edges
+    var findingEls = [];  // clickable finding labels
+
+    function _collect(node, parent) {
+      nodes.push(node);
+      if (parent) {
+        lines.push({
+          x1: parent._x + NODE_W / 2, y1: parent._y + NODE_H,
+          x2: node._x + NODE_W / 2,    y2: node._y,
+        });
+      }
+      // Findings
+      var fy = node._y + NODE_H + FIND_V_GAP;
+      var fxStart = node._x + (NODE_W - Math.min(node.findings.length, 3) * (FIND_W + 8) + 8) / 2;
+      node.findings.forEach(function (f, fi) {
+        findingEls.push({
+          x: fxStart + fi * (FIND_W + 8),
+          y: fy,
+          w: FIND_W,
+          h: FIND_H,
+          label: (f.vuln_type || 'CWE') + ' / #' + (f.path_index || '?'),
+          resultId: f.result_id,
+        });
+      });
+      node.children.forEach(function (c) { _collect(c, node); });
+    }
+    _collect(treeRoot, null);
+
+    // Color by role
+    function _roleColors(role) {
+      if (role === 'source')      return { fill: 'rgba(34,197,94,0.12)', stroke: 'rgba(34,197,94,0.5)', text: '#4ade80' };
+      if (role === 'sink')        return { fill: 'rgba(248,113,113,0.12)', stroke: 'rgba(248,113,113,0.5)', text: '#f87171' };
+      if (role === 'needs-check' || role === 'needs_check' || role === 'propagate')
+                                  return { fill: 'rgba(251,191,36,0.1)', stroke: 'rgba(251,191,36,0.45)', text: '#fbbf24' };
+      return { fill: 'rgba(59,130,246,0.1)', stroke: 'rgba(59,130,246,0.4)', text: '#60a5fa' };
     }
 
-    return '<ul class="tree-branch">' +
-      children.map(function (child) {
-        var rc = String(child.role || 'node').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
-        var meta = [];
-        if (child.arg != null) meta.push('arg ' + child.arg);
-        if (child.callEa) meta.push(_esc(child.callEa));
-        return '<li class="tree-node ' + rc + '">' +
-          '<div class="tree-node-content">' +
-            '<span class="tree-node-dot"></span>' +
-            '<div class="tree-node-card">' +
-              '<strong>' + _esc(child.name) + '</strong>' +
-              '<span class="tree-node-role">' + _esc(child.role || 'node') + '</span>' +
-              (meta.length ? '<span class="tree-node-meta">' + meta.join(' · ') + '</span>' : '') +
-            '</div>' +
-          '</div>' +
-          _renderTreeChildren(child) +
-        '</li>';
-      }).join('') +
-    '</ul>';
+    // Generate SVG
+    var svg = '<svg width="' + totalW + '" height="' + totalH + '" style="display:block;font-family:var(--font-mono);">' +
+      '<defs><marker id="arrowhead" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto"><polygon points="0 0, 6 2, 0 4" fill="rgba(148,163,184,0.4)"/></marker></defs>';
+
+    // Edges
+    lines.forEach(function (l) {
+      var midY = (l.y1 + l.y2) / 2;
+      svg += '<path d="M' + l.x1 + ',' + l.y1 + ' C' + l.x1 + ',' + midY + ' ' + l.x2 + ',' + midY + ' ' + l.x2 + ',' + l.y2 + '" stroke="rgba(148,163,184,0.3)" stroke-width="1.5" fill="none"/>';
+    });
+
+    // Nodes
+    nodes.forEach(function (n) {
+      var c = _roleColors(n.role);
+      svg += '<rect x="' + n._x + '" y="' + n._y + '" width="' + NODE_W + '" height="' + NODE_H + '" rx="8" fill="' + c.fill + '" stroke="' + c.stroke + '" stroke-width="1.2"/>';
+      // Role label
+      svg += '<text x="' + (n._x + 10) + '" y="' + (n._y + 18) + '" fill="' + c.text + '" font-size="9" font-weight="700" text-transform="uppercase">' + _esc(n.role || 'node') + '</text>';
+      // Func name
+      var nameDisplay = (n.name || 'unknown');
+      if (nameDisplay.length > 22) nameDisplay = nameDisplay.substring(0, 20) + '..';
+      svg += '<text x="' + (n._x + NODE_W / 2) + '" y="' + (n._y + 38) + '" fill="#e2e8f0" font-size="12" font-weight="600" text-anchor="middle">' + _esc(nameDisplay) + '</text>';
+      // Call EA if present
+      if (n.callEa) {
+        svg += '<text x="' + (n._x + NODE_W - 10) + '" y="' + (n._y + 18) + '" fill="rgba(255,255,255,0.35)" font-size="9" text-anchor="end">' + _esc(n.callEa) + '</text>';
+      }
+    });
+
+    // Findings (clickable - use foreignObject for HTML buttons)
+    findingEls.forEach(function (f) {
+      svg += '<rect x="' + f.x + '" y="' + f.y + '" width="' + f.w + '" height="' + f.h + '" rx="13" fill="rgba(59,130,246,0.12)" stroke="rgba(59,130,246,0.35)" stroke-width="1" cursor="pointer" class="svg-finding" data-result-id="' + _esc(f.resultId) + '"/>';
+      var labelDisplay = f.label.length > 20 ? f.label.substring(0, 18) + '..' : f.label;
+      svg += '<text x="' + (f.x + f.w / 2) + '" y="' + (f.y + f.h / 2 + 4) + '" fill="#93c5fd" font-size="10" font-weight="600" text-anchor="middle" pointer-events="none">' + _esc(labelDisplay) + '</text>';
+    });
+
+    svg += '</svg>';
+
+    return '<div class="firmware-tree-wrap">' +
+      '<div class="code-block-title">CGI vulnerability tree</div>' +
+      '<div class="svg-tree-container">' + svg + '</div>' +
+    '</div>';
   }
 
   // ── cards ────────────────────────────────────────────────
@@ -398,11 +485,12 @@
 
   function _handleClick(e) {
     var btn = e.target.closest('.result-detail-btn');
-    var treeLink = e.target.closest('.tree-finding-link');
-    if (btn || treeLink) {
+    var svgF = e.target.closest('.svg-finding');
+    if (btn || svgF) {
       e.preventDefault();
       e.stopImmediatePropagation();
-      _showDetail((btn || treeLink).dataset.resultId);
+      var rid = btn ? btn.dataset.resultId : svgF.getAttribute('data-result-id');
+      _showDetail(rid);
       return;
     }
     // Delete entire record

@@ -84,135 +84,24 @@
   display: flex; align-items: center; justify-content: center; text-align: center;
 }
 
-/* ── 真树形图（UL/LI + CSS连线）──────────────────────────── */
+/* ── SVG 图形化树 ────────────────────────────────────────── */
 
 .firmware-tree-wrap {
   padding: 14px 16px; border-bottom: 1px solid var(--border);
 }
 
-.tree-root {
+.svg-tree-container {
+  overflow: auto;
+  max-height: 500px;
   margin-top: 10px;
-  position: relative;
-}
-.tree-root-label {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 14px;
-  border: 1px solid rgba(59,130,246,0.4);
-  border-radius: 8px;
-  background: rgba(59,130,246,0.12);
-  color: var(--accent);
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 13px;
-  margin-bottom: 6px;
 }
 
-.tree-branch {
-  list-style: none;
-  margin: 0;
-  padding: 0 0 0 28px;
-  position: relative;
+.svg-finding {
+  transition: fill 0.15s ease, stroke 0.15s ease;
 }
-.tree-branch::before {
-  content: "";
-  position: absolute;
-  top: 8px; bottom: 16px; left: 10px;
-  width: 1px;
-  background: rgba(148,163,184,0.25);
-}
-
-.tree-node {
-  position: relative;
-  padding: 4px 0;
-}
-.tree-node::before {
-  content: "";
-  position: absolute;
-  top: 18px; left: -18px;
-  width: 18px; height: 1px;
-  background: rgba(148,163,184,0.25);
-}
-.tree-node:last-child::before {
-  /* The last child's connector goes to the vertical line, no further */
-}
-
-.tree-node-content {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.tree-node-dot {
-  width: 10px; height: 10px; border-radius: 50%;
-  background: rgba(148,163,184,0.6);
-  flex-shrink: 0;
-}
-.tree-node.source > .tree-node-content .tree-node-dot { background: #22c55e; }
-.tree-node.sink   > .tree-node-content .tree-node-dot { background: var(--danger); }
-.tree-node.needs-check > .tree-node-content .tree-node-dot,
-.tree-node.needs_check > .tree-node-content .tree-node-dot { background: var(--warning); }
-
-.tree-node-card {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: rgba(0,0,0,0.2);
-  font-size: 12px;
-}
-.tree-node-card strong {
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-}
-.tree-node-role {
-  color: var(--text-muted);
-  font-size: 10px;
-  text-transform: uppercase;
-}
-.tree-node-meta {
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 10px;
-}
-
-/* leaf: findings */
-.tree-leaf {
-  position: relative;
-  padding: 3px 0 3px 18px;
-  list-style: none;
-}
-.tree-leaf::before {
-  content: "";
-  position: absolute;
-  top: 12px; left: 0;
-  width: 12px; height: 1px;
-  background: rgba(148,163,184,0.2);
-}
-.tree-leaf-dot {
-  position: absolute;
-  top: 8px; left: -4px;
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: rgba(59,130,246,0.5);
-}
-
-.tree-finding-link {
-  border: 1px solid rgba(59,130,246,0.35);
-  border-radius: 4px;
-  padding: 3px 8px;
-  background: rgba(59,130,246,0.1);
-  color: var(--accent);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  cursor: pointer;
-  display: inline-block;
-}
-.tree-finding-link:hover {
-  background: rgba(59,130,246,0.22);
-  border-color: rgba(59,130,246,0.6);
+.svg-finding:hover {
+  fill: rgba(59,130,246,0.25) !important;
+  stroke: rgba(59,130,246,0.7) !important;
 }
 
 /* ── 漏洞卡片列表 ────────────────────────────────────────── */
