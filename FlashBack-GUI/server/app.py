@@ -9,8 +9,23 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.responses import Response
 
 from server.persistence import load_persisted_tasks
+
+
+class _NoCacheStaticFiles(StaticFiles):
+    """StaticFiles that sends Cache-Control: no-cache to prevent
+    Electron/Chromium from caching JS/CSS across restarts."""
+    async def get_response(self, path: str, scope) -> Response:
+        resp = await super().get_response(path, scope)
+        content_type = resp.headers.get('content-type', '')
+        # Disable caching for all text-based frontend assets
+        if path.endswith(('.js', '.css', '.html')) or 'text/html' in content_type or 'javascript' in content_type or 'css' in content_type:
+            resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+        return resp
 
 
 def create_app(resource_dir: Path) -> FastAPI:
@@ -61,6 +76,6 @@ def create_app(resource_dir: Path) -> FastAPI:
         frontend_dir = Path(sys.executable).parent.parent / "frontend"
     else:
         frontend_dir = Path(__file__).resolve().parent.parent / "frontend"
-    app.mount("/", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")
+    app.mount("/", _NoCacheStaticFiles(directory=str(frontend_dir), html=True), name="frontend")
 
     return app

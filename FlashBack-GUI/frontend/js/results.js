@@ -64,11 +64,9 @@
     var removeSet = {};
     idsToRemove.forEach(function (id) { removeSet[id] = true; });
     _results = _results.filter(function (r) { return !removeSet[r.id]; });
-    // Save remaining IDs to localStorage so deleted results don't reappear on restart
+    // Save remaining IDs per-task so deleted results don't reappear on restart
     var remainingIds = _results.map(function (r) { return r.id; });
-    try { localStorage.setItem('flashback_last_task_id', _taskId); } catch (e) {}
-    try { localStorage.setItem('flashback_last_output_dir', _outputDir); } catch (e) {}
-    try { localStorage.setItem('flashback_remaining_ids', JSON.stringify(remainingIds)); } catch (e) {}
+    try { localStorage.setItem('flashback_remaining_' + _taskId, JSON.stringify(remainingIds)); } catch (e) {}
     _applyFilters();  // preserve active filters
     if (typeof LLMReview !== 'undefined' && LLMReview.clearSelection) {
       LLMReview.clearSelection();
@@ -216,7 +214,11 @@
     if (!container) return;
 
     if (!list.length) {
-      container.innerHTML = '<div class="text-muted" style="padding:40px;text-align:center;">No results. Run a scan first.</div>';
+      container.innerHTML = '<div class="panel"><div class="panel-body" style="text-align:center;padding:48px;">' +
+        '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="color:var(--text-muted);margin-bottom:12px;"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18"/><path d="M3 9h6"/><path d="M3 15h6"/><path d="M14 8h4"/><path d="M14 12h4"/><path d="M14 16h3"/></svg>' +
+        '<p class="code-label">NO DATA</p>' +
+        '<p class="text-muted text-sm mt-sm">No results. Run a scan in the Analysis tab first.</p>' +
+      '</div></div>';
       return;
     }
 
@@ -335,18 +337,20 @@
       // Remember across restarts so results survive app exit
       try { localStorage.setItem('flashback_last_task_id', _taskId); } catch (e) {}
       try { localStorage.setItem('flashback_last_output_dir', _outputDir); } catch (e) {}
-      // Save full list as baseline for filtering deleted items
-      try { localStorage.setItem('flashback_remaining_ids', JSON.stringify(_results.map(function(r){return r.id;})));
-      } catch (e) {}
 
-      // Apply saved filter (items removed by user in previous session)
+      // Apply saved filter FIRST (before saving new baseline)
+      var filterKey = 'flashback_remaining_' + _taskId;
       try {
-        var savedIds = JSON.parse(localStorage.getItem('flashback_remaining_ids') || 'null');
-        if (savedIds && Array.isArray(savedIds)) {
+        var savedIds = JSON.parse(localStorage.getItem(filterKey) || 'null');
+        if (savedIds && Array.isArray(savedIds) && savedIds.length < _results.length) {
           var keepSet = {};
           savedIds.forEach(function (id) { keepSet[id] = true; });
           _results = _results.filter(function (r) { return keepSet[r.id]; });
         }
+      } catch (e) {}
+
+      // THEN save filtered list as new baseline
+      try { localStorage.setItem(filterKey, JSON.stringify(_results.map(function(r){return r.id;})));
       } catch (e) {}
 
       _populateFilters(_results);
