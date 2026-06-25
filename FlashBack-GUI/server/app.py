@@ -2,6 +2,7 @@
 """FastAPI 应用创建 — CORS + lifespan + 静态文件 + 路由注册。"""
 from __future__ import annotations
 
+import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -53,7 +54,10 @@ def create_app(resource_dir: Path) -> FastAPI:
     app.include_router(ws_router)
 
     # 静态文件（最后挂载，API 路由优先匹配）
-    frontend_dir = Path(__file__).resolve().parent.parent / "frontend"
+    if getattr(sys, "frozen", False):
+        frontend_dir = Path(sys.executable).parent.parent / "frontend"
+    else:
+        frontend_dir = Path(__file__).resolve().parent.parent / "frontend"
     app.mount("/", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")
 
     return app

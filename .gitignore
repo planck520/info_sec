@@ -59,6 +59,18 @@ firmware_extraction/
 # FlashBack analysis output (do NOT commit)
 flashback-output/
 
+# PyInstaller build
+FlashBack-GUI/flashback-server/
+FlashBack-GUI/build/
+FlashBack-GUI/*.spec
+
+# electron-builder output
+FlashBack-GUI/release/
+FlashBack-GUI/dist/
+
+# Logs
+*.log
+
 # Local MCP / dev config
 .mcp.json
 draw-mcp-main/

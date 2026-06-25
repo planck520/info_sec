@@ -74,11 +74,16 @@ def _run_uvicorn(app, port: int, ready_event: threading.Event):
 def get_resource_dir() -> Path:
     """获取 resources/ 真实磁盘路径。
 
-    PyInstaller 打包后: exe 同级目录
-    开发环境:          项目根目录
+    开发环境: 项目根目录/resources
+    PyInstaller + electron-builder:
+        exe 在 <install>/resources/flashback-server/flashback-server.exe
+        extraResources 将 backward/config/llm/frontend 直接平铺在 <install>/resources/ 下
+        所以 parent.parent 就是 resources/ 目录本身，不需要再拼 /resources
     """
     if getattr(sys, "frozen", False):
-        return Path(sys.executable).parent / "resources"
+        # exe: <install>/resources/flashback-server/flashback-server.exe
+        # parent.parent = <install>/resources （extraResources 直接平铺在此）
+        return Path(sys.executable).parent.parent
     return Path(__file__).resolve().parent / "resources"
 
 
