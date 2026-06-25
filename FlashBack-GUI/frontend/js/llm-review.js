@@ -283,7 +283,11 @@ var LLMReview = (function () {
   var _llmInitialized = false;
 
   function init() {
-    if (_llmInitialized) return;
+    if (_llmInitialized) {
+      // Reapply selection visual state (selectedIds preserved across page switches)
+      _updateUI();
+      return;
+    }
     _llmInitialized = true;
 
     var btn = document.getElementById('llm-review-btn');
@@ -302,7 +306,7 @@ var LLMReview = (function () {
 
   function destroy() {
     _stopPolling();
-    _state.selectedIds = {};
+    // Preserve _state.selectedIds — selection survives page switches
     _state.reviewId = null;
     _state.running = false;
   }
