@@ -103,9 +103,6 @@
     var vulnCount = group.firmwares.reduce(function (s, f) { return s + f.results.length; }, 0);
     // Find record_id for the delete button (from first result in this group)
     var recId = group.firmwares[0] && group.firmwares[0].results[0] ? group.firmwares[0].results[0].record_id : '';
-    var rec = null;
-    for (var i = 0; i < records.length; i++) { if (records[i].record_id === recId) { rec = records[i]; break; } }
-    var reviewedTag = rec && rec.llm_reviewed ? '<span style="color:var(--accent-cyan);font-size:10px;">LLM ✓</span>' : '';
 
     return '<div class="panel result-device-group" data-device="' + _esc(group.device) + '">' +
       '<div class="result-device-head collapse-trigger" data-target="device-body-' + _esc(recId) + '">' +
@@ -116,7 +113,6 @@
         '<div class="result-device-stats">' +
           '<span>' + group.firmwares.length + ' binaries/CGI</span>' +
           '<span>' + vulnCount + ' findings</span>' +
-          reviewedTag +
           '<button class="btn btn-secondary btn-sm history-del-record" data-record-id="' + _esc(recId) + '" style="color:var(--danger);" title="Delete this record">Del</button>' +
         '</div>' +
       '</div>' +
@@ -332,8 +328,10 @@
     var vBadge = '';
     if (item.verdict) {
       var isV = item.verdict.is_vulnerable;
+      var conf = item.verdict.confidence != null ? ' ' + Math.round(item.verdict.confidence * 100) + '%' : '';
       vBadge = '<span class="severity-badge ' + (isV ? 'critical' : 'safe') + '" style="margin-left:6px;">' +
-        (isV ? 'VULNERABLE' : 'SAFE') + '</span>';
+        (isV ? 'VULNERABLE' : 'SAFE') + conf + '</span>' +
+        '<span style="color:var(--accent-cyan);font-size:10px;margin-left:4px;border:1px solid rgba(6,182,212,0.35);border-radius:3px;padding:1px 5px;">LLM ✓</span>';
     }
 
     return (

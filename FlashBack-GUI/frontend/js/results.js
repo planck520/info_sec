@@ -271,6 +271,11 @@
         '</div>'
       );
     }).join('');
+
+    // Reapply LLM verdict badges (cards regenerated, verdicts persist in LLMReview)
+    if (typeof LLMReview !== 'undefined' && LLMReview.reapplyVerdicts) {
+      setTimeout(function () { LLMReview.reapplyVerdicts(); }, 50);
+    }
   }
 
   function _populateFilters(list) {

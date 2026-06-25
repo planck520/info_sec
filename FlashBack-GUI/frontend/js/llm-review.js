@@ -315,6 +315,16 @@ var LLMReview = (function () {
     return _state.verdicts;
   }
 
+  // Reapply verdict badges + selection to DOM cards (called after _renderResults)
+  function reapplyVerdicts() {
+    document.querySelectorAll('.result-card[data-result-id]').forEach(function (card) {
+      var id = card.dataset.resultId;
+      if (_state.verdicts[id]) {
+        _renderVerdict(card, _state.verdicts[id]);
+      }
+    });
+  }
+
   return {
     init: init,
     destroy: destroy,
@@ -322,5 +332,6 @@ var LLMReview = (function () {
     selectAll: selectAll,
     clearSelection: clearSelection,
     getVerdicts: getVerdicts,
+    reapplyVerdicts: reapplyVerdicts,
   };
 })();
