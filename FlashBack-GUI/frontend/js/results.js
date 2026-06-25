@@ -206,28 +206,6 @@
     showToast('Deleted ' + selected.length, 'info');
   }
 
-  async function autoSaveRemaining() {
-    if (!_results.length || !_taskId) return;
-    var ids = _results.map(function (r) { return r.id; });
-    var verdicts = (typeof LLMReview !== 'undefined' && LLMReview.getVerdicts)
-      ? LLMReview.getVerdicts() : {};
-    try {
-      await api.post('/api/history', {
-        task_id: _taskId,
-        result_ids: ids,
-        verdicts: verdicts,
-      });
-      _results = [];
-    } catch (e) {
-      console.error('Auto-save failed:', e);
-      // Keep results — they'll be retried on next auto-save trigger
-    }
-  }
-
-  function getRemainingIds() {
-    return _results.map(function (r) { return r.id; });
-  }
-
   function _renderResults(list) {
     var container = document.getElementById('results-list');
     if (!container) return;
@@ -371,6 +349,10 @@
       window.__lastOutputDir = _outputDir;
       window.__lastTaskId = _taskId;
 
+      // Remember across restarts so results survive app exit
+      try { localStorage.setItem('flashback_last_task_id', _taskId); } catch (e) {}
+      try { localStorage.setItem('flashback_last_output_dir', _outputDir); } catch (e) {}
+
       _populateFilters(_results);
       _renderResults(_results);
     } catch (e) {
@@ -385,11 +367,23 @@
         _initialized = true;
         _initFilters();
 
-        // Bind save/delete buttons (once)
+        // Bind save/delete/select-all buttons (once)
         var saveBtn = document.getElementById('btn-save-history');
         var delBtn = document.getElementById('btn-delete-selected');
+        var selectAllBtn = document.getElementById('btn-select-all');
         if (saveBtn) saveBtn.addEventListener('click', saveSelected);
         if (delBtn) delBtn.addEventListener('click', deleteSelected);
+        if (selectAllBtn) selectAllBtn.addEventListener('click', function () {
+          if (typeof LLMReview === 'undefined') return;
+          var allCards = document.querySelectorAll('.result-card[data-result-id]');
+          var allSelected = allCards.length > 0 &&
+            Array.from(allCards).every(function (c) { return c.classList.contains('selected'); });
+          if (allSelected) {
+            LLMReview.clearSelection();
+          } else {
+            LLMReview.selectAll();
+          }
+        });
 
         // Detail button handler (stopPropagation to not toggle LLM selection)
         var list = document.getElementById('results-list');
@@ -405,6 +399,13 @@
       }
 
       var taskId = window.__lastTaskId;
+      // After restart, window.__lastTaskId is lost — recover from localStorage
+      if (!taskId) {
+        try { taskId = localStorage.getItem('flashback_last_task_id'); } catch (e) {}
+        if (taskId) {
+          try { window.__lastOutputDir = localStorage.getItem('flashback_last_output_dir'); } catch (e) {}
+        }
+      }
       if (taskId && !_taskId) {
         loadResults(taskId);
       } else if (!taskId && !_taskId) {
@@ -422,21 +423,6 @@
         LLMReview.destroy();
       }
     },
-  });
-
-  // Expose for auto-save from analysis.js / app.js
-  window.__resultsAutoSave = autoSaveRemaining;
-  window.__resultsGetRemaining = getRemainingIds;
-
-  window.addEventListener('beforeunload', function () {
-    if (_results.length && _taskId) {
-      // Best-effort sync save via sendBeacon
-      var ids = _results.map(function (r) { return r.id; });
-      var verdicts = (typeof LLMReview !== 'undefined' && LLMReview.getVerdicts)
-        ? LLMReview.getVerdicts() : {};
-      var payload = JSON.stringify({ task_id: _taskId, result_ids: ids, verdicts: verdicts });
-      try { navigator.sendBeacon('/api/history', new Blob([payload], { type: 'application/json' })); } catch (e) {}
-    }
   });
 
 })();

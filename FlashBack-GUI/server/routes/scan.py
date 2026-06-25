@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from engine.config_manager import get_config
 from engine.orchestrator import FlashBackRunner
+from server.app import _save_persisted_task
 from server.websocket import broadcast_task_event
 
 router = APIRouter(tags=["scan"])
@@ -271,6 +272,8 @@ async def start_scan(request: Request, body: ScanStartRequest):
                 task.finished_at = datetime.now().isoformat(timespec="seconds")
             final_type = "done" if task.status == "done" else task.status
             broadcast_task_event(task_id, {"type": final_type, **task.snapshot(include_logs=False)})
+            # Persist completed task to disk so results survive backend restart
+            _save_persisted_task(request.app.state.resource_dir, task_id, task.snapshot(include_logs=False))
         except Exception as exc:
             with task.lock:
                 task.status = "error" if not task.cancel_event.is_set() else "stopped"
@@ -278,6 +281,7 @@ async def start_scan(request: Request, body: ScanStartRequest):
                 task.finished_at = datetime.now().isoformat(timespec="seconds")
             log_callback({"level": "ERROR", "message": str(exc)})
             broadcast_task_event(task_id, {"type": "error", **task.snapshot(include_logs=False), "message": str(exc)})
+            _save_persisted_task(request.app.state.resource_dir, task_id, task.snapshot(include_logs=False))
 
     thread = threading.Thread(target=worker, daemon=True, name=f"scan-{task_id[:8]}")
     thread.start()
@@ -288,9 +292,12 @@ async def start_scan(request: Request, body: ScanStartRequest):
 async def list_tasks(request: Request):
     """Return all tasks (for results page to find completed scans)."""
     tasks = request.app.state.tasks
+    persisted = getattr(request.app.state, "persisted_tasks", {})
     now = datetime.now().isoformat(timespec="seconds")
     result = []
+    seen_ids = set()
     for tid, t in tasks.items():
+        seen_ids.add(tid)
         entry = {
             "task_id": tid, "status": t.status, "output_dir": t.output_dir,
             "completed": t.completed, "total": t.total, "created_at": t.created_at,
@@ -310,6 +317,19 @@ async def list_tasks(request: Request):
             except (ValueError, TypeError):
                 pass
         result.append(entry)
+    # Include persisted tasks that survived a restart
+    for tid, pt in persisted.items():
+        if tid in seen_ids:
+            continue
+        result.append({
+            "task_id": tid, "status": pt.get("status", "done"),
+            "output_dir": pt.get("output_dir", ""),
+            "completed": pt.get("completed", 0), "total": pt.get("total", 0),
+            "created_at": pt.get("created_at", ""),
+            "started_at": pt.get("started_at", ""),
+            "finished_at": pt.get("finished_at", ""),
+            "elapsed_seconds": 0,
+        })
     return {"tasks": result}
 
 

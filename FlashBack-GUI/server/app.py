@@ -2,6 +2,7 @@
 """FastAPI 应用创建 — CORS + lifespan + 静态文件 + 路由注册。"""
 from __future__ import annotations
 
+import json
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -10,12 +11,37 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+_TASKS_FILE = "completed_tasks.json"
+
+
+def _load_persisted_tasks(resource_dir: Path) -> dict:
+    """Load completed task metadata that survives restarts."""
+    path = resource_dir / _TASKS_FILE
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def _save_persisted_task(resource_dir: Path, task_id: str, data: dict) -> None:
+    """Persist a completed task so it survives backend restart."""
+    path = resource_dir / _TASKS_FILE
+    all_tasks = _load_persisted_tasks(resource_dir)
+    all_tasks[task_id] = data
+    try:
+        path.write_text(json.dumps(all_tasks, ensure_ascii=False, indent=2), encoding="utf-8")
+    except OSError:
+        pass
+
 
 def create_app(resource_dir: Path) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         app.state.resource_dir = resource_dir
         app.state.tasks = {}  # task_id → TaskState (供 scan.py)
+        app.state.persisted_tasks = _load_persisted_tasks(resource_dir)
         yield
         for _tid, state in list(app.state.tasks.items()):
             proc = state.get("process")

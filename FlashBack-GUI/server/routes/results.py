@@ -31,17 +31,24 @@ async def get_results(request: Request, task_id: str = Query(...)):
         task_id: the task UUID returned by POST /api/scan/start
     """
     task = request.app.state.tasks.get(task_id)
+    persisted = None
     if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+        # Fall back to persisted tasks (survives backend restart)
+        persisted = request.app.state.persisted_tasks.get(task_id)
+        if not persisted:
+            raise HTTPException(status_code=404, detail="Task not found")
 
-    output_dir = task.output_dir
+    output_dir = task.output_dir if task else persisted.get("output_dir", "")
     if not output_dir:
         raise HTTPException(status_code=400, detail="Task has no output_dir")
+
+    result_files = task.result_files if task else persisted.get("result_files", [])
+    task_status = task.status if task else persisted.get("status", "done")
 
     results = []
     seen = set()
 
-    for json_path_str in task.result_files:
+    for json_path_str in result_files:
         json_path = Path(json_path_str)
         if not json_path.exists():
             continue
@@ -82,7 +89,7 @@ async def get_results(request: Request, task_id: str = Query(...)):
     return {
         "task_id": task_id,
         "output_dir": output_dir,
-        "status": task.status,
+        "status": task_status,
         "results": results,
     }
 
@@ -99,8 +106,13 @@ async def get_result_detail(
     """
     task = request.app.state.tasks.get(task_id)
     if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-    output_dir = task.output_dir
+        # Fall back to persisted tasks
+        persisted = request.app.state.persisted_tasks.get(task_id)
+        if not persisted:
+            raise HTTPException(status_code=404, detail="Task not found")
+        output_dir = persisted.get("output_dir", "")
+    else:
+        output_dir = task.output_dir
     if not output_dir:
         raise HTTPException(status_code=400, detail="Task has no output_dir")
 

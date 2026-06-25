@@ -320,11 +320,6 @@
       return;
     }
 
-    // Auto-save remaining results from previous scan before starting new one
-    if (window.__resultsAutoSave) {
-      try { await window.__resultsAutoSave(); } catch (e) {}
-    }
-
     resetRuntimeUi();
     state.lastProgress = null;
     state.currentItemKey = null;
