@@ -375,18 +375,19 @@
   }
 
   // ── page lifecycle ─────────────────────────────────────────
-  var _settingsInitialized = false;
+  var _settingsEventsBound = false;
 
   AppState.registerPage('settings', {
     init: function () {
-      if (_settingsInitialized) return;
-      _settingsInitialized = true;
+      // Always reload to keep AppState in sync (e.g. llm_enabled)
+      loadSettings();
+      if (_settingsEventsBound) return;
+      _settingsEventsBound = true;
       initLLMProviderSwitch();
       initLLMToggle();
       initSettingsSaveButton();
       initIDAPathButtons();
       initOutputBrowse();
-      loadSettings();
       var testBtn = document.getElementById('settings-test-llm');
       if (testBtn) testBtn.addEventListener('click', testLLMConnection);
     },

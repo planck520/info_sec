@@ -87,6 +87,14 @@ const AppState = (() => {
       });
     }
 
+    // 预加载 settings，防止 LLM toggle 等状态在未访问设置页时为空
+    if (typeof api !== 'undefined') {
+      api.get('/api/settings').then(function (s) {
+        _state['llm_enabled'] = s.llm_enabled !== false;
+        _state['output_dir'] = s.output_dir || '';
+      }).catch(function () {});
+    }
+
     // 初始路由
     navigateTo(location.hash.replace('#', '') || 'dashboard');
   }

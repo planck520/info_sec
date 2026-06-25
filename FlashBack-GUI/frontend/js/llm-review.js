@@ -74,8 +74,16 @@ var LLMReview = (function () {
       return;
     }
 
-    // Check LLM toggle
-    if (!AppState.getState('llm_enabled')) {
+    // Check LLM toggle — AppState (preloaded), fallback to API
+    var llmEnabled = AppState.getState('llm_enabled');
+    if (llmEnabled === undefined || llmEnabled === null) {
+      try {
+        var settings = await api.get('/api/settings');
+        llmEnabled = settings.llm_enabled !== false;
+        AppState.setState('llm_enabled', llmEnabled);
+      } catch (e) { /* ignore, treat as disabled */ }
+    }
+    if (!llmEnabled) {
       showToast('LLM analysis is disabled. Enable it in Settings.', 'warning');
       return;
     }
