@@ -19,6 +19,7 @@
     currentItemKey: null,
     currentItemStartedAt: null,
     lastCompleted: 0,
+    logCount: 0,   // number of log lines already displayed from polling
   };
 
   function $(id) { return document.getElementById(id); }
@@ -329,6 +330,7 @@
     state.currentItemKey = null;
     state.currentItemStartedAt = Date.now();
     state.lastCompleted = 0;
+    state.logCount = 0;
     setRunning(true);
     addLog('INFO', '提交分析任务...');
 
@@ -343,7 +345,6 @@
       state.outputDir = output;
       state.startedAt = Date.now();
       state.currentItemStartedAt = state.startedAt;
-      startTimer();
       connectLogs(state.taskId);
       addLog('INFO', '任务已创建：' + state.taskId);
     } catch (err) {
@@ -366,15 +367,54 @@
   }
 
   function connectLogs(taskId) {
-    if (state.ws) state.ws.close();
-    state.ws = api.connectWS('/ws/logs?task_id=' + encodeURIComponent(taskId), {
-      onOpen: function () { addLog('INFO', '实时日志连接已建立'); },
-      onLog: function (msg) { addLog(msg.level || 'INFO', msg.message || '', msg.timestamp); },
-      onProgress: handleProgress,
-      onDone: function (msg) { finishTask('DONE', msg); },
-      onError: function (msg) { finishTask('ERROR', msg); },
-      onClose: function () { addLog('WARN', '实时日志连接已断开'); },
-    });
+    if (state.ws) {
+      state.ws.close();
+      state.ws = null;
+    }
+    addLog('INFO', '开始监控分析进度...');
+    _startPolling(taskId);
+  }
+
+  function _startPolling(taskId) {
+    stopTimer();
+    var lastLogIdx = state.logCount || 0;
+    state.timer = setInterval(async function () {
+      if (!state.taskId) return;
+
+      // Update elapsed time (every tick for smooth display)
+      if (state.startedAt) {
+        var elapsed = Math.floor((Date.now() - state.startedAt) / 1000);
+        var m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+        var s = String(elapsed % 60).padStart(2, '0');
+        setText('stat-time', m + ':' + s);
+      }
+
+      try {
+        var snap = await api.get('/api/scan/progress/' + encodeURIComponent(taskId));
+        if (!snap) return;
+
+        // Display new log lines
+        if (snap.logs && snap.logs.length > lastLogIdx) {
+          for (var i = lastLogIdx; i < snap.logs.length; i++) {
+            var entry = snap.logs[i];
+            addLog(entry.level || 'INFO', entry.message || '', entry.timestamp);
+          }
+          lastLogIdx = snap.logs.length;
+          state.logCount = lastLogIdx;
+        }
+
+        handleProgress(snap);
+        if (snap.status === 'done') {
+          finishTask('DONE', snap);
+        } else if (snap.status === 'error') {
+          finishTask('ERROR', snap);
+        } else if (snap.status === 'stopped') {
+          finishTask('STOPPED', snap);
+        }
+      } catch (e) {
+        // Retry next tick
+      }
+    }, 250);
   }
 
   function handleProgress(msg) {
@@ -500,13 +540,13 @@
       setProgress(0, '等待开始');
       setEngineTag('IDLE', '');
     }
+    // Resume polling if we have a running task but timer was stopped by destroy
+    if (state.taskId && !state.timer) {
+      _startPolling(state.taskId);
+    }
   }
 
   function destroyAnalysisPage() {
-    if (state.ws) {
-      state.ws.close();
-      state.ws = null;
-    }
     stopTimer();
   }
 
