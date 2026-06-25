@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "build:py": "pyinstaller --noconfirm --onedir --name flashback-server --add-data \"engine;engine\" --add-data \"server;server\" --hidden-import uvicorn --hidden-import fastapi --hidden-import starlette --hidden-import requests --hidden-import pydantic --hidden-import websockets --hidden-import anyio --hidden-import h11 --hidden-import httpcore --hidden-import colorama --hidden-import sqlite3 --hidden-import engine.config_manager --hidden-import engine.ida_detector --hidden-import engine.llm_service --hidden-import engine.orchestrator --hidden-import server.routes.scan --hidden-import server.routes.results --hidden-import server.routes.settings --hidden-import server.routes.llm --hidden-import server.routes.history --hidden-import server.websocket main.py",
+    "build:py": "pyinstaller --noconfirm --onedir --name flashback-server --add-data \"engine;engine\" --add-data \"server;server\" --hidden-import uvicorn --hidden-import fastapi --hidden-import starlette --hidden-import requests --hidden-import pydantic --hidden-import websockets --hidden-import anyio --hidden-import h11 --hidden-import httpcore --hidden-import colorama --hidden-import sqlite3 --hidden-import engine.config_manager --hidden-import engine.ida_detector --hidden-import engine.llm_service --hidden-import engine.orchestrator --hidden-import server.routes.scan --hidden-import server.routes.results --hidden-import server.routes.settings --hidden-import server.routes.llm --hidden-import server.routes.history --hidden-import server.websocket --hidden-import server.persistence main.py",
     "build:dist": "electron-builder --win",
     "build": "npm run build:py && npm run build:dist"
   },

@@ -64,6 +64,11 @@
     var removeSet = {};
     idsToRemove.forEach(function (id) { removeSet[id] = true; });
     _results = _results.filter(function (r) { return !removeSet[r.id]; });
+    // Save remaining IDs to localStorage so deleted results don't reappear on restart
+    var remainingIds = _results.map(function (r) { return r.id; });
+    try { localStorage.setItem('flashback_last_task_id', _taskId); } catch (e) {}
+    try { localStorage.setItem('flashback_last_output_dir', _outputDir); } catch (e) {}
+    try { localStorage.setItem('flashback_remaining_ids', JSON.stringify(remainingIds)); } catch (e) {}
     _applyFilters();  // preserve active filters
     if (typeof LLMReview !== 'undefined' && LLMReview.clearSelection) {
       LLMReview.clearSelection();
@@ -310,28 +315,6 @@
     if (searchInput) searchInput.addEventListener('input', _applyFilters);
   }
 
-  async function _loadLatestTask() {
-    var container = document.getElementById('results-list');
-    try {
-      var resp = await api.get('/api/scan/tasks');
-      var tasks = (resp.tasks || []).filter(function (t) { return t.status === 'done' && t.output_dir; });
-      if (tasks.length > 0) {
-        var latest = tasks[tasks.length - 1];
-        window.__lastTaskId = latest.task_id;
-        window.__lastOutputDir = latest.output_dir;
-        loadResults(latest.task_id);
-        return;
-      }
-    } catch (e) {
-      console.error('Failed to discover tasks:', e);
-    }
-    if (container) {
-      container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);">' +
-        'No completed scans found.<br><br>Run a scan in the <b>Analysis</b> tab first, then return here.' +
-        '</div>';
-    }
-  }
-
   async function loadResults(taskId) {
     if (!taskId) return;
 
@@ -352,6 +335,19 @@
       // Remember across restarts so results survive app exit
       try { localStorage.setItem('flashback_last_task_id', _taskId); } catch (e) {}
       try { localStorage.setItem('flashback_last_output_dir', _outputDir); } catch (e) {}
+      // Save full list as baseline for filtering deleted items
+      try { localStorage.setItem('flashback_remaining_ids', JSON.stringify(_results.map(function(r){return r.id;})));
+      } catch (e) {}
+
+      // Apply saved filter (items removed by user in previous session)
+      try {
+        var savedIds = JSON.parse(localStorage.getItem('flashback_remaining_ids') || 'null');
+        if (savedIds && Array.isArray(savedIds)) {
+          var keepSet = {};
+          savedIds.forEach(function (id) { keepSet[id] = true; });
+          _results = _results.filter(function (r) { return keepSet[r.id]; });
+        }
+      } catch (e) {}
 
       _populateFilters(_results);
       _renderResults(_results);
@@ -408,10 +404,8 @@
       }
       if (taskId && !_taskId) {
         loadResults(taskId);
-      } else if (!taskId && !_taskId) {
-        _loadLatestTask();
       }
-      // else: keep existing results, don't re-render
+      // else: keep existing results (or show empty if first visit with no completed scans)
 
       if (typeof LLMReview !== 'undefined') {
         LLMReview.init();

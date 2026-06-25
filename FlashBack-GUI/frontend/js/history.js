@@ -77,6 +77,9 @@
 
     container.innerHTML = summary + grouped.map(function (g) { return _renderDeviceGroup(g, records); }).join('');
     _wireCollapse();
+    // Default: collapse all device bodies (show only device-level headers)
+    document.querySelectorAll('.collapse-body').forEach(function (b) { b.classList.add('collapsed'); });
+    document.querySelectorAll('.collapse-arrow').forEach(function (a) { a.textContent = '▶'; });
   }
 
   // ── grouping ─────────────────────────────────────────────
@@ -511,7 +514,7 @@
     } catch (e) {
       console.error('Failed to load history:', e);
       var c = document.getElementById('history-list');
-      if (c) c.innerHTML = '<div class="panel results-empty-panel"><div class="panel-body"><p class="code-label">LOAD FAILED</p><p class="text-muted text-sm mt-sm">' + _esc(e.message) + '</p></div></div>';
+      if (c) c.innerHTML = '<div class="panel results-empty-panel"><div class="panel-body"><p class="code-label">NO HISTORY</p><p class="text-muted text-sm mt-sm">No history records. Save results from the <b>Results</b> page first.</p></div></div>';
     }
   }
 

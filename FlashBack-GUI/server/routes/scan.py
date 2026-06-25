@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 
 from engine.config_manager import get_config
 from engine.orchestrator import FlashBackRunner
-from server.app import _save_persisted_task
+from server.persistence import save_persisted_task
 from server.websocket import broadcast_task_event
 
 router = APIRouter(tags=["scan"])
@@ -273,7 +273,7 @@ async def start_scan(request: Request, body: ScanStartRequest):
             final_type = "done" if task.status == "done" else task.status
             broadcast_task_event(task_id, {"type": final_type, **task.snapshot(include_logs=False)})
             # Persist completed task to disk so results survive backend restart
-            _save_persisted_task(request.app.state.resource_dir, task_id, task.snapshot(include_logs=False))
+            save_persisted_task(task_id, task.snapshot(include_logs=False))
         except Exception as exc:
             with task.lock:
                 task.status = "error" if not task.cancel_event.is_set() else "stopped"
@@ -281,7 +281,7 @@ async def start_scan(request: Request, body: ScanStartRequest):
                 task.finished_at = datetime.now().isoformat(timespec="seconds")
             log_callback({"level": "ERROR", "message": str(exc)})
             broadcast_task_event(task_id, {"type": "error", **task.snapshot(include_logs=False), "message": str(exc)})
-            _save_persisted_task(request.app.state.resource_dir, task_id, task.snapshot(include_logs=False))
+            save_persisted_task(task_id, task.snapshot(include_logs=False))
 
     thread = threading.Thread(target=worker, daemon=True, name=f"scan-{task_id[:8]}")
     thread.start()

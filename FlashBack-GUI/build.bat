@@ -34,6 +34,7 @@ pyinstaller --noconfirm --onedir ^
   --hidden-import server.routes.llm ^
   --hidden-import server.routes.history ^
   --hidden-import server.websocket ^
+  --hidden-import server.persistence ^
   main.py
 
 if %ERRORLEVEL% NEQ 0 (
