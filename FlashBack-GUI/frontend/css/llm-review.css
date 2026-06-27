@@ -47,6 +47,7 @@
 .result-card .llm-badge.completed  { background: rgba(52,211,153,0.15); color: var(--success); }
 .result-card .llm-badge.vulnerable { background: rgba(248,113,113,0.18); color: var(--danger); }
 .result-card .llm-badge.safe       { background: rgba(52,211,153,0.14); color: var(--success); }
+.result-card .llm-badge.failed     { background: rgba(248,113,113,0.18); color: var(--danger); }
 
 /* ── mini progress bar ──────────────────────────────────── */
 .llm-progress-mini {
@@ -103,6 +104,7 @@
 }
 .llm-reasoning .verdict-header.true-positive  { color: var(--danger); }
 .llm-reasoning .verdict-header.false-positive { color: var(--success); }
+.llm-reasoning .verdict-header.review-error   { color: var(--danger); }
 
 .llm-reasoning .verdict-reasoning {
   white-space: pre-wrap;

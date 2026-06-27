@@ -189,10 +189,12 @@ var LLMReview = (function () {
   }
 
   function _renderVerdict(card, verdict) {
+    var reasoning = verdict.reasoning_chain || verdict.analysis_result || verdict.error || '';
+    var hasError = _isErrorVerdict(verdict, reasoning);
     var isVuln = verdict.is_vulnerable;
-    var badgeClass = isVuln ? 'vulnerable' : 'safe';
-    var badgeText = isVuln ? 'VULNERABLE' : 'SAFE';
-    _setBadge(card, 'completed', badgeText, badgeClass);
+    var badgeClass = hasError ? 'failed' : (isVuln ? 'vulnerable' : 'safe');
+    var badgeText = hasError ? 'CONNECTION FAILED' : (isVuln ? 'VULNERABLE' : 'SAFE');
+    _setBadge(card, hasError ? 'failed' : 'completed', badgeText, badgeClass);
 
     // Reasoning panel
     var panel = card.querySelector('.llm-reasoning');
@@ -206,9 +208,8 @@ var LLMReview = (function () {
     var conf = verdict.confidence != null
       ? ' (confidence: ' + (Math.round(verdict.confidence * 100)) + '%)'
       : '';
-    var headerClass = isVuln ? 'true-positive' : 'false-positive';
-    var headerIcon = isVuln ? 'TRUE POSITIVE' : 'FALSE POSITIVE / SAFE';
-    var reasoning = verdict.reasoning_chain || verdict.analysis_result || '';
+    var headerClass = hasError ? 'review-error' : (isVuln ? 'true-positive' : 'false-positive');
+    var headerIcon = hasError ? 'LLM CONNECTION FAILED' : (isVuln ? 'TRUE POSITIVE' : 'FALSE POSITIVE / SAFE');
     var modelTag = _state._modelInfo || '';
 
     panel.innerHTML =
@@ -217,6 +218,18 @@ var LLMReview = (function () {
         (modelTag ? '<span style="font-weight:400;font-size:10px;color:var(--text-muted);margin-left:8px;">' + _escapeHtml(modelTag) + '</span>' : '') +
       '</div>' +
       '<div class="verdict-reasoning">' + _escapeHtml(reasoning) + '</div>';
+  }
+
+  function _isErrorVerdict(verdict, reasoning) {
+    if (!verdict) return true;
+    if (verdict.error) return true;
+    var text = (reasoning || '').toLowerCase();
+    return text.indexOf('error:') !== -1 ||
+      text.indexOf('http request failed') !== -1 ||
+      text.indexOf('unauthorized') !== -1 ||
+      text.indexOf('unable to connect') !== -1 ||
+      text.indexOf('timed out') !== -1 ||
+      text.indexOf('model returned empty response') !== -1;
   }
 
   function _setBadge(card, status, text, extraClass) {

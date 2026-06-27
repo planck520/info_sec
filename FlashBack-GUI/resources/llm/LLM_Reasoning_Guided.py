@@ -429,7 +429,7 @@ Output only one valid JSON object. Do not include Markdown fences or any extra t
         # 1. Generate the reasoning trace
         reasoning_prompt = self.build_chain_of_thought_prompt(vuln_info, code_content)
         reasoning_content = self.call_deepseek_model(reasoning_prompt)
-        
+
         if not reasoning_content:
             return {'is_vulnerable': False, 'reasoning_chain': "Error: Model returned empty response", 'analysis_result': ""}
 

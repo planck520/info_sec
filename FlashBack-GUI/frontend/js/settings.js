@@ -355,24 +355,28 @@
   function initOutputBrowse() {
     var btn = document.getElementById('settings-output-browse');
     if (!btn) return;
-    btn.addEventListener('click', function () {
-      var input = document.createElement('input');
-      input.type = 'file';
-      input.webkitdirectory = true;
-      input.directory = true;
-      input.addEventListener('change', function () {
-        if (this.files && this.files.length > 0) {
-          var fullPath = this.files[0].path || this.files[0].name;
-          if (fullPath.indexOf('\\') !== -1 || fullPath.indexOf('/') !== -1) {
-            var sep = fullPath.indexOf('\\') !== -1 ? '\\' : '/';
-            var parts = fullPath.split(sep);
-            parts.pop();
-            _setSettingsField('settings-output-dir', parts.join(sep));
-            saveSettings(true);
-          }
+    btn.addEventListener('click', async function () {
+      btn.disabled = true;
+      var oldText = btn.textContent;
+      btn.textContent = '…';
+      try {
+        var path = null;
+        if (window.electronAPI && typeof window.electronAPI.selectDirectory === 'function') {
+          path = await window.electronAPI.selectDirectory('选择分析结果输出目录');
+        } else {
+          var resp = await api.get('/api/scan/select-dir', { title: '选择分析结果输出目录' });
+          path = resp && resp.path;
         }
-      });
-      input.click();
+        if (path) {
+          _setSettingsField('settings-output-dir', path);
+          saveSettings(true);
+        }
+      } catch (e) {
+        showToast('Select failed: ' + e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = oldText || 'Browse';
+      }
     });
   }
 
