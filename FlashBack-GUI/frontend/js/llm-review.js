@@ -74,8 +74,16 @@ var LLMReview = (function () {
       return;
     }
 
-    // Check LLM toggle
-    if (!AppState.getState('llm_enabled')) {
+    // Check LLM toggle — AppState (preloaded), fallback to API
+    var llmEnabled = AppState.getState('llm_enabled');
+    if (llmEnabled === undefined || llmEnabled === null) {
+      try {
+        var settings = await api.get('/api/settings');
+        llmEnabled = settings.llm_enabled !== false;
+        AppState.setState('llm_enabled', llmEnabled);
+      } catch (e) { /* ignore, treat as disabled */ }
+    }
+    if (!llmEnabled) {
       showToast('LLM analysis is disabled. Enable it in Settings.', 'warning');
       return;
     }
@@ -288,7 +296,11 @@ var LLMReview = (function () {
   var _llmInitialized = false;
 
   function init() {
-    if (_llmInitialized) return;
+    if (_llmInitialized) {
+      // Reapply selection visual state (selectedIds preserved across page switches)
+      _updateUI();
+      return;
+    }
     _llmInitialized = true;
 
     var btn = document.getElementById('llm-review-btn');
@@ -307,13 +319,23 @@ var LLMReview = (function () {
 
   function destroy() {
     _stopPolling();
-    _state.selectedIds = {};
+    // Preserve _state.selectedIds — selection survives page switches
     _state.reviewId = null;
     _state.running = false;
   }
 
   function getVerdicts() {
     return _state.verdicts;
+  }
+
+  // Reapply verdict badges + selection to DOM cards (called after _renderResults)
+  function reapplyVerdicts() {
+    document.querySelectorAll('.result-card[data-result-id]').forEach(function (card) {
+      var id = card.dataset.resultId;
+      if (_state.verdicts[id]) {
+        _renderVerdict(card, _state.verdicts[id]);
+      }
+    });
   }
 
   return {
@@ -323,5 +345,6 @@ var LLMReview = (function () {
     selectAll: selectAll,
     clearSelection: clearSelection,
     getVerdicts: getVerdicts,
+    reapplyVerdicts: reapplyVerdicts,
   };
 })();

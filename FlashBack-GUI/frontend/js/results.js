@@ -11,7 +11,52 @@
   var _results = [];
   var _outputDir = '';
   var _taskId = '';
+  var _firmwareName = '';
   var _initialized = false;
+
+  // ── detail panel (simple: no path tree, just info + code) ──
+
+  async function _showResultDetail(resultId) {
+    if (!_taskId || !resultId) return;
+    var sel = '.result-detail-panel[data-detail-for="' + resultId + '"]';
+    var panel = document.querySelector(sel);
+    if (!panel) return;
+    if (panel.style.display !== 'none' && panel.dataset.loaded === 'true') {
+      panel.style.display = 'none';
+      return;
+    }
+    panel.style.display = 'block';
+    panel.innerHTML = '<div class="panel-body"><p class="code-label">DETAIL</p><p class="text-muted text-sm mt-sm">Loading...</p></div>';
+    try {
+      var resp = await api.get('/api/results/detail', { result_id: resultId, task_id: _taskId });
+      var v = resp.vuln_info || {};
+      var path = Array.isArray(v.path) ? v.path : [];
+      var rows = path.map(function (node, idx) {
+        return '<tr><td>' + (idx + 1) + '</td><td>' + _esc(node.func || '') + '</td><td>' + _esc(node.arg_index == null ? '' : node.arg_index) + '</td><td>' + _esc(node.call_ea || '') + '</td><td>' + _esc(node.func_ea || '') + '</td><td>' + _esc(node.label || '') + '</td></tr>';
+      }).join('');
+      var code = resp.code_content || '';
+      panel.innerHTML =
+        '<div class="section-hd"><span class="dot amber"></span> RESULT DETAIL</div>' +
+        '<div class="panel-body result-detail-body">' +
+          '<div class="detail-grid">' +
+            '<div><span class="code-label">RESULT ID</span><strong>' + _esc(resultId) + '</strong></div>' +
+            '<div><span class="code-label">CWE</span><strong>' + _esc(v.vuln_type || 'N/A') + '</strong></div>' +
+            '<div><span class="code-label">SINK</span><strong>' + _esc(v.sink_func || 'N/A') + '()</strong></div>' +
+            '<div><span class="code-label">SOURCE</span><strong>' + _esc(v.source_func || 'N/A') + '()</strong></div>' +
+          '</div>' +
+          '<div class="code-block-title">path hops</div>' +
+          '<div class="result-path-table-wrap">' +
+            '<table class="result-path-table"><thead><tr><th>#</th><th>func</th><th>arg</th><th>call_ea</th><th>func_ea</th><th>label</th></tr></thead>' +
+            '<tbody>' + (rows || '<tr><td colspan="6">No path data</td></tr>') + '</tbody></table>' +
+          '</div>' +
+          '<div class="code-block-title">decompiled code</div>' +
+          '<pre class="result-code-block">' + _esc(code || 'No decompiled code available.') + '</pre>' +
+        '</div>';
+      panel.dataset.loaded = 'true';
+    } catch (e) {
+      panel.innerHTML = '<div class="panel-body"><p class="code-label">DETAIL FAILED</p><p class="text-muted text-sm mt-sm">' + _esc(e.message) + '</p></div>';
+    }
+  }
 
   // ── history save helpers ────────────────────────────────
 
@@ -19,6 +64,9 @@
     var removeSet = {};
     idsToRemove.forEach(function (id) { removeSet[id] = true; });
     _results = _results.filter(function (r) { return !removeSet[r.id]; });
+    // Save remaining IDs per-task so deleted results don't reappear on restart
+    var remainingIds = _results.map(function (r) { return r.id; });
+    try { localStorage.setItem('flashback_remaining_' + _taskId, JSON.stringify(remainingIds)); } catch (e) {}
     _applyFilters();  // preserve active filters
     if (typeof LLMReview !== 'undefined' && LLMReview.clearSelection) {
       LLMReview.clearSelection();
@@ -34,20 +82,118 @@
       showToast('Select at least one result', 'warning');
       return;
     }
-    // Save first, only remove on success
+    _showSaveDialog(selected);
+  }
+
+  function _showSaveDialog(selected) {
+    // Fetch existing records for the dialog
+    api.get('/api/history').then(function (resp) {
+      _renderSaveDialog(selected, resp.records || []);
+    }).catch(function () {
+      _renderSaveDialog(selected, []);
+    });
+  }
+
+  function _renderSaveDialog(selected, records) {
+    // Remove old dialog if exists
+    var old = document.getElementById('save-history-dialog');
+    if (old) old.remove();
+
+    var backdrop = document.createElement('div');
+    backdrop.id = 'save-history-dialog';
+    backdrop.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;';
+
+    var recordOptions = records.map(function (r) {
+      return '<div class="save-dialog-record" data-record-id="' + r.record_id + '" style="padding:10px 14px;border:1px solid rgba(255,255,255,0.12);border-radius:8px;cursor:pointer;margin-bottom:6px;transition:all 0.15s;">' +
+        '<span style="font-weight:600;color:#fff;">' + _esc(r.device || '?') + '</span>' +
+        '<span style="color:var(--text-muted);margin-left:8px;font-size:12px;">' + _esc(r.firmware || '?') + '</span>' +
+        '<span style="color:var(--text-muted);margin-left:8px;font-size:11px;">' + r.entry_count + ' vulns</span>' +
+        (r.llm_reviewed ? '<span style="color:var(--accent-cyan);margin-left:6px;font-size:10px;">LLM ✓</span>' : '') +
+      '</div>';
+    }).join('');
+
+    backdrop.innerHTML = '<div style="background:#1a1a2e;border:1px solid rgba(255,255,255,0.2);border-radius:16px;padding:24px;width:480px;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.5);">' +
+      '<div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:4px;">Save to History</div>' +
+      '<div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">' + selected.length + ' result(s) selected</div>' +
+
+      '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">Existing Records — click to append</div>' +
+      '<div id="save-dialog-records" style="max-height:200px;overflow-y:auto;margin-bottom:16px;">' +
+        (records.length ? recordOptions : '<div style="color:var(--text-muted);font-size:12px;padding:8px;">No existing records</div>') +
+      '</div>' +
+
+      '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;">Or create new record</div>' +
+      '<div class="flex-col gap-sm" style="margin-bottom:6px;">' +
+        '<input id="save-dialog-device" class="input" placeholder="Device name (e.g. TOTOLINK C835BR)" style="width:100%;">' +
+        '<span class="text-xs text-muted">Firmware: <b>' + _esc(_firmwareName || 'auto-detected') + '</b> (auto-detected from scan)</span>' +
+      '</div>' +
+
+      '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">' +
+        '<button class="btn btn-secondary btn-sm" id="save-dialog-cancel">Cancel</button>' +
+        '<button class="btn btn-primary btn-sm" id="save-dialog-new">Save</button>' +
+      '</div>' +
+    '</div>';
+
+    document.body.appendChild(backdrop);
+
+    var selectedRecordId = null;
+
+    // Click backdrop to close
+    backdrop.addEventListener('click', function (e) {
+      if (e.target === backdrop) backdrop.remove();
+    });
+
+    // Cancel
+    document.getElementById('save-dialog-cancel').addEventListener('click', function () { backdrop.remove(); });
+
+    // Select existing record
+    var recordDivs = backdrop.querySelectorAll('.save-dialog-record');
+    recordDivs.forEach(function (div) {
+      div.addEventListener('click', function () {
+        recordDivs.forEach(function (d) { d.style.borderColor = 'rgba(255,255,255,0.12)'; d.style.background = ''; });
+        div.style.borderColor = 'rgba(59,130,246,0.6)';
+        div.style.background = 'rgba(59,130,246,0.1)';
+        selectedRecordId = div.dataset.recordId;
+      });
+      div.addEventListener('mouseenter', function () {
+        if (selectedRecordId !== div.dataset.recordId) div.style.background = 'rgba(255,255,255,0.04)';
+      });
+      div.addEventListener('mouseleave', function () {
+        if (selectedRecordId !== div.dataset.recordId) div.style.background = '';
+      });
+    });
+
+    // Create new
+    document.getElementById('save-dialog-new').addEventListener('click', async function () {
+      var device = document.getElementById('save-dialog-device').value.trim();
+      if (!device && !selectedRecordId) {
+        showToast('Select a record or enter a device name', 'warning');
+        return;
+      }
+      backdrop.remove();
+      await _doSave(selected, selectedRecordId || null, device, _firmwareName);
+    });
+  }
+
+  async function _doSave(selected, recordId, device, firmware) {
     var verdicts = (typeof LLMReview !== 'undefined' && LLMReview.getVerdicts)
       ? LLMReview.getVerdicts() : {};
+    var payload = { task_id: _taskId, result_ids: selected, verdicts: verdicts };
+    if (recordId) payload.record_id = recordId;
+    if (device) payload.device = device;
+    if (firmware) payload.firmware = firmware;
     try {
-      await api.post('/api/history', {
-        task_id: _taskId,
-        result_ids: selected,
-        verdicts: verdicts,
-      });
+      await api.post('/api/history', payload);
       _removeResults(selected);
       showToast('Saved ' + selected.length + ' to history', 'success');
     } catch (e) {
       showToast('Save failed: ' + e.message, 'error');
     }
+  }
+
+  function _esc(s) {
+    var d = document.createElement('div');
+    d.textContent = s == null ? '' : String(s);
+    return d.innerHTML;
   }
 
   function deleteSelected() {
@@ -63,34 +209,16 @@
     showToast('Deleted ' + selected.length, 'info');
   }
 
-  async function autoSaveRemaining() {
-    if (!_results.length || !_taskId) return;
-    var ids = _results.map(function (r) { return r.id; });
-    var verdicts = (typeof LLMReview !== 'undefined' && LLMReview.getVerdicts)
-      ? LLMReview.getVerdicts() : {};
-    try {
-      await api.post('/api/history', {
-        task_id: _taskId,
-        result_ids: ids,
-        verdicts: verdicts,
-      });
-      _results = [];
-    } catch (e) {
-      console.error('Auto-save failed:', e);
-      // Keep results — they'll be retried on next auto-save trigger
-    }
-  }
-
-  function getRemainingIds() {
-    return _results.map(function (r) { return r.id; });
-  }
-
   function _renderResults(list) {
     var container = document.getElementById('results-list');
     if (!container) return;
 
     if (!list.length) {
-      container.innerHTML = '<div class="text-muted" style="padding:40px;text-align:center;">No results. Run a scan first.</div>';
+      container.innerHTML = '<div class="panel"><div class="panel-body" style="text-align:center;padding:48px;">' +
+        '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="color:var(--text-muted);margin-bottom:12px;"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18"/><path d="M3 9h6"/><path d="M3 15h6"/><path d="M14 8h4"/><path d="M14 12h4"/><path d="M14 16h3"/></svg>' +
+        '<p class="code-label">NO DATA</p>' +
+        '<p class="text-muted text-sm mt-sm">No results. Run a scan in the Analysis tab first.</p>' +
+      '</div></div>';
       return;
     }
 
@@ -104,9 +232,10 @@
         sevStyle = 'background:rgba(59,130,246,0.15);color:var(--accent);';
       }
       return (
+        '<div class="result-vuln-wrap">' +
         '<div class="result-card ' + r.sev + '" data-result-id="' + r.id + '" style="cursor:pointer;">' +
           '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
-            '<div class="flex-col gap-xs">' +
+            '<div class="flex-col gap-xs" style="flex:1;min-width:0;">' +
               '<div class="flex-row gap-sm" style="align-items:center;">' +
                 '<span class="code-label" style="font-size:10px;">' + r.device + '</span>' +
                 '<span class="text-xs text-muted">' + r.firmware + '</span>' +
@@ -115,13 +244,23 @@
               '<span class="code-value" style="font-size:14px;">' + r.cwe + ' — ' + r.sink + '()</span>' +
               '<span class="text-xs text-muted">source: ' + r.source + '()  ·  path #' + r.id.split('/')[2] + '</span>' +
             '</div>' +
-            '<span class="severity-badge" style="font-size:10px;padding:3px 8px;border-radius:4px;font-weight:600;' + sevStyle + '">' +
-              r.sev.toUpperCase() +
-            '</span>' +
+            '<div class="flex-row gap-sm" style="flex-shrink:0;align-items:center;">' +
+              '<span class="severity-badge" style="font-size:10px;padding:3px 8px;border-radius:4px;font-weight:600;' + sevStyle + '">' +
+                r.sev.toUpperCase() +
+              '</span>' +
+              '<button class="btn btn-secondary btn-sm result-detail-btn" data-result-id="' + r.id + '">Detail</button>' +
+            '</div>' +
           '</div>' +
+        '</div>' +
+        '<div class="panel result-detail-panel" data-detail-for="' + r.id + '" style="display:none;"></div>' +
         '</div>'
       );
     }).join('');
+
+    // Reapply LLM verdict badges (cards regenerated, verdicts persist in LLMReview)
+    if (typeof LLMReview !== 'undefined' && LLMReview.reapplyVerdicts) {
+      setTimeout(function () { LLMReview.reapplyVerdicts(); }, 50);
+    }
   }
 
   function _populateFilters(list) {
@@ -178,28 +317,6 @@
     if (searchInput) searchInput.addEventListener('input', _applyFilters);
   }
 
-  async function _loadLatestTask() {
-    var container = document.getElementById('results-list');
-    try {
-      var resp = await api.get('/api/scan/tasks');
-      var tasks = (resp.tasks || []).filter(function (t) { return t.status === 'done' && t.output_dir; });
-      if (tasks.length > 0) {
-        var latest = tasks[tasks.length - 1];
-        window.__lastTaskId = latest.task_id;
-        window.__lastOutputDir = latest.output_dir;
-        loadResults(latest.task_id);
-        return;
-      }
-    } catch (e) {
-      console.error('Failed to discover tasks:', e);
-    }
-    if (container) {
-      container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);">' +
-        'No completed scans found.<br><br>Run a scan in the <b>Analysis</b> tab first, then return here.' +
-        '</div>';
-    }
-  }
-
   async function loadResults(taskId) {
     if (!taskId) return;
 
@@ -211,10 +328,30 @@
       _results = resp.results || [];
       _outputDir = resp.output_dir || '';
       _taskId = resp.task_id || taskId;
+      _firmwareName = (_results.length && _results[0].firmware) || '';
 
       // Expose for LLMReview
       window.__lastOutputDir = _outputDir;
       window.__lastTaskId = _taskId;
+
+      // Remember across restarts so results survive app exit
+      try { localStorage.setItem('flashback_last_task_id', _taskId); } catch (e) {}
+      try { localStorage.setItem('flashback_last_output_dir', _outputDir); } catch (e) {}
+
+      // Apply saved filter FIRST (before saving new baseline)
+      var filterKey = 'flashback_remaining_' + _taskId;
+      try {
+        var savedIds = JSON.parse(localStorage.getItem(filterKey) || 'null');
+        if (savedIds && Array.isArray(savedIds) && savedIds.length < _results.length) {
+          var keepSet = {};
+          savedIds.forEach(function (id) { keepSet[id] = true; });
+          _results = _results.filter(function (r) { return keepSet[r.id]; });
+        }
+      } catch (e) {}
+
+      // THEN save filtered list as new baseline
+      try { localStorage.setItem(filterKey, JSON.stringify(_results.map(function(r){return r.id;})));
+      } catch (e) {}
 
       _populateFilters(_results);
       _renderResults(_results);
@@ -230,20 +367,49 @@
         _initialized = true;
         _initFilters();
 
-        // Bind save/delete buttons (once)
+        // Bind save/delete/select-all buttons (once)
         var saveBtn = document.getElementById('btn-save-history');
         var delBtn = document.getElementById('btn-delete-selected');
+        var selectAllBtn = document.getElementById('btn-select-all');
         if (saveBtn) saveBtn.addEventListener('click', saveSelected);
         if (delBtn) delBtn.addEventListener('click', deleteSelected);
+        if (selectAllBtn) selectAllBtn.addEventListener('click', function () {
+          if (typeof LLMReview === 'undefined') return;
+          var allCards = document.querySelectorAll('.result-card[data-result-id]');
+          var allSelected = allCards.length > 0 &&
+            Array.from(allCards).every(function (c) { return c.classList.contains('selected'); });
+          if (allSelected) {
+            LLMReview.clearSelection();
+          } else {
+            LLMReview.selectAll();
+          }
+        });
+
+        // Detail button handler (stopPropagation to not toggle LLM selection)
+        var list = document.getElementById('results-list');
+        if (list) {
+          list.addEventListener('click', function (e) {
+            var detailBtn = e.target.closest('.result-detail-btn');
+            if (detailBtn) {
+              e.stopPropagation();
+              _showResultDetail(detailBtn.dataset.resultId);
+            }
+          });
+        }
       }
 
       var taskId = window.__lastTaskId;
+      // After restart, window.__lastTaskId is lost — recover from localStorage
+      if (!taskId) {
+        try { taskId = localStorage.getItem('flashback_last_task_id'); } catch (e) {}
+        if (taskId) {
+          try { window.__lastOutputDir = localStorage.getItem('flashback_last_output_dir'); } catch (e) {}
+        }
+      }
       if (taskId && !_taskId) {
         loadResults(taskId);
-      } else if (!taskId && !_taskId) {
-        _loadLatestTask();
       }
-      // else: keep existing results, don't re-render
+      // else: keep existing results (or show empty if first visit with no completed scans)
 
       if (typeof LLMReview !== 'undefined') {
         LLMReview.init();
@@ -255,21 +421,6 @@
         LLMReview.destroy();
       }
     },
-  });
-
-  // Expose for auto-save from analysis.js / app.js
-  window.__resultsAutoSave = autoSaveRemaining;
-  window.__resultsGetRemaining = getRemainingIds;
-
-  window.addEventListener('beforeunload', function () {
-    if (_results.length && _taskId) {
-      // Best-effort sync save via sendBeacon
-      var ids = _results.map(function (r) { return r.id; });
-      var verdicts = (typeof LLMReview !== 'undefined' && LLMReview.getVerdicts)
-        ? LLMReview.getVerdicts() : {};
-      var payload = JSON.stringify({ task_id: _taskId, result_ids: ids, verdicts: verdicts });
-      try { navigator.sendBeacon('/api/history', new Blob([payload], { type: 'application/json' })); } catch (e) {}
-    }
   });
 
 })();

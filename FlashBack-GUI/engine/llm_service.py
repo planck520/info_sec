@@ -20,9 +20,15 @@ import tempfile
 from pathlib import Path
 from typing import Any, Callable
 
-_RESOURCE_LLM = (
-    Path(__file__).resolve().parent.parent / "resources" / "llm"
-)
+def _get_llm_dir() -> Path:
+    """Return the llm/ resource directory in both dev and frozen modes."""
+    if getattr(sys, "frozen", False):
+        # exe: <install>/resources/flashback-server/flashback-server.exe
+        # parent.parent = <install>/resources（llm/ 直接平铺在此）
+        return Path(sys.executable).parent.parent / "llm"
+    return Path(__file__).resolve().parent.parent / "resources" / "llm"
+
+_RESOURCE_LLM = _get_llm_dir()
 if str(_RESOURCE_LLM) not in sys.path:
     sys.path.insert(0, str(_RESOURCE_LLM))
 

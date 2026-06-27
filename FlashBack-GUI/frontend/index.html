@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FlashBack — Firmware Vulnerability Analyzer</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><polygon points='13,2 3,14 12,14 11,22 21,10 12,10 13,2' fill='%233b82f6'/></svg>">
+  <link rel="icon" href="logo.png">
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/analysis.css">
@@ -27,8 +27,7 @@
   <!-- ═══ 自定义标题栏 ═══ -->
   <div class="titlebar">
     <div class="titlebar-drag">
-      <span class="titlebar-logo">✦</span>
-      <span class="titlebar-title">FlashBack</span>
+            <span class="titlebar-title">FlashBack</span>
       <span class="titlebar-sub">Firmware Security</span>
     </div>
     <div class="titlebar-actions">
@@ -49,9 +48,7 @@
       <!-- Logo -->
       <div class="sidebar-logo">
         <div class="logo-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-          </svg>
+          <img src="logo.png" style="width:100%;height:100%;object-fit:contain;">
         </div>
         <div>
           <div class="logo-text">FlashBack</div>
@@ -192,7 +189,7 @@
             <div class="section-hd">
               <span class="dot green"></span> Recent Scans
               <span class="spacer"></span>
-              <a href="#results" class="section-link">View all</a>
+              <a href="#history" class="section-link">View all</a>
             </div>
             <div class="panel-body dash-scroll" id="dash-recent-scans">
               <div class="dash-empty">
@@ -207,7 +204,7 @@
             <div class="section-hd">
               <span class="dot amber"></span> CWE Distribution
               <span class="spacer"></span>
-              <a href="#results" class="section-link">View all</a>
+              <a href="#history" class="section-link">View all</a>
             </div>
             <div class="panel-body dash-scroll" id="dash-vuln-overview">
               <div class="dash-empty">
@@ -414,6 +411,7 @@
             <option value="direct">Direct (Fast)</option>
           </select>
           <button class="btn btn-secondary btn-sm" id="btn-save-history">Save to History</button>
+          <button class="btn btn-secondary btn-sm" id="btn-select-all">Select All</button>
           <button class="btn btn-secondary btn-sm" id="btn-delete-selected">Delete</button>
           <span class="selected-count" id="llm-selected-count"></span>
           <span style="flex:1;"></span>
@@ -431,7 +429,7 @@
             <div class="panel-body" style="text-align:center;padding:48px;">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="color:var(--text-muted);margin-bottom:12px;"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18"/><path d="M3 9h6"/><path d="M3 15h6"/><path d="M14 8h4"/><path d="M14 12h4"/><path d="M14 16h3"/></svg>
               <p class="code-label">NO DATA</p>
-              <p class="text-muted text-sm mt-sm">尚未加载结果数据。请先运行固件分析（成员 B 开发中）</p>
+              <p class="text-muted text-sm mt-sm">No results. Run a scan in the Analysis tab first.</p>
             </div>
           </div>
         </div>
@@ -572,11 +570,11 @@
                 <span class="spacer"></span>
                 <span class="tag" id="ida-tag">NOT FOUND</span>
               </div>
-              <div class="panel-body">
-                <div class="flex-row gap-sm" style="margin-bottom:12px;">
-                  <input class="input input-mono" type="text" placeholder="D:\ida9.1\windows\ida.exe" id="settings-ida-path">
-                  <button class="btn btn-secondary btn-sm" style="flex-shrink:0;" id="btn-ida-browse">Browse</button>
-                  <button class="btn btn-secondary btn-sm" style="flex-shrink:0;" id="btn-ida-detect">Auto Detect</button>
+              <div class="panel-body" style="display:flex;flex-direction:column;gap:10px;">
+                <input class="input input-mono" type="text" placeholder="D:\ida9.1\windows\ida.exe" id="settings-ida-path" style="width:100%;">
+                <div class="flex-row gap-sm">
+                  <button class="btn btn-secondary btn-sm" id="btn-ida-browse">Browse</button>
+                  <button class="btn btn-secondary btn-sm" id="btn-ida-detect">Auto Detect</button>
                 </div>
                 <div class="flex-row gap-sm">
                   <span style="width:8px;height:8px;border-radius:50%;background:var(--text-muted);display:inline-block;" id="ida-dot"></span>
@@ -712,45 +710,97 @@
           <div class="sub">$ man flashback</div>
         </div>
 
-        <div style="flex:1;max-width:660px;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
+        <div class="help-grid">
 
-          <!-- 快速入门 -->
-          <div class="panel">
-            <div class="section-hd">
-              <span class="dot green"></span>
-              GETTING STARTED
+          <!-- 左栏 -->
+          <div class="settings-sidebar">
+            <!-- 快速入门 -->
+            <div class="panel">
+              <div class="section-hd">
+                <span class="dot green"></span>
+                GETTING STARTED
+              </div>
+              <div class="panel-body" style="line-height:2.2;">
+                <p><span class="code-value">1.</span> 前往 <b>系统设置</b> → 配置 IDA Pro 安装路径</p>
+                <p><span class="code-value">2.</span> 配置 LLM API Key，点击 Test Connection 验证</p>
+                <p><span class="code-value">3.</span> 前往 <b>固件分析</b> → SELECT FOLDER → START SCAN</p>
+                <p><span class="code-value">4.</span> 在 <b>扫描结果</b> 查看漏洞卡片，按设备/CWE 筛选</p>
+                <p><span class="code-value">5.</span> 选中卡片 → <b>AI Review</b> 或 <b>Save to History</b></p>
+                <p><span class="code-value">6.</span> 在 <b>历史记录</b> 浏览已保存的漏洞详情</p>
+              </div>
             </div>
-            <div class="panel-body" style="line-height:2;">
-              <p><span class="code-value">1.</span> 前往 <b>设置</b> 页面配置 IDA Pro 安装路径</p>
-              <p><span class="code-value">2.</span> （可选）配置 LLM API 以启用 AI 辅助漏洞审查</p>
-              <p><span class="code-value">3.</span> 前往 <b>分析</b> 页面，选择固件目录并启动扫描</p>
-              <p><span class="code-value">4.</span> 扫描完成后，在 <b>结果</b> 页面浏览和导出漏洞报告</p>
+
+            <!-- LLM 审查 -->
+            <div class="panel">
+              <div class="section-hd">
+                <span class="dot green"></span>
+                LLM REVIEW
+              </div>
+              <div class="panel-body" style="line-height:2;">
+                <p>采用 <b>3-pass 多数投票</b> 机制，LLM 从多个角度独立分析，取多数结果为最终判定。</p>
+                <p><span class="code-label">Reasoning (Deep)</span><br>思维链引导，逐步推理调用链、数据流、可利用性，精度最高。</p>
+                <p><span class="code-label">Direct (Fast)</span><br>一次性判定 + 置信度，速度快。</p>
+              </div>
+            </div>
+
+            <!-- 历史记录 -->
+            <div class="panel">
+              <div class="section-hd">
+                <span class="dot amber"></span>
+                HISTORY RECORDS
+              </div>
+              <div class="panel-body" style="line-height:2;">
+                <p>数据持久化到 <span class="code-label">%APPDATA%/FlashBack/history/</span>。</p>
+                <p>保存时可追加到已有记录（自动去重）或新建。每条记录含 CGI 漏洞树、路径表、反编译代码、LLM 审查结果。</p>
+              </div>
             </div>
           </div>
 
-          <!-- 关于 -->
-          <div class="panel">
-            <div class="section-hd">
-              <span class="dot amber"></span>
-              ABOUT
+          <!-- 右栏 -->
+          <div class="settings-sidebar">
+            <!-- FAQ -->
+            <div class="panel">
+              <div class="section-hd">
+                <span class="dot amber"></span>
+                FAQ
+              </div>
+              <div class="panel-body" style="line-height:2.2;">
+                <p><span class="code-value">Q:</span> 支持什么格式？<br><span class="code-value">A:</span> ELF / PE / Mach-O。建议先用 binwalk 解包固件镜像。</p>
+                <p><span class="code-value">Q:</span> 分析需要多久？<br><span class="code-value">A:</span> 单个 CGI 约 30-90 秒，完整固件可能数十分钟。</p>
+                <p><span class="code-value">Q:</span> 必须安装 IDA Pro？<br><span class="code-value">A:</span> 是的。依赖 IDA 反汇编/反编译。支持 7.x/8.x/9.x。</p>
+                <p><span class="code-value">Q:</span> LLM 需要联网吗？<br><span class="code-value">A:</span> 云端 API 需要，Ollama 本地部署不需要。</p>
+                <p><span class="code-value">Q:</span> 输出的漏洞格式是什么？<br><span class="code-value">A:</span> JSON（含完整路径跳转）+ 反编译 C 代码片段。</p>
+              </div>
             </div>
-            <div class="panel-body">
-              <div style="display:flex;flex-direction:column;gap:12px;">
-                <div class="flex-between">
-                  <span class="code-label">APPLICATION</span>
-                  <span class="code-value">FlashBack GUI</span>
-                </div>
-                <div class="flex-between">
-                  <span class="code-label">VERSION</span>
-                  <span class="code-value">v1.0.0</span>
-                </div>
-                <div class="flex-between">
-                  <span class="code-label">BASED ON</span>
-                  <span class="code-value">FlashBack (CCS 2026)</span>
-                </div>
-                <div class="flex-between">
-                  <span class="code-label">RUNTIME</span>
-                  <span class="code-value">Python + FastAPI + Edge WebView2</span>
+
+            <!-- 关于 -->
+            <div class="panel">
+              <div class="section-hd">
+                <span class="dot amber"></span>
+                ABOUT
+              </div>
+              <div class="panel-body">
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                  <div class="flex-between">
+                    <span class="code-label">APPLICATION</span>
+                    <span class="code-value">FlashBack GUI</span>
+                  </div>
+                  <div class="flex-between">
+                    <span class="code-label">VERSION</span>
+                    <span class="code-value">v1.0.0</span>
+                  </div>
+                  <div class="flex-between">
+                    <span class="code-label">BASED ON</span>
+                    <span class="code-value">FlashBack (CCS 2026)</span>
+                  </div>
+                  <div class="flex-between">
+                    <span class="code-label">RUNTIME</span>
+                    <span class="code-value">Python + FastAPI + Electron</span>
+                  </div>
+                  <div class="flex-between">
+                    <span class="code-label">LLM</span>
+                    <span class="code-value">DeepSeek / OpenAI / Grok / Ollama</span>
+                  </div>
                 </div>
               </div>
             </div>
