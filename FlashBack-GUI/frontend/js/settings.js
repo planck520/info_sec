@@ -252,6 +252,34 @@
 
   // ── Settings-specific buttons ───────────────────────────────
 
+  function initApiKeyVisibilityToggle() {
+    var keyEl = document.getElementById('settings-llm-key');
+    if (!keyEl || !keyEl.parentElement) return;
+    var eyeEl = keyEl.parentElement.querySelector('svg');
+    if (!eyeEl) return;
+
+    eyeEl.setAttribute('role', 'button');
+    eyeEl.setAttribute('tabindex', '0');
+    eyeEl.setAttribute('title', '显示/隐藏 API Key');
+
+    function toggle() {
+      if (keyEl.value && keyEl.value.indexOf('****') !== -1) {
+        showToast('已保存的 API Key 仅脱敏显示；重新输入后可查看明文', 'info');
+        return;
+      }
+      keyEl.type = keyEl.type === 'password' ? 'text' : 'password';
+      eyeEl.style.color = keyEl.type === 'text' ? 'var(--accent)' : 'var(--text-muted)';
+    }
+
+    eyeEl.addEventListener('click', toggle);
+    eyeEl.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggle();
+      }
+    });
+  }
+
   function initSettingsSaveButton() {
     var btn = document.getElementById('settings-save-btn');
     if (btn) btn.addEventListener('click', function () { saveSettings(false); });
@@ -384,6 +412,7 @@
       initLLMProviderSwitch();
       initLLMToggle();
       initSettingsSaveButton();
+      initApiKeyVisibilityToggle();
       initIDAPathButtons();
       initOutputBrowse();
       loadSettings();
