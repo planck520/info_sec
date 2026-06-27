@@ -28,12 +28,21 @@ let pythonProcess = null;
 
 // ── 启动 Python 后端 ─────────────────────────────────────
 function startBackend() {
-  const pythonExe = 'python';
-  const scriptPath = path.join(__dirname, '..', 'main.py');
+  let exe, args;
 
-  console.log(`[Electron] Starting backend: ${pythonExe} ${scriptPath} --server-only --port ${BACKEND_PORT}`);
+  if (app.isPackaged) {
+    // 生产环境：使用 PyInstaller 编译的 flashback-server.exe
+    exe = path.join(process.resourcesPath, 'flashback-server', 'flashback-server.exe');
+    args = ['--server-only', '--port', String(BACKEND_PORT)];
+  } else {
+    // 开发环境：直接用 python 运行 main.py
+    exe = 'python';
+    args = [path.join(__dirname, '..', 'main.py'), '--server-only', '--port', String(BACKEND_PORT)];
+  }
 
-  pythonProcess = spawn(pythonExe, [scriptPath, '--server-only', '--port', String(BACKEND_PORT)], {
+  console.log(`[Electron] Starting backend: ${exe} ${args.join(' ')}`);
+
+  pythonProcess = spawn(exe, args, {
     stdio: ['ignore', 'pipe', 'pipe'],
     env: {
       ...process.env,
@@ -86,7 +95,7 @@ function waitForBackend(retries = 30, interval = 500) {
 }
 
 // ── 创建窗口 ─────────────────────────────────────────────
-function createWindow() {
+async function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -102,8 +111,24 @@ function createWindow() {
     },
   });
 
+  // 页面加载失败时显示错误信息（避免黑屏无提示）
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDesc, validatedURL) => {
+    console.error(`[Electron] Page load failed: ${errorDesc} (code=${errorCode}) url=${validatedURL}`);
+    mainWindow.webContents.loadURL(`data:text/html;charset=utf-8,
+      <html><body style="background:#1a1a2e;color:#e0e0e0;font-family:monospace;padding:40px;">
+      <h2>FlashBack 启动失败</h2>
+      <p>无法连接到后端服务：${errorDesc}</p>
+      <p>请确认端口 18920 未被占用，然后重启应用。</p>
+      </body></html>`);
+  });
+
+  // 打开 DevTools 方便调试（Ctrl+Shift+I 也可手动打开）
+  if (process.argv.includes('--dev')) {
+    mainWindow.webContents.openDevTools();
+  }
+
   // 禁用磁盘缓存 — 确保每次加载最新的 CSS/JS
-  mainWindow.webContents.session.clearCache();
+  await mainWindow.webContents.session.clearCache();
   mainWindow.loadURL(`${BACKEND_URL}/#token=${AUTH_TOKEN}`);
 
   mainWindow.on('closed', () => {

@@ -34,7 +34,7 @@ async def get_results(request: Request, task_id: str = Query(...)):
     persisted = None
     if not task:
         # Fall back to persisted tasks (survives backend restart)
-        persisted = request.app.state.persisted_tasks.get(task_id)
+        persisted = getattr(request.app.state, "persisted_tasks", {}).get(task_id)
         if not persisted:
             raise HTTPException(status_code=404, detail="Task not found")
 
@@ -107,7 +107,7 @@ async def get_result_detail(
     task = request.app.state.tasks.get(task_id)
     if not task:
         # Fall back to persisted tasks
-        persisted = request.app.state.persisted_tasks.get(task_id)
+        persisted = getattr(request.app.state, "persisted_tasks", {}).get(task_id)
         if not persisted:
             raise HTTPException(status_code=404, detail="Task not found")
         output_dir = persisted.get("output_dir", "")

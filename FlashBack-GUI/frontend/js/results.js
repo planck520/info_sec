@@ -356,6 +356,11 @@
       _populateFilters(_results);
       _renderResults(_results);
     } catch (e) {
+      // Stale task ID (e.g. result files deleted) — clear so we don't keep retrying
+      if (e.message && e.message.indexOf('404') !== -1) {
+        try { localStorage.removeItem('flashback_last_task_id'); } catch (ignored) {}
+        try { localStorage.removeItem('flashback_last_output_dir'); } catch (ignored) {}
+      }
       if (container) container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--danger);">Failed to load results: ' + e.message + '</div>';
       console.error('loadResults error:', e);
     }
@@ -406,7 +411,8 @@
           try { window.__lastOutputDir = localStorage.getItem('flashback_last_output_dir'); } catch (e) {}
         }
       }
-      if (taskId && !_taskId) {
+      console.log('[results:init] window.__lastTaskId:', window.__lastTaskId, 'localStorage taskId:', (function(){try{return localStorage.getItem('flashback_last_task_id')}catch(e){return null}})());
+      if (taskId && taskId !== _taskId) {
         loadResults(taskId);
       }
       // else: keep existing results (or show empty if first visit with no completed scans)

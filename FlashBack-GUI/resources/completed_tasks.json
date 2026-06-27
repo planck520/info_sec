@@ -1,0 +1,22 @@
+{
+  "fdbd0dda-d5db-4aee-bf08-9705f4f3f6dd": {
+    "task_id": "fdbd0dda-d5db-4aee-bf08-9705f4f3f6dd",
+    "status": "done",
+    "completed": 1,
+    "total": 1,
+    "current": null,
+    "success": 1,
+    "fail": 0,
+    "progress": 100,
+    "mode": "standard",
+    "parallel": 1,
+    "output_dir": "D:\\FlashBack_code\\flashback-output",
+    "result_files": [
+      "D:\\FlashBack_code\\flashback-output\\cgi-bin\\cstecgi.json"
+    ],
+    "error": null,
+    "created_at": "2026-06-25T20:06:41",
+    "started_at": "2026-06-25T20:06:41",
+    "finished_at": "2026-06-25T20:06:53"
+  }
+}

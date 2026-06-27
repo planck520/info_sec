@@ -2,6 +2,7 @@
 """FastAPI 应用创建 — CORS + lifespan + 静态文件 + 路由注册。"""
 from __future__ import annotations
 
+import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -9,6 +10,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from server.persistence import load_persisted_tasks
 from server.security import (
     AUTH_HEADER,
     get_allowed_origins,
@@ -23,6 +25,7 @@ def create_app(resource_dir: Path) -> FastAPI:
     async def lifespan(app: FastAPI):
         app.state.resource_dir = resource_dir
         app.state.tasks = {}  # task_id → TaskState (供 scan.py)
+        app.state.persisted_tasks = load_persisted_tasks()  # task_id → metadata (重启后恢复)
         yield
         for _tid, state in list(app.state.tasks.items()):
             proc = state.get("process")
@@ -69,7 +72,12 @@ def create_app(resource_dir: Path) -> FastAPI:
     app.include_router(ws_router)
 
     # 静态文件（最后挂载，API 路由优先匹配）
-    frontend_dir = Path(__file__).resolve().parent.parent / "frontend"
+    # Frozen: frontend 由 electron-builder extraResources 复制到 resources/frontend/
+    # Dev:     frontend 与 server/ 同级（项目根目录下）
+    if getattr(sys, "frozen", False):
+        frontend_dir = resource_dir / "frontend"
+    else:
+        frontend_dir = Path(__file__).resolve().parent.parent / "frontend"
     app.mount("/", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")
 
     return app
