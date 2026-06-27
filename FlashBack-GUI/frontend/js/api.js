@@ -9,11 +9,42 @@ const api = (() => {
   'use strict';
 
   const BASE_URL = window.location.origin;
+  const AUTH_HEADER = 'X-FlashBack-Token';
+
+  function _readTokenFromHash() {
+    const hash = window.location.hash || '';
+    const marker = '#token=';
+    if (!hash.startsWith(marker)) return '';
+    try {
+      return decodeURIComponent(hash.slice(marker.length));
+    } catch (e) {
+      return hash.slice(marker.length);
+    }
+  }
+
+  function _initToken() {
+    const token = _readTokenFromHash();
+    if (token) {
+      sessionStorage.setItem('flashbackToken', token);
+      history.replaceState(null, '', window.location.pathname + window.location.search + '#dashboard');
+      return token;
+    }
+    return sessionStorage.getItem('flashbackToken') || '';
+  }
+
+  const AUTH_TOKEN = _initToken();
+
+  function _withToken(path) {
+    if (!AUTH_TOKEN) return path;
+    const sep = path.indexOf('?') === -1 ? '?' : '&';
+    return path + sep + 'token=' + encodeURIComponent(AUTH_TOKEN);
+  }
 
   // ── 通用 fetch 包装 ───────────────────────────────────
   async function _request(method, path, paramsOrBody) {
     let url = BASE_URL + path;
     const options = { method, headers: {} };
+    if (AUTH_TOKEN) options.headers[AUTH_HEADER] = AUTH_TOKEN;
 
     if (method === 'GET' || method === 'DELETE') {
       if (paramsOrBody) {
@@ -37,7 +68,7 @@ const api = (() => {
 
   // ── WebSocket 连接工厂 ────────────────────────────────
   function connectWS(path, callbacks = {}) {
-    const wsUrl = BASE_URL.replace('http', 'ws') + path;
+    const wsUrl = BASE_URL.replace('http', 'ws') + _withToken(path);
     const { onLog, onProgress, onDone, onError, onOpen, onClose } = callbacks;
 
     let ws = null;
@@ -74,6 +105,11 @@ const api = (() => {
 
       ws.onclose = (e) => {
         if (closed) return;
+        if (e.code === 1008) {
+          closed = true;
+          if (onClose) onClose(e);
+          return;
+        }
         // 意外断开：指数退避重连
         if (retries < maxRetries && !e.wasClean) {
           const delay = Math.min(1000 * Math.pow(2, retries), 8000);

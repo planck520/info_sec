@@ -5,9 +5,17 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+
+from server.security import (
+    AUTH_HEADER,
+    get_allowed_origins,
+    is_authorized_request,
+    is_protected_api_path,
+    unauthorized_response,
+)
 
 
 def create_app(resource_dir: Path) -> FastAPI:
@@ -32,10 +40,18 @@ def create_app(resource_dir: Path) -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=get_allowed_origins(),
+        allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", AUTH_HEADER],
     )
+
+    @app.middleware("http")
+    async def require_api_token(request: Request, call_next):
+        """Protect local API routes from arbitrary browser pages."""
+        if request.method != "OPTIONS" and is_protected_api_path(request.url.path):
+            if not is_authorized_request(request):
+                return unauthorized_response()
+        return await call_next(request)
 
     # API 路由（先注册，优先级高于静态文件）
     from server.routes.scan import router as scan_router

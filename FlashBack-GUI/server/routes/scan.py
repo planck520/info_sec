@@ -19,13 +19,15 @@ router = APIRouter(tags=["scan"])
 
 VALID_MODES = {"standard", "nocache", "nopropagator"}
 TERMINAL_STATUS = {"done", "error", "stopped"}
+MAX_FIRMWARES_PER_TASK = 64
+MAX_PATH_CHARS = 1024
 
 
 class ScanStartRequest(BaseModel):
     firmwares: List[str] = Field(default_factory=list)
-    output_dir: str
+    output_dir: str = Field(..., min_length=1, max_length=MAX_PATH_CHARS)
     mode: str = "standard"
-    parallel: int = 1
+    parallel: int = Field(1, ge=1)
 
 
 class TaskState:
@@ -214,20 +216,34 @@ async def start_scan(request: Request, body: ScanStartRequest):
     """启动分析任务。"""
     if not body.firmwares:
         raise HTTPException(status_code=400, detail="请至少选择一个固件文件")
+    if len(body.firmwares) > MAX_FIRMWARES_PER_TASK:
+        raise HTTPException(status_code=400, detail=f"单次任务最多支持 {MAX_FIRMWARES_PER_TASK} 个固件文件")
     if body.mode not in VALID_MODES:
         raise HTTPException(status_code=400, detail="分析模式不合法")
+
+    normalized_firmwares: list[str] = []
     for item in body.firmwares:
-        if not Path(item).exists() or not Path(item).is_file():
+        if not item or len(item) > MAX_PATH_CHARS:
+            raise HTTPException(status_code=400, detail="固件文件路径不合法")
+        try:
+            firmware_path = Path(item).expanduser().resolve()
+        except (OSError, RuntimeError) as exc:
+            raise HTTPException(status_code=400, detail=f"固件文件路径不合法：{item}") from exc
+        if not firmware_path.exists() or not firmware_path.is_file():
             raise HTTPException(status_code=400, detail=f"固件文件不存在：{item}")
-    if not body.output_dir:
-        raise HTTPException(status_code=400, detail="输出目录不能为空")
+        normalized_firmwares.append(str(firmware_path))
+
+    try:
+        output_dir = Path(body.output_dir).expanduser().resolve()
+    except (OSError, RuntimeError) as exc:
+        raise HTTPException(status_code=400, detail="输出目录不合法") from exc
 
     resource_dir = Path(request.app.state.resource_dir)
     max_parallel = int(get_config().get("max_parallel") or 4)
-    parallel = max(1, min(int(body.parallel or 1), max_parallel, len(body.firmwares)))
+    parallel = max(1, min(int(body.parallel or 1), max_parallel, len(normalized_firmwares)))
     task_id = str(uuid.uuid4())
     runner = _get_runner(resource_dir, get_config().get("ida_path"))
-    task = TaskState(task_id, body.firmwares, body.output_dir, body.mode, parallel, runner)
+    task = TaskState(task_id, normalized_firmwares, str(output_dir), body.mode, parallel, runner)
     request.app.state.tasks[task_id] = task
 
     def log_callback(payload: dict[str, Any]) -> None:
@@ -246,8 +262,8 @@ async def start_scan(request: Request, body: ScanStartRequest):
         broadcast_task_event(task_id, {"type": "progress", **task.snapshot(include_logs=False)})
         try:
             results = runner.run_batch(
-                firmwares=[Path(p) for p in body.firmwares],
-                output_dir=Path(body.output_dir),
+                firmwares=[Path(p) for p in normalized_firmwares],
+                output_dir=output_dir,
                 mode=body.mode,
                 parallel=parallel,
                 on_progress=progress_callback,
@@ -256,7 +272,7 @@ async def start_scan(request: Request, body: ScanStartRequest):
             )
             with task.lock:
                 task.result_files = [
-                    str(Path(body.output_dir) / Path(path).parent.name / f"{Path(path).stem}.json")
+                    str(output_dir / Path(path).parent.name / f"{Path(path).stem}.json")
                     for path, ok in results.items() if ok
                 ]
                 if task.cancel_event.is_set():

@@ -8,6 +8,8 @@ from typing import Any, Dict, List
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from server.security import is_authorized_websocket
+
 router = APIRouter()
 
 
@@ -73,6 +75,10 @@ def broadcast_task_event(task_id: str, message: dict[str, Any]) -> None:
 @router.websocket("/ws/logs")
 async def logs_websocket(websocket: WebSocket, task_id: str):
     """订阅指定分析任务的实时日志。"""
+    if not is_authorized_websocket(websocket):
+        await websocket.close(code=1008)
+        return
+
     manager.bind_loop()
     tasks = getattr(websocket.app.state, "tasks", {})
     task = tasks.get(task_id)

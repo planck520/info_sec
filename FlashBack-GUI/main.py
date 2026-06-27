@@ -13,6 +13,8 @@ from __future__ import annotations
 import argparse
 import ctypes
 import logging
+import os
+import secrets
 import socket
 import sys
 import threading
@@ -94,6 +96,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="FlashBack GUI")
     parser.add_argument("--server-only", action="store_true", help="仅启动 API 服务器（Electron 模式）")
     parser.add_argument("--port", type=int, default=None, help="指定端口（默认自动探测）")
+    parser.add_argument("--token", default="", help="本地 API 会话 token")
+    parser.add_argument("--allowed-origin", default="", help="允许访问本地 API 的前端 Origin")
     args = parser.parse_args()
 
     # 1. 验证资源目录
@@ -107,9 +111,14 @@ def main() -> int:
         return 1
     LOGGER.info("Resource dir: %s", resource_dir)
 
-    # 2. 端口
+    # 2. 端口 + 本地 API 会话安全
     port = args.port if args.port else find_available_port()
     LOGGER.info("Using port: %d", port)
+
+    allowed_origin = args.allowed_origin or os.environ.get("FLASHBACK_ALLOWED_ORIGIN") or f"http://127.0.0.1:{port}"
+    token = args.token or os.environ.get("FLASHBACK_TOKEN") or secrets.token_hex(32)
+    os.environ["FLASHBACK_ALLOWED_ORIGIN"] = allowed_origin
+    os.environ["FLASHBACK_TOKEN"] = token
 
     # 3. 创建应用
     app = create_app(resource_dir=resource_dir)
@@ -143,7 +152,7 @@ def main() -> int:
     title = "FlashBack — Firmware Vulnerability Analyzer"
     window = webview.create_window(
         title=title,
-        url=f"http://127.0.0.1:{port}",
+        url=f"http://127.0.0.1:{port}/#token={token}",
         width=1400,
         height=900,
         min_size=(1024, 768),

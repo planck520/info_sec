@@ -9,6 +9,7 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
 const http = require('http');
+const crypto = require('crypto');
 
 // ── GPU 渲染优化（修复 Electron Chromium 文字合成）──────
 app.commandLine.appendSwitch('enable-gpu-rasterization');
@@ -20,6 +21,7 @@ app.commandLine.appendSwitch('disable-http-cache');
 const BACKEND_PORT = 18920;
 const BACKEND_HOST = '127.0.0.1';
 const BACKEND_URL = `http://${BACKEND_HOST}:${BACKEND_PORT}`;
+const AUTH_TOKEN = crypto.randomBytes(32).toString('hex');
 
 let mainWindow = null;
 let pythonProcess = null;
@@ -33,7 +35,12 @@ function startBackend() {
 
   pythonProcess = spawn(pythonExe, [scriptPath, '--server-only', '--port', String(BACKEND_PORT)], {
     stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, PYTHONUNBUFFERED: '1' },
+    env: {
+      ...process.env,
+      PYTHONUNBUFFERED: '1',
+      FLASHBACK_TOKEN: AUTH_TOKEN,
+      FLASHBACK_ALLOWED_ORIGIN: BACKEND_URL,
+    },
   });
 
   pythonProcess.stdout.on('data', (data) => {
@@ -60,9 +67,13 @@ function waitForBackend(retries = 30, interval = 500) {
     let attempts = 0;
     const check = () => {
       attempts++;
-      http.get(`${BACKEND_URL}/api/settings`, (res) => {
+      const req = http.get(`${BACKEND_URL}/api/settings`, {
+        headers: { 'X-FlashBack-Token': AUTH_TOKEN },
+      }, (res) => {
+        res.resume();
         resolve(true);
-      }).on('error', () => {
+      });
+      req.on('error', () => {
         if (attempts >= retries) {
           reject(new Error(`Backend not ready after ${retries} attempts`));
         } else {
@@ -93,7 +104,7 @@ function createWindow() {
 
   // 禁用磁盘缓存 — 确保每次加载最新的 CSS/JS
   mainWindow.webContents.session.clearCache();
-  mainWindow.loadURL(BACKEND_URL);
+  mainWindow.loadURL(`${BACKEND_URL}/#token=${AUTH_TOKEN}`);
 
   mainWindow.on('closed', () => {
     mainWindow = null;
